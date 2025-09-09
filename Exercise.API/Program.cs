@@ -6,7 +6,9 @@ using Microsoft.Identity.Web;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddHttpClient("ExerciseDb", client =>
+builder.Services.AddApplication();
+
+builder.Services.AddHttpClient("ExerciseApi", client =>
 {
     client.BaseAddress = new Uri("https://exercisedb.p.rapidapi.com/");
     client.DefaultRequestHeaders.Add("x-rapidapi-host", builder.Configuration["RapidApi:Host"]);
@@ -21,7 +23,9 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+
 var app = builder.Build();
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
