@@ -9,7 +9,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Exercise.Domain", "Exercise
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Exercise.Application", "Exercise.Application\Exercise.Application.csproj", "{725D4AB0-18A0-4EDE-82F9-105B7D95ACC3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Exercise.Infrastructure", "Exercise.Imfrastructure\Exercise.Infrastructure.csproj", "{2C3CE57F-E45B-40FE-97F9-6A50D7490536}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Exercise.Infrastructure", "Exercise.Infrastructure\Exercise.Infrastructure.csproj", "{2C3CE57F-E45B-40FE-97F9-6A50D7490536}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}"
 	ProjectSection(SolutionItems) = preProject

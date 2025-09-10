@@ -2,7 +2,7 @@
 
 The domain layer is the heart of the Exercise Microservice, containing the core business logic, entities, and rules. Built with Domain-Driven Design (DDD) principles and SOLID design patterns.
 
-## ??? Architecture Philosophy
+## Architecture Philosophy
 
 The domain layer follows these key principles:
 - **Domain-Driven Design** - Rich domain models with behavior
