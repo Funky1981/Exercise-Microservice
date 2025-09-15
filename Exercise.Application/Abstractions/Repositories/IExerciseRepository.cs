@@ -21,5 +21,13 @@ namespace Exercise.Application.Abstractions.Repositories
         /// <param name="cancellationToken">A cancellation token for the operation</param>
         /// <returns>A read-only list of all exercises</returns>
         Task<IReadOnlyList<ExerciseEntity>> GetAllAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Retrieves a specific exercise by its unique identifier  
+        /// </summary>
+        /// <param name="id">The unique identifier of the exercise</param>
+        /// <param name="cancellationToken">A cancellation token for the operation</param>
+        /// <returns>The exercise that matches the specified identifier, or null if not found</returns>
+        Task<ExerciseEntity?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
     }
 }
