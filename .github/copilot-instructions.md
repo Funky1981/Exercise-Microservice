@@ -1,17 +1,41 @@
-## Built-in Command Shortcuts (minimal)
+## Built-in Command Shortcuts
 
-This file contains a short, minimal set of MCP shortcuts that are most useful for everyday development. Keep a small toolset in your Copilot/agent settings: Code management, Pull request management, Issues, and Repos.
+### GitHub MCP (`/gh`)
 
-### GitHub MCP (`/gh`) — keep these
 - `/gh create pr` — Create a pull request
 - `/gh list prs` — List open pull requests
 - `/gh repos` — List your repositories
 - `/gh issues` — List issues in a repository
 - `/gh create issue` — Create a new issue
+- `/gh close issue <id>` — Close an issue by ID
+- `/gh branches` — List branches in a repository
+- `/gh commit <msg>` — Commit changes with a message
+- `/gh status` — Show repository status
+- `/gh clone <repo>` — Clone a repository
 
-Always replace placeholders like `<repo>`, `<id>`, `<msg>` with your values.
+### Upstash Context7 MCP (`/ctx7`)
+
+- `/ctx7 semantic <query>` — Perform a semantic search
+- `/ctx7 summarize <text>` — Summarize provided text
+- `/ctx7 extract <entity>` — Extract entities from text
+- `/ctx7 compare <a> <b>` — Compare semantic similarity
+
+### Pieces MCP (`/pcs`)
+
+- `/pcs context` — Get code context from Pieces
+- `/pcs snippet <name>` — Retrieve a code snippet by name
+- `/pcs save <name>` — Save current code as a snippet
+- `/pcs search <query>` — Search for code snippets
+
+### Playwright MCP (`/pw`)
+
+- `/pw test <url>` — Run browser tests on a URL
+- `/pw screenshot <url>` — Take a screenshot of a webpage
+- `/pw crawl <url>` — Crawl a webpage for links
+- `/pw automate <action>` — Automate a browser action
 
 ### Filesystem MCP (`/fs`) — essential shortcuts
+
 Use these to let the agent manage workspace files and directories. Paths and examples use Windows absolute paths.
 
 - `/fs create_dir <absolute-path>` — Create directories recursively.
@@ -23,6 +47,7 @@ Use these to let the agent manage workspace files and directories. Paths and exa
 - `/fs insert_edit <file-path>` — Make a small inline edit to an existing file.
 
 PowerShell / Windows notes:
+
 - Use absolute Windows paths (drive letter + backslashes) for predictable results.
 - When giving ranges to `read_file`, use 1-based line numbers.
 
@@ -32,10 +57,9 @@ Usage example:
 
 ---
 
-If you want this trimmed further or to add back a specific category (workflows, notifications, Playwright), edit this file or say `expand: <category>` and an updated snippet will be provided.
-
 **Always refer to this file for MCP usage and command shortcuts.**
 PowerShell / Windows notes:
+
 - Use absolute Windows paths (drive letter + backslashes) for predictable results.
 - When giving ranges to `read_file`, use 1-based line numbers.
 

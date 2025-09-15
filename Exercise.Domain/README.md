@@ -5,15 +5,16 @@ The domain layer is the heart of the Exercise Microservice, containing the core 
 ## Architecture Philosophy
 
 The domain layer follows these key principles:
+
 - **Domain-Driven Design** - Rich domain models with behavior
 - **Clean Architecture** - Independent of external concerns
 - **SOLID Principles** - Maintainable and extensible design
 - **Encapsulation** - Protected invariants and controlled state changes
 - **Guard Clauses** - Defensive programming with validation
 
-## ?? Project Structure
+## 📁 Project Structure
 
-```
+```plaintext
 Exercise.Domain/
 ??? Entities/             # Core domain entities with business logic
 ?   ??? User.cs          # User aggregates and behavior
@@ -33,6 +34,7 @@ Exercise.Domain/
 ## ??? Domain Entities
 
 ### User Entity
+
 Represents a system user with authentication and profile management.
 
 ```csharp
@@ -52,12 +54,14 @@ public class User
 ```
 
 **Key Features:**
+
 - Secure password handling with hashing
 - Social login support (Google, Facebook)
 - Profile management with validation
 - Email validation with regex patterns
 
 ### Exercise Entity
+
 Represents individual exercises with their properties and metadata.
 
 ```csharp
@@ -77,12 +81,14 @@ public class Exercise
 ```
 
 **Key Features:**
+
 - Immutable once created (except for description/GIF updates)
 - Equipment requirement detection
 - Body part and muscle targeting
 - Rich metadata support
 
 ### Workout Entity
+
 Manages individual workout sessions with exercise collections and state.
 
 ```csharp
@@ -102,12 +108,14 @@ public class Workout
 ```
 
 **Key Features:**
+
 - Encapsulated exercise collection with controlled access
 - State management (active vs completed)
 - Duplicate exercise prevention
 - Completion tracking with duration
 
 ### WorkoutPlan Entity
+
 Orchestrates multiple workouts into structured programs.
 
 ```csharp
@@ -127,12 +135,14 @@ public class WorkoutPlan
 ```
 
 **Key Features:**
+
 - Multi-workout program management
 - Date range validation
 - User ownership enforcement
 - Activation/deactivation lifecycle
 
 ### ExerciseLog Entity
+
 Records completed workouts with detailed performance metrics.
 
 ```csharp
@@ -151,12 +161,14 @@ public class ExerciseLog
 ```
 
 **Key Features:**
+
 - Detailed exercise performance tracking
 - Sets, reps, and duration recording
 - Automatic duration calculation
 - Historical workout data
 
 ### Analytics Entity
+
 Provides structured data storage for progress tracking and reporting.
 
 ```csharp
@@ -174,6 +186,7 @@ public class Analytics
 ```
 
 **Key Features:**
+
 - Flexible data structure for various metrics
 - Type-safe data retrieval
 - Period-based analytics
@@ -182,6 +195,7 @@ public class Analytics
 ## ?? Value Objects
 
 ### Height Value Object
+
 Immutable height representation with unit conversions.
 
 ```csharp
@@ -202,6 +216,7 @@ public class Height
 ```
 
 ### Weight Value Object
+
 Immutable weight representation with unit conversions.
 
 ```csharp
@@ -221,6 +236,7 @@ public class Weight
 ```
 
 **Value Object Benefits:**
+
 - **Immutability** - Cannot be changed after creation
 - **Equality** - Value-based equality comparison
 - **Unit Safety** - Prevents unit conversion errors
@@ -243,6 +259,7 @@ public static class Guard
 ```
 
 **Guard Benefits:**
+
 - **Consistency** - Same validation approach across all entities
 - **Maintainability** - Single place to update validation rules
 - **Readability** - Clear intent with descriptive method names
@@ -252,24 +269,28 @@ public static class Guard
 ## ? Business Rules Enforced
 
 ### User Rules
+
 - Email must be in valid format
 - Passwords must be at least 8 characters
 - Social login users cannot set passwords
 - Profile updates maintain data integrity
 
 ### Workout Rules
+
 - Cannot modify completed workouts
 - No duplicate exercises in a workout
 - Duration must be positive when completing
 - User ownership is strictly enforced
 
 ### WorkoutPlan Rules
+
 - End date must be after start date
 - Cannot add workouts for different users
 - Only one plan can be active at a time
 - Date ranges must be valid
 
 ### ExerciseLog Rules
+
 - Cannot modify completed logs
 - Sets and reps must be positive
 - Duration calculations are automatic
@@ -278,26 +299,31 @@ public static class Guard
 ## ?? SOLID Principles Applied
 
 ### Single Responsibility Principle (SRP)
+
 - Each entity manages only its own concerns
 - Guard class handles only validation
 - Value objects represent single concepts
 
 ### Open/Closed Principle (OCP)
+
 - Entities are open for extension via methods
 - Closed for modification with private setters
 - Guard pattern allows new validation rules
 
 ### Liskov Substitution Principle (LSP)
+
 - Value objects maintain equality contracts
 - Entity interfaces can be safely substituted
 - Polymorphic behavior is consistent
 
 ### Interface Segregation Principle (ISP)
+
 - Focused interfaces for specific needs
 - No forced dependencies on unused methods
 - Client-specific abstractions
 
 ### Dependency Inversion Principle (DIP)
+
 - Domain doesn't depend on infrastructure
 - Abstractions define contracts
 - Dependencies point inward
@@ -305,6 +331,7 @@ public static class Guard
 ## ?? Domain Testing
 
 ### Unit Testing Approach
+
 ```csharp
 [Test]
 public void User_SetPassword_Should_ThrowException_When_UserIsSocialLogin()
@@ -318,6 +345,7 @@ public void User_SetPassword_Should_ThrowException_When_UserIsSocialLogin()
 ```
 
 ### Testing Categories
+
 - **Entity Behavior** - Business method testing
 - **Validation Rules** - Guard clause testing
 - **State Transitions** - Lifecycle testing
@@ -341,11 +369,13 @@ public class WorkoutCompletedEvent : IDomainEvent
 ## ?? Performance Considerations
 
 ### Memory Efficiency
+
 - **Readonly collections** prevent unnecessary copies
 - **Private setters** minimize object mutation
 - **Static Guards** reduce allocation overhead
 
 ### Computation Efficiency
+
 - **Lazy calculations** where appropriate
 - **Cached regex patterns** for validation
 - **Efficient LINQ operations** in collections
@@ -353,11 +383,13 @@ public class WorkoutCompletedEvent : IDomainEvent
 ## ?? Future Enhancements
 
 ### Domain Services
+
 - `WorkoutRecommendationService` - AI-powered workout suggestions
 - `ProgressCalculationService` - Advanced analytics calculations
 - `ExerciseCompatibilityService` - Exercise combination validation
 
 ### Advanced Features
+
 - **Domain Events** - Event-driven architecture
 - **Specification Pattern** - Complex query logic
 - **Repository Patterns** - Data access abstractions

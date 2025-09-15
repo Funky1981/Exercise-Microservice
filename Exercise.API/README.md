@@ -2,32 +2,34 @@
 
 The API layer provides RESTful endpoints for the Exercise Microservice, built with ASP.NET Core Minimal API for high performance and simplicity.
 
-## ??? Architecture
+## 🏗️ Architecture
 
 The API layer follows Clean Architecture principles:
+
 - **Controllers/Endpoints** - HTTP request handling
 - **Middleware** - Cross-cutting concerns (authentication, logging, validation)
 - **DTOs** - Data transfer objects for API contracts
 - **Filters** - Request/response processing
 
-## ?? Project Structure
+## 📁 Project Structure
 
-```
+```text
 Exercise.API/
-??? Controllers/           # API controllers (if using controller-based approach)
-??? Endpoints/            # Minimal API endpoint definitions
-??? Middleware/           # Custom middleware components
-??? DTOs/                 # Data Transfer Objects
-??? Filters/              # Action filters and exception handlers
-??? Extensions/           # Service collection extensions
-??? Program.cs            # Application entry point and configuration
-??? appsettings.json      # Application configuration
-??? README.md            # This file
+├── Controllers/           # API controllers (if using controller-based approach)
+├── Endpoints/            # Minimal API endpoint definitions
+├── Middleware/           # Custom middleware components
+├── DTOs/                 # Data Transfer Objects
+├── Filters/              # Action filters and exception handlers
+├── Extensions/           # Service collection extensions
+├── Program.cs            # Application entry point and configuration
+├── appsettings.json      # Application configuration
+└── README.md            # This file
 ```
 
-## ??? API Endpoints
+## 📋 API Endpoints
 
 ### Exercise Endpoints
+
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
 | `GET` | `/api/exercises/{bodyPart}` | Get exercises by body part | No |
@@ -37,6 +39,7 @@ Exercise.API/
 | `DELETE` | `/api/exercises/{id}` | Delete exercise | Yes |
 
 ### Authentication Endpoints
+
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
 | `POST` | `/api/auth/register` | Register new user | No |
@@ -46,6 +49,7 @@ Exercise.API/
 | `POST` | `/api/auth/external` | Social login | No |
 
 ### User Management Endpoints
+
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
 | `GET` | `/api/users/profile` | Get current user profile | Yes |
@@ -53,6 +57,7 @@ Exercise.API/
 | `DELETE` | `/api/users/profile` | Delete user account | Yes |
 
 ### Workout Endpoints
+
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
 | `GET` | `/api/workouts` | Get user's workouts | Yes |
@@ -63,6 +68,7 @@ Exercise.API/
 | `DELETE` | `/api/workouts/{id}` | Delete workout | Yes |
 
 ### Workout Plan Endpoints
+
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
 | `GET` | `/api/workout-plans` | Get user's workout plans | Yes |
@@ -73,15 +79,17 @@ Exercise.API/
 | `DELETE` | `/api/workout-plans/{id}` | Delete workout plan | Yes |
 
 ### Analytics Endpoints
+
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
 | `GET` | `/api/analytics/progress` | Get user progress data | Yes |
 | `GET` | `/api/analytics/summary` | Get workout summary | Yes |
 | `GET` | `/api/analytics/trends` | Get performance trends | Yes |
 
-## ?? Configuration
+## ⚙️ Configuration
 
 ### Required Configuration
+
 ```json
 {
   "ConnectionStrings": {
@@ -109,29 +117,33 @@ Exercise.API/
 ```
 
 ### Environment Variables
+
 - `ASPNETCORE_ENVIRONMENT` - Development/Staging/Production
 - `ASPNETCORE_URLS` - URLs to bind to
 - `JWT_SECRET` - JWT secret key (production)
 - `RAPIDAPI_KEY` - RapidAPI key for exercise database
 
-## ?? Security
+## 🔒 Security
 
 ### Authentication
+
 - **JWT Bearer tokens** for API authentication
 - **Social login** integration (Google, Facebook)
 - **Refresh token** rotation for security
 
 ### Authorization
+
 - **Role-based access control** for admin functions
 - **Resource-based authorization** for user data
 - **Claims-based permissions** for fine-grained control
 
 ### Validation
+
 - **Input validation** using FluentValidation
 - **Model binding validation** for request DTOs
 - **Business rule validation** at domain level
 
-## ?? Middleware Pipeline
+## 🔧 Middleware Pipeline
 
 1. **Exception Handling** - Global error handling
 2. **CORS** - Cross-origin request handling
@@ -141,9 +153,10 @@ Exercise.API/
 6. **Rate Limiting** - API rate limiting
 7. **Response Compression** - Gzip compression
 
-## ?? Request/Response Examples
+## 📝 Request/Response Examples
 
 ### Create Workout
+
 ```http
 POST /api/workouts
 Authorization: Bearer {jwt-token}
@@ -162,6 +175,7 @@ Content-Type: application/json
 ```
 
 ### Response
+
 ```json
 {
   "id": "123e4567-e89b-12d3-a456-426614174000",
@@ -179,9 +193,10 @@ Content-Type: application/json
 }
 ```
 
-## ?? Error Handling
+## ⚠️ Error Handling
 
 ### Standard Error Response
+
 ```json
 {
   "type": "https://tools.ietf.org/html/rfc7231#section-6.5.1",
@@ -195,6 +210,7 @@ Content-Type: application/json
 ```
 
 ### HTTP Status Codes
+
 - `200` - Success
 - `201` - Created
 - `400` - Bad Request
@@ -203,9 +219,10 @@ Content-Type: application/json
 - `404` - Not Found
 - `500` - Internal Server Error
 
-## ?? Performance
+## ⚡ Performance
 
 ### Optimizations
+
 - **Minimal API** for reduced overhead
 - **Response caching** for static data
 - **Database connection pooling**
@@ -213,14 +230,16 @@ Content-Type: application/json
 - **Response compression** (Gzip)
 
 ### Monitoring
+
 - **Application Insights** integration
 - **Health checks** for dependencies
 - **Metrics collection** for performance
 - **Structured logging** with Serilog
 
-## ?? Testing
+## 🧪 Testing
 
 ### Testing Strategy
+
 ```bash
 # Run API integration tests
 dotnet test Exercise.API.Tests
@@ -233,14 +252,16 @@ dotnet test --collect:"XPlat Code Coverage"
 ```
 
 ### Test Categories
+
 - **Unit Tests** - Individual endpoint logic
 - **Integration Tests** - Full request/response cycle
 - **Contract Tests** - API contract validation
 - **Performance Tests** - Load and stress testing
 
-## ?? Deployment
+## 🚀 Deployment
 
 ### Docker
+
 ```dockerfile
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 WORKDIR /app
@@ -264,14 +285,18 @@ ENTRYPOINT ["dotnet", "Exercise.API.dll"]
 ```
 
 ### Health Checks
+
 Available at `/health`:
+
 - Database connectivity
 - External API availability
 - Memory usage
 - Disk space
 
-## ?? Related Documentation
+## 📚 Related Documentation
 
 - [Domain Layer Documentation](../Exercise.Domain/README.md)
 - [Application Layer Documentation](../Exercise.Application/README.md)
 - [Infrastructure Layer Documentation](../Exercise.Infrastructure/README.md)
+ 
+ 
