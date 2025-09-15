@@ -57,6 +57,30 @@ Usage example:
 
 ---
 
+## Essential Tool Usage Rules
+
+**ALWAYS use these tools for consistent, up-to-date assistance:**
+
+### Memory & Context (`/pcs`)
+- **ALWAYS** check `/pcs context` or `/pcs search` for conversation history and user preferences
+- Use `/pcs save` to preserve important project decisions and learning moments
+- Reference past conversations to maintain continuity and respect user's learning style
+
+### Documentation (`/ctx7`)
+- **ALWAYS** use `/ctx7` for current best practices and up-to-date library documentation
+- Never assume knowledge about frameworks - always validate against current documentation
+- Use for architecture patterns, coding standards, and implementation guidance
+
+### File Management (`/fs`)
+- **ALWAYS** use `/fs` tools for all file operations instead of built-in VS Code tools
+- Use `/fs read_file` to examine code before making suggestions
+- Use `/fs create_file` and `/fs insert_edit` for file modifications
+- Use `/fs file_search` to find files across the project structure
+
+**Rule: Context First, Action Second** - Always gather context using these tools before providing guidance or making changes.
+
+---
+
 **Always refer to this file for MCP usage and command shortcuts.**
 PowerShell / Windows notes:
 

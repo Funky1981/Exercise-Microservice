@@ -14,5 +14,12 @@ namespace Exercise.Application.Abstractions.Repositories
         /// <param name="cancellationToken">A cancellation token for the operation</param>
         /// <returns>A read-only list of exercises that match the specified body part</returns>
         Task<IReadOnlyList<ExerciseEntity>> GetByBodyPartAsync(string bodyPart, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Retrieves all exercises from the repository
+        /// </summary>
+        /// <param name="cancellationToken">A cancellation token for the operation</param>
+        /// <returns>A read-only list of all exercises</returns>
+        Task<IReadOnlyList<ExerciseEntity>> GetAllAsync(CancellationToken cancellationToken = default);
     }
 }
