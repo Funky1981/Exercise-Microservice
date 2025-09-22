@@ -64,10 +64,11 @@ namespace Exercise.Domain.Entities
             Weight = weight;
         }
 
+        private static readonly Regex EmailRegex = new Regex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.Compiled);
+
         private static bool IsValidEmail(string email)
         {
-            var emailRegex = new Regex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.Compiled);
-            return emailRegex.IsMatch(email);
+            return EmailRegex.IsMatch(email);
         }
 
         public override string ToString()
