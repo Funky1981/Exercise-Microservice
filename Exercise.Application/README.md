@@ -24,15 +24,24 @@ Exercise.Application/
 │   └── Behaviors/         # MediatR pipeline behaviors
 ├── Exercises/             # Exercise-related application logic
 │   ├── Dtos/             # Data Transfer Objects for exercises
-│   │   └── ⏳ ExerciseDto.cs
-│   ├── Mapping/          # AutoMapper profiles
-│   │   └── ⏳ ExerciseProfile.cs
-│   └── Queries/          # Read operations (CQRS)
-│       └── GetExercisesByBodyPart/
-│           ├── ⏳ GetExercisesByBodyPartQuery.cs
-│           ├── ⏳ GetExercisesByBodyPartValidator.cs
-│           └── ⏳ GetExercisesByBodyPartHandler.cs
-├── Features/             # Feature-organized application logic (future)
+│   │   └── ✅ ExerciseDto.cs
+│   └── Mapping/          # AutoMapper profiles
+│       └── ✅ ExerciseProfile.cs
+├── Features/             # Feature-organized application logic
+│   └── Exercises/        # Exercise feature vertical slices
+│       ├── Mapping/      # AutoMapper profiles
+│       │   └── ✅ ExerciseProfile.cs
+│       └── Queries/      # Read operations (CQRS)
+│           ├── GetExercisesByBodyPart/
+│           │   ├── ✅ GetExercisesByBodyPartQuery.cs
+│           │   ├── ✅ GetExercisesByBodyPartQueryValidator.cs
+│           │   └── ✅ GetExercisesByBodyPartQueryHandler.cs
+│           ├── GetAllExercises/
+│           │   ├── ✅ GetAllExercisesQuery.cs
+│           │   └── ✅ GetAllExercisesQueryHandler.cs
+│           └── GetExercisesById/
+│               ├── ✅ GetExercisesByIdQuery.cs
+│               └── ✅ GetExercisesByIdQueryHandler.cs
 ├── DependencyInjection.cs # Service registration
 ├── Exercise.Application.csproj
 └── README.md            # This file
@@ -52,6 +61,10 @@ public interface IExerciseRepository
 {
     Task<IReadOnlyList<ExerciseEntity>> GetByBodyPartAsync(string bodyPart, 
         CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<ExerciseEntity>> GetAllAsync(
+        CancellationToken cancellationToken = default);
+    Task<ExerciseEntity?> GetByIdAsync(Guid id, 
+        CancellationToken cancellationToken = default);
 }
 ```
 
@@ -67,6 +80,38 @@ public interface IExerciseRepository
 - Returns IReadOnlyList for defensive programming  
 - Comprehensive XML documentation
 - Namespace conflict resolution using aliases
+
+#### **2. CQRS Query Handlers - ✅ Complete**
+
+**Implemented Handlers:**
+- **GetExercisesByBodyPartQueryHandler** - Filter exercises by body part
+- **GetAllExercisesQueryHandler** - Retrieve all exercises
+- **GetExercisesByIdQueryHandler** - Get specific exercise by ID
+
+**Features:**
+- Full async/await implementation with CancellationToken
+- AutoMapper integration for entity-to-DTO mapping
+- Dependency injection with IExerciseRepository
+- Comprehensive error handling and validation
+- Clean Architecture compliance
+
+#### **3. AutoMapper Configuration - ✅ Complete**
+
+```csharp
+// Exercise.Application/Features/Exercises/Mapping/ExerciseProfile.cs
+public class ExerciseProfile : Profile
+{
+    public ExerciseProfile()
+    {
+        CreateMap<ExerciseEntity, ExerciseDto>();
+    }
+}
+```
+
+**Features:**
+- Entity-to-DTO mapping configuration
+- Comprehensive unit test coverage
+- Integration with dependency injection
 
 #### **2. Dependency Injection Setup**
 
@@ -310,15 +355,43 @@ using ExerciseEntity = Exercise.Domain.Entities.Exercise;
 /// <returns>A read-only list of exercises that match the specified body part</returns>
 ```
 
+## 🧪 Testing Coverage - ✅ **Complete**
+
+### **Unit Test Infrastructure**
+
+Comprehensive unit test suite implemented with modern C# testing patterns:
+
+**Test Framework Stack:**
+- **xUnit** - Primary testing framework with [Fact] attributes
+- **Moq** - Mock framework for dependency injection testing  
+- **FluentAssertions** - Readable assertion syntax with `.Should()` patterns
+- **AutoMapper Testing** - Configuration validation and mapping tests
+
+**Implemented Tests:**
+- ✅ **AutoMapper Profile Tests** - Validates entity-to-DTO mapping configuration
+- ✅ **Handler Unit Tests** - GetExercisesByBodyPartQueryHandler with full AAA pattern
+- ⏳ **Additional Handler Tests** - GetAllExercises and GetById handlers
+- ⏳ **Integration Tests** - End-to-end pipeline testing
+
+**C# Testing Concepts Demonstrated:**
+- Async/await testing patterns with CancellationToken  
+- Mock<T> generic types and dependency injection
+- Constructor-based test setup with AutoMapper configuration
+- Arrange-Act-Assert test structure
+- FluentAssertions for expressive test validation
+- Interface abstraction testing with repository mocks
+
+**Test Documentation:** See [Testing README](../Exercise.Application.Tests/README.md)
+
 ## 🚀 Next Development Steps
 
 ### **Immediate Priorities**
 
-1. **Create ExerciseDto** - Define API response shape
-2. **AutoMapper Profile** - Configure domain entity to DTO mapping
-3. **Query Implementation** - Complete GetExercisesByBodyPart vertical slice
-4. **Validation Rules** - Implement input validation with FluentValidation
-5. **Handler Logic** - Orchestrate repository calls and mapping
+1. ✅ ~~**Create ExerciseDto** - Define API response shape~~
+2. ✅ ~~**AutoMapper Profile** - Configure domain entity to DTO mapping~~
+3. ✅ ~~**Query Implementation** - Complete GetExercisesByBodyPart vertical slice~~
+4. ✅ ~~**Handler Logic** - Orchestrate repository calls and mapping~~
+5. **Complete Remaining Handler Tests** - GetAllExercises and GetById test coverage
 
 ### **Future Enhancements**
 
@@ -327,6 +400,7 @@ using ExerciseEntity = Exercise.Domain.Entities.Exercise;
 3. **Advanced Queries** - Search, filtering, pagination
 4. **Error Handling** - Custom exceptions and error responses
 5. **Caching Strategy** - Response caching and distributed caching
+6. **Integration Tests** - Full CQRS pipeline with in-memory database
 
 ## 🔗 Related Layers
 
