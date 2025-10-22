@@ -28,6 +28,6 @@ namespace Exercise.Application.Abstractions.Repositories
         /// <param name="id">The unique identifier of the exercise</param>
         /// <param name="cancellationToken">A cancellation token for the operation</param>
         /// <returns>The exercise that matches the specified identifier, or null if not found</returns>
-        Task<ExerciseEntity?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+        Task<ExerciseEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     }
 }

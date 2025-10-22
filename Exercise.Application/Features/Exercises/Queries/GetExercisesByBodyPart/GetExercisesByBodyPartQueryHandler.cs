@@ -1,13 +1,10 @@
+using AutoMapper;
+using Exercise.Application.Abstractions.Repositories;
+using Exercise.Application.Exercises.Dtos;
+using MediatR;
+
 namespace Exercise.Application.Features.Exercises.Queries.GetExercisesByBodyPart
 {
-    using System.Collections.Generic;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using AutoMapper;
-    using Exercise.Application.Abstractions.Repositories;
-    using Exercise.Application.Exercises.Dtos;
-    using MediatR;
-
     /// <summary>
     /// Handler for processing GetExercisesByBodyPartQuery requests
     /// </summary>

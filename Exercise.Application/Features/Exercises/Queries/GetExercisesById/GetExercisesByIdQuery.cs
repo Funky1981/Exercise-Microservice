@@ -5,7 +5,12 @@ namespace Exercise.Application.Features.Exercises.Queries.GetExercisesById
 {
     public class GetExercisesByIdQuery : IRequest<ExerciseDto>
     {
-        public int Id { get; set; }
+        public Guid Id { get; private set; }
+
+        public GetExercisesByIdQuery(Guid id)
+        {
+            Id = id;
+        }
     }
 }
 
