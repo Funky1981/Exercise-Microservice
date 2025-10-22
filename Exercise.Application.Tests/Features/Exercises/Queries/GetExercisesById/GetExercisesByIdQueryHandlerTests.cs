@@ -1,11 +1,5 @@
-using System;                                             
-using System.Collections.Generic;                         
-using System.Threading;
-using System.Threading.Tasks;
-using AutoMapper;                                         
-using Exercise.Application.Exercises.Dtos;                
+using AutoMapper;                                                         
 using Exercise.Application.Features.Exercises.Queries.GetExercisesById;  
-using Xunit;
 using Moq;
 using FluentAssertions;
 using Exercise.Application.Abstractions.Repositories;
@@ -75,7 +69,7 @@ public class GetExercisesByIdQueryHandlerTests
 
         _mockRepository
             .Setup(repo => repo.GetByIdAsync(exerciseId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((ExerciseEntity)null);
+            .ReturnsAsync((ExerciseEntity?)null);
 
         var query = new GetExercisesByIdQuery(exerciseId);
 

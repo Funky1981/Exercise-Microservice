@@ -1,11 +1,6 @@
-using System;                                             
-using System.Collections.Generic;                         
-using System.Threading;                                   
-using System.Threading.Tasks;                             
+                         
 using AutoMapper;                                         
-using Exercise.Application.Exercises.Dtos;                
-using Exercise.Application.Features.Exercises.Queries.GetAllExercises;  
-using Xunit;
+using Exercise.Application.Features.Exercises.Queries.GetAllExercises;
 using Moq;
 using FluentAssertions;
 using Exercise.Application.Abstractions.Repositories;

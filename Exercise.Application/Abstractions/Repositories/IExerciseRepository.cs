@@ -1,4 +1,3 @@
-using System;
 using ExerciseEntity = Exercise.Domain.Entities.Exercise;
 
 namespace Exercise.Application.Abstractions.Repositories
