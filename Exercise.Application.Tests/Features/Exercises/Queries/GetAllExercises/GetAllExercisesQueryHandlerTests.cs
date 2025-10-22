@@ -1,5 +1,4 @@
-                         
-using AutoMapper;                                         
+using AutoMapper;
 using Exercise.Application.Features.Exercises.Queries.GetAllExercises;
 using Moq;
 using FluentAssertions;
