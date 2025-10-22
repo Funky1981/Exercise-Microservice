@@ -60,6 +60,11 @@ public class GetExercisesByIdQueryHandlerTests
         result.Id.Should().Be(exerciseId);
         result.Name.Should().Be("Push Up");
         result.BodyPart.Should().Be("Chest");
+
+        _mockRepository.Verify(
+            repo => repo.GetByIdAsync(exerciseId, It.IsAny<CancellationToken>()),
+            Times.Once
+        );
     }
 
     [Fact]
