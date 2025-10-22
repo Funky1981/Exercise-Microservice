@@ -3,11 +3,13 @@ using Exercise.Application;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Identity.Web;
+using Exercise.Infrastructure.Data;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddApplication();
+builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddHttpClient("ExerciseApi", client =>
 {
