@@ -7,8 +7,6 @@
 
 A production-ready .NET 9 microservice for fitness tracking and exercise management, built with **Clean Architecture** principles and **Domain-Driven Design**. This project demonstrates modern software engineering practices including CQRS, repository pattern, dependency injection, and comprehensive unit testing.
 
----
-
 ## 📋 Table of Contents
 
 - [Features](#-features)
@@ -17,23 +15,20 @@ A production-ready .NET 9 microservice for fitness tracking and exercise managem
 - [Getting Started](#-getting-started)
 - [Project Structure](#-project-structure)
 - [Development Status](#-development-status)
+- [How It Was Built](#-how-it-was-built)
 - [Documentation](#-documentation)
 - [Contributing](#-contributing)
 
----
-
 ## ✨ Features
 
-### Core Capabilities
-
+**Core Capabilities:**
 - **Exercise Management** - Browse, search, and manage exercise database
 - **Workout Planning** - Create and manage personalized workout plans
 - **Progress Tracking** - Log workouts and track fitness progress over time
 - **User Management** - User profiles with secure authentication
 - **Analytics Dashboard** - Comprehensive workout statistics and progress reports
 
-### Technical Highlights
-
+**Technical Highlights:**
 - ✅ **Clean Architecture** - Maintainable, testable, and scalable design
 - ✅ **CQRS Pattern** - Command Query Responsibility Segregation with MediatR
 - ✅ **Domain-Driven Design** - Rich domain models with encapsulated business logic
@@ -43,13 +38,11 @@ A production-ready .NET 9 microservice for fitness tracking and exercise managem
 - ✅ **Comprehensive Testing** - Unit tests with xUnit, Moq, and FluentAssertions
 - ✅ **Docker Support** - Containerized deployment ready
 
----
-
 ## 🏗️ Architecture
 
 This microservice follows **Clean Architecture** (Onion Architecture) with clear separation of concerns:
 
-```
+```plaintext
 ┌─────────────────────────────────────────────────────────┐
 │                      Exercise.API                        │
 │            (Controllers, Minimal APIs, DI)               │
@@ -69,7 +62,7 @@ This microservice follows **Clean Architecture** (Onion Architecture) with clear
 └─────────────────────────────────────────────────────────┘
 ```
 
-### Layer Responsibilities
+**Layer Responsibilities:**
 
 | Layer | Responsibility | Dependencies |
 |-------|---------------|--------------|
@@ -77,8 +70,6 @@ This microservice follows **Clean Architecture** (Onion Architecture) with clear
 | **Application** | Use cases, CQRS handlers, business workflows | Domain |
 | **Infrastructure** | Data access, external services, persistence | Domain, Application |
 | **API** | HTTP endpoints, authentication, DI configuration | All layers |
-
----
 
 ## �️ Technology Stack
 
@@ -111,9 +102,7 @@ This microservice follows **Clean Architecture** (Onion Architecture) with clear
 
 ## 🚀 Getting Started
 
-### Prerequisites
-
-Before running the application, ensure you have:
+**Prerequisites:**
 
 - [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0) installed
 - [SQL Server](https://www.microsoft.com/en-us/sql-server/sql-server-downloads) (or LocalDB)
@@ -121,7 +110,7 @@ Before running the application, ensure you have:
 - (Optional) [Docker Desktop](https://www.docker.com/products/docker-desktop) for containerized deployment
 - (Optional) [RapidAPI Key](https://rapidapi.com/justin-WFnsXH_t6/api/exercisedb) for exercise database integration
 
-### Installation
+**Installation:**
 
 1. **Clone the repository**
 
@@ -162,11 +151,10 @@ Before running the application, ensure you have:
    ```
 
 6. **Access the application**
-
    - API: `https://localhost:7041`
    - Swagger UI: `https://localhost:7041/swagger` (when implemented)
 
-### Running with Docker
+**Running with Docker:**
 
 ```bash
 # Build the Docker image
@@ -176,7 +164,7 @@ docker build -t exercise-microservice .
 docker run -p 8080:80 -p 8081:443 exercise-microservice
 ```
 
-### Running Tests
+**Running Tests:**
 
 ```bash
 # Run all unit tests
@@ -189,11 +177,9 @@ dotnet test --collect:"XPlat Code Coverage"
 dotnet test Exercise.Application.Tests/Exercise.Application.Tests.csproj
 ```
 
----
+## 📁 Project Structure
 
-## � Project Structure
-
-```
+```plaintext
 Exercise-Microservice/
 │
 ├── Exercise.API/                           # 🌐 API Layer
@@ -250,11 +236,9 @@ Exercise-Microservice/
 └── Exercise-Microservice.sln               # Solution file
 ```
 
----
-
 ## 📊 Development Status
 
-### Implementation Progress
+**Implementation Progress:**
 
 | Layer | Status | Progress | Description |
 |-------|--------|----------|-------------|
@@ -268,9 +252,9 @@ Exercise-Microservice/
 | **Integration Tests** | ⏳ Planned | 0% | Coming in Sprint 7 |
 | **Documentation** | ✅ Complete | 95% | Comprehensive READMEs |
 
-### Sprint Progress
+**Sprint Progress:**
 
-#### ✅ Completed Sprints
+### ✅ Completed Sprints
 
 - **Sprint 1** - Domain & Application Layer Foundation
   - Domain entities with encapsulation
@@ -284,19 +268,18 @@ Exercise-Microservice/
   - FluentAssertions for readable tests
   - Query handler test coverage
 
-- **Sprint 3** - Infrastructure Layer (Partial)
-  - ✅ Issue #10: DbContext and EF Core configuration
-  - 🔄 Issue #11: Repository implementation (in progress)
-  - ⏳ Issue #12: Database migrations (pending)
+**Sprint 3** - Infrastructure Layer (Partial)
+- ✅ Issue #10: DbContext and EF Core configuration
+- 🔄 Issue #11: Repository implementation (in progress)
+- ⏳ Issue #12: Database migrations (pending)
 
-#### 🔄 Current Sprint
+### 🔄 Current Sprint
 
-**Sprint 3** - Infrastructure Layer (Continuing)
 - Implementing concrete `ExerciseRepository`
 - Creating initial database migrations
 - Testing database connectivity
 
-#### ⏳ Upcoming Sprints
+### ⏳ Upcoming Sprints
 
 - **Sprint 4** - API Layer endpoints
 - **Sprint 5** - Authentication & Authorization
@@ -306,15 +289,13 @@ Exercise-Microservice/
 - **Sprint 9** - Performance & observability
 - **Sprint 10** - DevOps & deployment
 
----
-
 ## 🏗️ How It Was Built
 
-### Design Principles
+**Design Principles:**
 
-This project was built following industry best practices and modern software engineering principles:
+This project was built following industry best practices and modern software engineering principles.
 
-#### 1. **Clean Architecture**
+### 1. **Clean Architecture**
 
 The codebase is organized into concentric layers with strict dependency rules:
 
@@ -323,16 +304,16 @@ The codebase is organized into concentric layers with strict dependency rules:
 - **Infrastructure Layer** - Implements data access and external service integrations
 - **API Layer** - Exposes HTTP endpoints and handles cross-cutting concerns
 
-**Key Benefit**: High testability, maintainability, and independence from frameworks and databases.
+**Key Benefit:** High testability, maintainability, and independence from frameworks and databases.
 
-#### 2. **Domain-Driven Design (DDD)**
+### 2. **Domain-Driven Design (DDD)**
 
 - **Rich Domain Models** - Entities encapsulate business logic with private setters
 - **Value Objects** - Immutable objects like `Height` and `Weight` with built-in validation
 - **Aggregate Roots** - Entities like `User` and `Workout` maintain consistency boundaries
 - **Domain Guards** - Centralized validation using the Guard pattern
 
-#### 3. **CQRS (Command Query Responsibility Segregation)**
+### 3. **CQRS (Command Query Responsibility Segregation)**
 
 Separates read and write operations for better scalability and clarity:
 
@@ -352,7 +333,7 @@ public class GetExercisesByBodyPartQueryHandler
 }
 ```
 
-#### 4. **Repository Pattern**
+### 4. **Repository Pattern**
 
 Abstracts data access behind interfaces defined in the Domain layer:
 
@@ -372,7 +353,7 @@ public class ExerciseRepository : IExerciseRepository
 }
 ```
 
-#### 5. **Dependency Injection**
+### 5. **Dependency Injection**
 
 All dependencies are constructor-injected and registered in a centralized configuration:
 
@@ -381,7 +362,7 @@ All dependencies are constructor-injected and registered in a centralized config
 - DbContext for data access
 - Repositories for domain abstractions
 
-#### 6. **Test-Driven Development**
+### 6. **Test-Driven Development**
 
 Comprehensive unit test coverage using the AAA (Arrange-Act-Assert) pattern:
 
@@ -403,28 +384,26 @@ public async Task Handle_ShouldReturnExercises_WhenBodyPartExists()
 }
 ```
 
-### Technology Decisions
+**Technology Decisions:**
 
-#### Why Entity Framework Core?
+### Why Entity Framework Core?
 
 - **Code-First Approach** - Database schema generated from domain entities
 - **LINQ Support** - Type-safe queries with strong IntelliSense
 - **Migration System** - Version-controlled database schema changes
 - **Performance** - Excellent performance with async operations
 
-#### Why MediatR?
+### Why MediatR?
 
 - **Decoupling** - Controllers don't directly depend on handlers
 - **Cross-Cutting Concerns** - Pipeline behaviors for logging, validation, etc.
 - **Testability** - Easy to test handlers in isolation
 
-#### Why AutoMapper?
+### Why AutoMapper?
 
 - **Separation** - DTOs separate from domain entities
 - **Convention-Based** - Reduces boilerplate mapping code
 - **Type Safety** - Compile-time validation of mappings
-
----
 
 ## 📚 Documentation
 
@@ -435,8 +414,6 @@ Comprehensive documentation is available for each layer:
 - **[Application Layer](./Exercise.Application/README.md)** - CQRS handlers, DTOs, interfaces
 - **[Infrastructure Layer](./Exercise.Infrastructure/README.md)** - EF Core, repositories, data access
 - **[Testing Guide](./Exercise.Application.Tests/README.md)** - Unit testing patterns and practices
-
----
 
 ## 🤝 Contributing
 
@@ -451,7 +428,7 @@ Contributions are welcome! Please follow these guidelines:
 7. **Push** to your branch (`git push origin feature/amazing-feature`)
 8. **Open** a Pull Request
 
-### Code Standards
+**Code Standards:**
 
 - Follow C# naming conventions
 - Use private setters for entity properties
@@ -459,17 +436,13 @@ Contributions are welcome! Please follow these guidelines:
 - Write unit tests with AAA pattern
 - Document public APIs with XML comments
 
----
-
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
----
-
 ## 🔗 Learn More
 
-### Related Resources
+**Related Resources:**
 
 - [Clean Architecture by Uncle Bob](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
 - [Domain-Driven Design](https://martinfowler.com/bliki/DomainDrivenDesign.html)
@@ -478,19 +451,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Entity Framework Core](https://learn.microsoft.com/en-us/ef/core/)
 - [MediatR](https://github.com/jbogard/MediatR)
 
-### External APIs
-
+**External APIs:**
 - [RapidAPI Exercise Database](https://rapidapi.com/justin-WFnsXH_t6/api/exercisedb)
-
----
 
 ## 👨‍💻 Author
 
 **Chris Gibbons**
-
 - GitHub: [@Funky1981](https://github.com/Funky1981)
-
----
 
 ## ⭐ Acknowledgments
 
@@ -499,16 +466,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - CQRS pattern implementation with MediatR
 - Testing best practices from xUnit and FluentAssertions communities
 
----
-
-<div align="center">
-
 **Built with ❤️ using .NET 9**
 
 [![.NET](https://img.shields.io/badge/.NET-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![C#](https://img.shields.io/badge/C%23-239120?style=for-the-badge&logo=c-sharp&logoColor=white)](https://docs.microsoft.com/en-us/dotnet/csharp/)
 [![SQL Server](https://img.shields.io/badge/SQL_Server-CC2927?style=for-the-badge&logo=microsoft-sql-server&logoColor=white)](https://www.microsoft.com/en-us/sql-server)
-
-</div>
  
  
