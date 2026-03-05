@@ -1,6 +1,8 @@
 using Exercise.Application.Features.WorkoutPlans.Commands.ActivateWorkoutPlan;
+using Exercise.Application.Features.WorkoutPlans.Commands.AddWorkoutToWorkoutPlan;
 using Exercise.Application.Features.WorkoutPlans.Commands.CreateWorkoutPlan;
 using Exercise.Application.Features.WorkoutPlans.Commands.DeleteWorkoutPlan;
+using Exercise.Application.Features.WorkoutPlans.Commands.RemoveWorkoutFromWorkoutPlan;
 using Exercise.Application.Features.WorkoutPlans.Queries.GetWorkoutPlanById;
 using Exercise.Application.Features.WorkoutPlans.Queries.GetWorkoutPlansByUserId;
 using MediatR;
@@ -91,6 +93,35 @@ namespace Exercise.API
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status401Unauthorized);
+
+            // POST /api/workout-plans/{id}/workouts
+            group.MapPost("/{id:guid}/workouts",
+                async (Guid id, [FromBody] AddWorkoutRequest body, IMediator mediator, CancellationToken ct) =>
+                {
+                    await mediator.Send(new AddWorkoutToWorkoutPlanCommand(id, body.WorkoutId), ct);
+                    return Results.NoContent();
+                })
+            .WithName("AddWorkoutToWorkoutPlan")
+            .WithSummary("Add a workout to a workout plan")
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status401Unauthorized);
+
+            // DELETE /api/workout-plans/{id}/workouts/{workoutId}
+            group.MapDelete("/{id:guid}/workouts/{workoutId:guid}",
+                async (Guid id, Guid workoutId, IMediator mediator, CancellationToken ct) =>
+                {
+                    await mediator.Send(new RemoveWorkoutFromWorkoutPlanCommand(id, workoutId), ct);
+                    return Results.NoContent();
+                })
+            .WithName("RemoveWorkoutFromWorkoutPlan")
+            .WithSummary("Remove a workout from a workout plan")
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status401Unauthorized);
         }
     }
+
+    public record AddWorkoutRequest(Guid WorkoutId);
 }

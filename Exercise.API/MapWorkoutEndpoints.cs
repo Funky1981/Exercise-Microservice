@@ -1,6 +1,8 @@
+using Exercise.Application.Features.Workouts.Commands.AddExerciseToWorkout;
 using Exercise.Application.Features.Workouts.Commands.CompleteWorkout;
 using Exercise.Application.Features.Workouts.Commands.CreateWorkout;
 using Exercise.Application.Features.Workouts.Commands.DeleteWorkout;
+using Exercise.Application.Features.Workouts.Commands.RemoveExerciseFromWorkout;
 using Exercise.Application.Features.Workouts.Queries.GetWorkoutById;
 using Exercise.Application.Features.Workouts.Queries.GetWorkoutsByUserId;
 using MediatR;
@@ -88,9 +90,38 @@ namespace Exercise.API
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status401Unauthorized);
+
+            // POST /api/workouts/{id}/exercises
+            group.MapPost("/{id:guid}/exercises",
+                async (Guid id, [FromBody] AddExerciseRequest body, IMediator mediator, CancellationToken ct) =>
+                {
+                    await mediator.Send(new AddExerciseToWorkoutCommand(id, body.ExerciseId), ct);
+                    return Results.NoContent();
+                })
+            .WithName("AddExerciseToWorkout")
+            .WithSummary("Add an exercise to a workout")
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status401Unauthorized);
+
+            // DELETE /api/workouts/{id}/exercises/{exerciseId}
+            group.MapDelete("/{id:guid}/exercises/{exerciseId:guid}",
+                async (Guid id, Guid exerciseId, IMediator mediator, CancellationToken ct) =>
+                {
+                    await mediator.Send(new RemoveExerciseFromWorkoutCommand(id, exerciseId), ct);
+                    return Results.NoContent();
+                })
+            .WithName("RemoveExerciseFromWorkout")
+            .WithSummary("Remove an exercise from a workout")
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status401Unauthorized);
         }
     }
 
     // Small request body model — avoids collision with CompleteWorkoutCommand constructor arguments
     public record CompleteWorkoutRequest(TimeSpan Duration);
+
+    public record AddExerciseRequest(Guid ExerciseId);
 }

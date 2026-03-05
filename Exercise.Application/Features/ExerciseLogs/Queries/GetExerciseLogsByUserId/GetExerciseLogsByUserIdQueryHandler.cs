@@ -22,15 +22,12 @@ namespace Exercise.Application.Features.ExerciseLogs.Queries.GetExerciseLogsByUs
             GetExerciseLogsByUserIdQuery request,
             CancellationToken cancellationToken)
         {
-            var logs = await _exerciseLogRepository.GetByUserIdAsync(request.UserId, cancellationToken);
+            var skip = (request.PageNumber - 1) * request.PageSize;
+            var (logs, totalCount) = await _exerciseLogRepository.GetPagedByUserIdAsync(
+                request.UserId, skip, request.PageSize, cancellationToken);
+
             var dtos = _mapper.Map<List<ExerciseLogDto>>(logs);
-
-            var paged = dtos
-                .Skip((request.PageNumber - 1) * request.PageSize)
-                .Take(request.PageSize)
-                .ToList();
-
-            return new PagedResult<ExerciseLogDto>(paged, dtos.Count, request.PageNumber, request.PageSize);
+            return new PagedResult<ExerciseLogDto>(dtos, totalCount, request.PageNumber, request.PageSize);
         }
     }
 }

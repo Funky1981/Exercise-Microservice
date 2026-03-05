@@ -21,12 +21,32 @@ namespace Exercise.Infrastructure.Repositories
                 .FirstOrDefaultAsync(wp => wp.Id == id, cancellationToken);
         }
 
+        public async Task<WorkoutPlan?> GetByIdWithWorkoutsAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            return await _context.WorkoutPlans
+                .Include("_workouts")
+                .FirstOrDefaultAsync(wp => wp.Id == id, cancellationToken);
+        }
+
         public async Task<IReadOnlyList<WorkoutPlan>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
         {
             return await _context.WorkoutPlans
                 .AsNoTracking()
                 .Where(wp => wp.UserId == userId)
                 .ToListAsync(cancellationToken);
+        }
+
+        public async Task<(IReadOnlyList<WorkoutPlan> Items, int TotalCount)> GetPagedByUserIdAsync(
+            Guid userId, int skip, int take, CancellationToken cancellationToken = default)
+        {
+            var query = _context.WorkoutPlans
+                .AsNoTracking()
+                .Where(wp => wp.UserId == userId)
+                .OrderByDescending(wp => wp.StartDate);
+
+            var totalCount = await query.CountAsync(cancellationToken);
+            var items = await query.Skip(skip).Take(take).ToListAsync(cancellationToken);
+            return (items, totalCount);
         }
 
         public async Task AddAsync(WorkoutPlan workoutPlan, CancellationToken cancellationToken = default)

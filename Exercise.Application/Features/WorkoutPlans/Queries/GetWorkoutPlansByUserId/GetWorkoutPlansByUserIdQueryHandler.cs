@@ -22,15 +22,12 @@ namespace Exercise.Application.Features.WorkoutPlans.Queries.GetWorkoutPlansByUs
             GetWorkoutPlansByUserIdQuery request,
             CancellationToken cancellationToken)
         {
-            var plans = await _workoutPlanRepository.GetByUserIdAsync(request.UserId, cancellationToken);
+            var skip = (request.PageNumber - 1) * request.PageSize;
+            var (plans, totalCount) = await _workoutPlanRepository.GetPagedByUserIdAsync(
+                request.UserId, skip, request.PageSize, cancellationToken);
+
             var dtos = _mapper.Map<List<WorkoutPlanDto>>(plans);
-
-            var paged = dtos
-                .Skip((request.PageNumber - 1) * request.PageSize)
-                .Take(request.PageSize)
-                .ToList();
-
-            return new PagedResult<WorkoutPlanDto>(paged, dtos.Count, request.PageNumber, request.PageSize);
+            return new PagedResult<WorkoutPlanDto>(dtos, totalCount, request.PageNumber, request.PageSize);
         }
     }
 }
