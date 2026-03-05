@@ -9,5 +9,6 @@ namespace Exercise.Application.Abstractions.Repositories
         Task<(IReadOnlyList<ExerciseLog> Items, int TotalCount)> GetPagedByUserIdAsync(Guid userId, int skip, int take, CancellationToken cancellationToken = default);
         Task AddAsync(ExerciseLog exerciseLog, CancellationToken cancellationToken = default);
         Task UpdateAsync(ExerciseLog exerciseLog, CancellationToken cancellationToken = default);
+        Task DeleteAsync(ExerciseLog exerciseLog, CancellationToken cancellationToken = default);
     }
 }

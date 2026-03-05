@@ -3,6 +3,7 @@ using Exercise.Application.Features.WorkoutPlans.Commands.AddWorkoutToWorkoutPla
 using Exercise.Application.Features.WorkoutPlans.Commands.CreateWorkoutPlan;
 using Exercise.Application.Features.WorkoutPlans.Commands.DeleteWorkoutPlan;
 using Exercise.Application.Features.WorkoutPlans.Commands.RemoveWorkoutFromWorkoutPlan;
+using Exercise.Application.Features.WorkoutPlans.Commands.UpdateWorkoutPlan;
 using Exercise.Application.Features.WorkoutPlans.Queries.GetWorkoutPlanById;
 using Exercise.Application.Features.WorkoutPlans.Queries.GetWorkoutPlansByUserId;
 using MediatR;
@@ -68,6 +69,21 @@ namespace Exercise.API
             .WithSummary("Create a new workout plan")
             .Produces(StatusCodes.Status201Created)
             .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized);
+
+            // PUT /api/workout-plans/{id}
+            group.MapPut("/{id:guid}",
+                async (Guid id, UpdateWorkoutPlanCommand command, IMediator mediator, CancellationToken ct) =>
+                {
+                    command.WorkoutPlanId = id;
+                    await mediator.Send(command, ct);
+                    return Results.NoContent();
+                })
+            .WithName("UpdateWorkoutPlan")
+            .WithSummary("Update a workout plan's name, dates, and notes")
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status401Unauthorized);
 
             // POST /api/workout-plans/{id}/activate

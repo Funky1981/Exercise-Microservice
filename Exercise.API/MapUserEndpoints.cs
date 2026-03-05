@@ -1,3 +1,4 @@
+using Exercise.Application.Features.Users.Commands.DeleteUser;
 using Exercise.Application.Features.Users.Commands.RegisterUser;
 using Exercise.Application.Features.Users.Commands.UpdateUserProfile;
 using Exercise.Application.Features.Users.Queries.GetUserById;
@@ -60,6 +61,18 @@ namespace Exercise.API
             .WithSummary("Update a user's profile (username, height, weight)")
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status401Unauthorized);
+
+            // DELETE /api/users/{id}
+            group.MapDelete("/{id:guid}", async (Guid id, IMediator mediator, CancellationToken ct) =>
+            {
+                await mediator.Send(new DeleteUserCommand(id), ct);
+                return Results.NoContent();
+            })
+            .WithName("DeleteUser")
+            .WithSummary("Delete a user by their ID")
+            .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status401Unauthorized);
         }

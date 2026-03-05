@@ -38,5 +38,11 @@ namespace Exercise.Infrastructure.Repositories
             _context.Users.Update(user);
             return Task.CompletedTask;
         }
+
+        public Task DeleteAsync(User user, CancellationToken cancellationToken = default)
+        {
+            _context.Users.Remove(user);
+            return Task.CompletedTask;
+        }
     }
 }

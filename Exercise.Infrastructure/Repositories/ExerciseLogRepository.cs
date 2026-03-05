@@ -52,5 +52,11 @@ namespace Exercise.Infrastructure.Repositories
             _context.ExerciseLogs.Update(exerciseLog);
             return Task.CompletedTask;
         }
+
+        public Task DeleteAsync(ExerciseLog exerciseLog, CancellationToken cancellationToken = default)
+        {
+            _context.ExerciseLogs.Remove(exerciseLog);
+            return Task.CompletedTask;
+        }
     }
 }

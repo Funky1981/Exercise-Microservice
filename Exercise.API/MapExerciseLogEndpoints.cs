@@ -1,6 +1,7 @@
 using Exercise.Application.Features.ExerciseLogs.Commands.AddExerciseLogEntry;
 using Exercise.Application.Features.ExerciseLogs.Commands.CompleteExerciseLog;
 using Exercise.Application.Features.ExerciseLogs.Commands.CreateExerciseLog;
+using Exercise.Application.Features.ExerciseLogs.Commands.DeleteExerciseLog;
 using Exercise.Application.Features.ExerciseLogs.Queries.GetExerciseLogById;
 using Exercise.Application.Features.ExerciseLogs.Queries.GetExerciseLogsByUserId;
 using MediatR;
@@ -95,6 +96,18 @@ namespace Exercise.API
             .WithSummary("Mark an exercise log as completed")
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status401Unauthorized);
+
+            // DELETE /api/exercise-logs/{id}
+            group.MapDelete("/{id:guid}", async (Guid id, IMediator mediator, CancellationToken ct) =>
+            {
+                await mediator.Send(new DeleteExerciseLogCommand(id), ct);
+                return Results.NoContent();
+            })
+            .WithName("DeleteExerciseLog")
+            .WithSummary("Delete an exercise log by its ID")
+            .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status401Unauthorized);
         }
