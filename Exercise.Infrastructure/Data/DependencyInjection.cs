@@ -1,3 +1,5 @@
+using Exercise.Application.Abstractions.Repositories;
+using Exercise.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,7 +15,15 @@ namespace Exercise.Infrastructure.Data
                     configuration.GetConnectionString("DefaultConnection"),
                     b => b.MigrationsAssembly(typeof(ExerciseDbContext).Assembly.FullName)));
 
-            // Register other data-related services here, e.g., repositories
+            // Register repository implementations
+            services.AddScoped<IExerciseRepository, ExerciseRepository>();
+            services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IWorkoutRepository, WorkoutRepository>();
+            services.AddScoped<IWorkoutPlanRepository, WorkoutPlanRepository>();
+            services.AddScoped<IExerciseLogRepository, ExerciseLogRepository>();
+
+            // Unit of Work
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             return services;
         }
