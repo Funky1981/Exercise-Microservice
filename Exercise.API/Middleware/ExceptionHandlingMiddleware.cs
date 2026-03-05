@@ -32,6 +32,11 @@ namespace Exercise.API.Middleware
                 _logger.LogWarning(ex, "Resource not found for request {Path}", context.Request.Path);
                 await HandleNotFoundExceptionAsync(context, ex);
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogWarning(ex, "Unauthorized access attempt for request {Path}", context.Request.Path);
+                await HandleUnauthorizedExceptionAsync(context, ex);
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unhandled exception for request {Path}", context.Request.Path);
@@ -70,6 +75,22 @@ namespace Exercise.API.Middleware
                 Title = "Resource not found.",
                 Detail = ex.Message,
                 Status = StatusCodes.Status404NotFound,
+                Instance = context.Request.Path
+            };
+
+            return context.Response.WriteAsync(JsonSerializer.Serialize(problemDetails));
+        }
+
+        private static Task HandleUnauthorizedExceptionAsync(HttpContext context, UnauthorizedAccessException ex)
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            context.Response.ContentType = "application/problem+json";
+
+            var problemDetails = new ProblemDetails
+            {
+                Title = "Unauthorized.",
+                Detail = ex.Message,
+                Status = StatusCodes.Status401Unauthorized,
                 Instance = context.Request.Path
             };
 
