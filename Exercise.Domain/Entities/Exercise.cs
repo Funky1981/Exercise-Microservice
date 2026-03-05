@@ -44,6 +44,22 @@ namespace Exercise.Domain.Entities
             GifUrl = gifUrl;
         }
 
+        public void Update(string name, string bodyPart, string targetMuscle,
+            string? equipment = null, string? gifUrl = null, string? description = null, string? difficulty = null)
+        {
+            Guard.AgainstNullOrWhiteSpace(name, nameof(name));
+            Guard.AgainstNullOrWhiteSpace(bodyPart, nameof(bodyPart));
+            Guard.AgainstNullOrWhiteSpace(targetMuscle, nameof(targetMuscle));
+
+            Name = name;
+            BodyPart = bodyPart;
+            TargetMuscle = targetMuscle;
+            Equipment = equipment;
+            GifUrl = gifUrl;
+            Description = description;
+            Difficulty = difficulty;
+        }
+
         public bool RequiresEquipment()
         {
             return !string.IsNullOrWhiteSpace(Equipment);
