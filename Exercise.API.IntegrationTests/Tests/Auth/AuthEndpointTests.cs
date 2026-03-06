@@ -10,6 +10,7 @@ namespace Exercise.API.IntegrationTests.Tests.Auth;
 /// Integration tests for auth endpoints - register, login, and refresh token.
 /// Uses the real JWT factory so tokens are signed and validated end-to-end.
 /// </summary>
+[Collection("Integration")]
 public class AuthEndpointTests : IClassFixture<ExerciseWebApplicationFactory>
 {
     private readonly HttpClient _client;

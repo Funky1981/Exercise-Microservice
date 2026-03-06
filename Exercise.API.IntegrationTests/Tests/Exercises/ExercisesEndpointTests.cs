@@ -9,6 +9,7 @@ namespace Exercise.API.IntegrationTests.Tests.Exercises;
 /// Integration tests for the /api/exercises endpoints.
 /// Unauthorized tests use the real JWT factory; authorized tests bypass JWT via TestAuthHandler.
 /// </summary>
+[Collection("Integration")]
 public class ExercisesEndpointTests : IClassFixture<ExerciseWebApplicationFactory>,
                                       IClassFixture<AuthBypassWebApplicationFactory>
 {

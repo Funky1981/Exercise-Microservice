@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Exercise.API.IntegrationTests.Infrastructure;
 using FluentAssertions;
 
@@ -9,6 +10,7 @@ namespace Exercise.API.IntegrationTests.Tests.WorkoutPlans;
 /// Integration tests for the /api/workout-plans endpoints.
 /// Unauthorized tests use the real JWT factory; authorized tests bypass JWT via TestAuthHandler.
 /// </summary>
+[Collection("Integration")]
 public class WorkoutPlanEndpointTests : IClassFixture<ExerciseWebApplicationFactory>,
                                         IClassFixture<AuthBypassWebApplicationFactory>
 {
@@ -73,5 +75,79 @@ public class WorkoutPlanEndpointTests : IClassFixture<ExerciseWebApplicationFact
 
         var body = await listResp.Content.ReadAsStringAsync();
         body.Should().Contain("Endurance Block");
+    }
+
+    // ── Ownership guard (403) ────────────────────────────────────────────────
+
+    private async Task<Guid> CreateWorkoutPlanAsCurrentUserAsync(HttpClient client)
+    {
+        var resp = await client.PostAsJsonAsync("/api/workout-plans", new
+        {
+            name      = "Ownership Test Plan",
+            startDate = DateTime.UtcNow,
+            notes     = "ownership guard"
+        });
+        resp.StatusCode.Should().Be(HttpStatusCode.Created);
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        return body.GetProperty("id").GetGuid();
+    }
+
+    [Fact]
+    public async Task GetWorkoutPlanById_ByDifferentUser_ReturnsForbidden()
+    {
+        var original = _bypassFactory.AuthenticatedUserId;
+        try
+        {
+            _bypassFactory.AuthenticatedUserId = Guid.NewGuid();
+            var client = _bypassFactory.CreateClient();
+            var planId = await CreateWorkoutPlanAsCurrentUserAsync(client);
+
+            _bypassFactory.AuthenticatedUserId = Guid.NewGuid();
+            var response = await client.GetAsync($"/api/workout-plans/{planId}");
+
+            response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        }
+        finally { _bypassFactory.AuthenticatedUserId = original; }
+    }
+
+    [Fact]
+    public async Task UpdateWorkoutPlan_ByDifferentUser_ReturnsForbidden()
+    {
+        var original = _bypassFactory.AuthenticatedUserId;
+        try
+        {
+            _bypassFactory.AuthenticatedUserId = Guid.NewGuid();
+            var client = _bypassFactory.CreateClient();
+            var planId = await CreateWorkoutPlanAsCurrentUserAsync(client);
+
+            _bypassFactory.AuthenticatedUserId = Guid.NewGuid();
+            var response = await client.PutAsJsonAsync($"/api/workout-plans/{planId}", new
+            {
+                name      = "Hacked Plan",
+                startDate = DateTime.UtcNow,
+                notes     = "should be blocked"
+            });
+
+            response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        }
+        finally { _bypassFactory.AuthenticatedUserId = original; }
+    }
+
+    [Fact]
+    public async Task DeleteWorkoutPlan_ByDifferentUser_ReturnsForbidden()
+    {
+        var original = _bypassFactory.AuthenticatedUserId;
+        try
+        {
+            _bypassFactory.AuthenticatedUserId = Guid.NewGuid();
+            var client = _bypassFactory.CreateClient();
+            var planId = await CreateWorkoutPlanAsCurrentUserAsync(client);
+
+            _bypassFactory.AuthenticatedUserId = Guid.NewGuid();
+            var response = await client.DeleteAsync($"/api/workout-plans/{planId}");
+
+            response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        }
+        finally { _bypassFactory.AuthenticatedUserId = original; }
     }
 }

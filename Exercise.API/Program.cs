@@ -6,6 +6,7 @@ using Exercise.Application;
 using Exercise.Application.Abstractions.Services;
 using Exercise.Infrastructure.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -143,6 +144,15 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+// Apply any pending EF Core migrations on startup so containers self-migrate.
+// Skipped for SQLite (used by integration tests which call EnsureCreatedAsync instead).
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ExerciseDbContext>();
+    if (db.Database.ProviderName?.Contains("SqlServer", StringComparison.OrdinalIgnoreCase) == true)
+        await db.Database.MigrateAsync();
+}
+
 // ?? HTTP pipeline ??????????????????????????????????????????????????????????
 if (app.Environment.IsDevelopment())
 {
@@ -156,6 +166,19 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Security response headers — applied to every response
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Append("X-Frame-Options", "DENY");
+    context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
+    context.Response.Headers.Append("X-Permitted-Cross-Domain-Policies", "none");
+    context.Response.Headers.Append("Permissions-Policy", "geolocation=(), microphone=(), camera=()");
+    if (!app.Environment.IsDevelopment())
+        context.Response.Headers.Append("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+    await next();
+});
 
 // Structured HTTP request logging via Serilog (before auth/endpoint middleware)
 app.UseSerilogRequestLogging();
