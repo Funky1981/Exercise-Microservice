@@ -5,6 +5,8 @@
 
 # This stage is used when running from VS in fast mode (Default for Debug configuration)
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+# Create a non-root user to run the application — prevents privilege escalation if the container is compromised
+RUN addgroup --system appgroup && adduser --system --ingroup appgroup --no-create-home appuser
 WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
@@ -29,4 +31,6 @@ RUN dotnet publish "./Exercise.API.csproj" -c %BUILD_CONFIGURATION% -o /app/publ
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+# Switch to non-root user before starting the process
+USER appuser
 ENTRYPOINT ["dotnet", "Exercise.API.dll"]
