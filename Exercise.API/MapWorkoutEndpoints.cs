@@ -1,5 +1,6 @@
 using Asp.Versioning;
 using Exercise.Application.Features.Workouts.Commands.AddExerciseToWorkout;
+using Exercise.Application.Features.Workouts.Dtos;
 using Exercise.Application.Features.Workouts.Commands.CompleteWorkout;
 using Exercise.Application.Features.Workouts.Commands.CreateWorkout;
 using Exercise.Application.Features.Workouts.Commands.DeleteWorkout;
@@ -46,9 +47,10 @@ namespace Exercise.API
                 })
             .WithName("GetWorkoutsByUserId")
             .WithSummary("Get a paged list of the authenticated user's workouts")
-            .Produces(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .WithDescription("pageNumber and pageSize are required. Results are scoped to the authenticated user's JWT — users can only see their own workouts.")
+            .Produces<IReadOnlyList<WorkoutDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
 
             // GET /api/workouts/{id}
             group.MapGet("/{id:guid}", async (Guid id, IMediator mediator, CancellationToken ct) =>
@@ -65,9 +67,9 @@ namespace Exercise.API
             })
             .WithName("GetWorkoutById")
             .WithSummary("Get a single workout by its ID")
-            .Produces(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status404NotFound)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .Produces<WorkoutDto>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
 
             // POST /api/workouts
             // userId is set from the JWT claim — the request body UserId field is ignored
@@ -83,9 +85,10 @@ namespace Exercise.API
             })
             .WithName("CreateWorkout")
             .WithSummary("Create a new workout session for the authenticated user")
+            .WithDescription("The userId is extracted from the JWT claim and applied automatically — any UserId in the request body is ignored.")
             .Produces(StatusCodes.Status201Created)
-            .Produces(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
 
             // PUT /api/workouts/{id}
             group.MapPut("/{id:guid}",
@@ -98,9 +101,9 @@ namespace Exercise.API
             .WithName("UpdateWorkout")
             .WithSummary("Update a workout's name, date, and notes")
             .Produces(StatusCodes.Status204NoContent)
-            .Produces(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status404NotFound)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
 
             // POST /api/workouts/{id}/complete
             group.MapPost("/{id:guid}/complete",
@@ -111,10 +114,11 @@ namespace Exercise.API
                 })
             .WithName("CompleteWorkout")
             .WithSummary("Mark a workout as completed with its total duration")
+            .WithDescription("Supply Duration as a TimeSpan string in the request body, e.g. \"00:45:00\" for 45 minutes.")
             .Produces(StatusCodes.Status204NoContent)
-            .Produces(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status404NotFound)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
 
             // DELETE /api/workouts/{id}
             group.MapDelete("/{id:guid}", async (Guid id, IMediator mediator, CancellationToken ct) =>
@@ -125,8 +129,8 @@ namespace Exercise.API
             .WithName("DeleteWorkout")
             .WithSummary("Soft-delete a workout by its ID")
             .Produces(StatusCodes.Status204NoContent)
-            .Produces(StatusCodes.Status404NotFound)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
 
             // POST /api/workouts/{id}/exercises
             group.MapPost("/{id:guid}/exercises",
@@ -138,9 +142,9 @@ namespace Exercise.API
             .WithName("AddExerciseToWorkout")
             .WithSummary("Add an exercise to a workout")
             .Produces(StatusCodes.Status204NoContent)
-            .Produces(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status404NotFound)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
 
             // DELETE /api/workouts/{id}/exercises/{exerciseId}
             group.MapDelete("/{id:guid}/exercises/{exerciseId:guid}",
@@ -152,8 +156,8 @@ namespace Exercise.API
             .WithName("RemoveExerciseFromWorkout")
             .WithSummary("Remove an exercise from a workout")
             .Produces(StatusCodes.Status204NoContent)
-            .Produces(StatusCodes.Status404NotFound)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
         }
     }
 

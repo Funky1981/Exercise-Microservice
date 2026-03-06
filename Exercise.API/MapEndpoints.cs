@@ -1,4 +1,5 @@
 ﻿using Asp.Versioning;
+using Exercise.Application.Exercises.Dtos;
 using Exercise.Application.Features.Exercises.Commands.CreateExercise;
 using Exercise.Application.Features.Exercises.Commands.DeleteExercise;
 using Exercise.Application.Features.Exercises.Commands.UpdateExercise;
@@ -34,8 +35,9 @@ namespace Exercise.API
             })
             .WithName("GetAllExercises")
             .WithSummary("Get all exercises")
-            .Produces(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .WithDescription("Returns the full catalogue of exercises. For a filtered view use GET /api/exercises/bodypart/{bodyPart}.")
+            .Produces<IReadOnlyList<ExerciseDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
 
             // GET /api/exercises/{id}
             group.MapGet("/{id:guid}", async (Guid id, IMediator mediator, CancellationToken ct) =>
@@ -52,9 +54,9 @@ namespace Exercise.API
             })
             .WithName("GetExerciseById")
             .WithSummary("Get a single exercise by its ID")
-            .Produces(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status404NotFound)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .Produces<ExerciseDto>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
 
             // GET /api/exercises/bodypart/{bodyPart}
             group.MapGet("/bodypart/{bodyPart}", async (string bodyPart, IMediator mediator, CancellationToken ct) =>
@@ -64,9 +66,10 @@ namespace Exercise.API
             })
             .WithName("GetExercisesByBodyPart")
             .WithSummary("Get exercises filtered by body part (e.g. chest, back, legs)")
-            .Produces(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .WithDescription("Valid body part values include: chest, back, lower arms, lower legs, neck, shoulders, upper arms, upper legs, waist, cardio.")
+            .Produces<IReadOnlyList<ExerciseDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
 
             // POST /api/exercises
             group.MapPost("/", async (CreateExerciseCommand command, IMediator mediator, CancellationToken ct) =>
@@ -77,8 +80,8 @@ namespace Exercise.API
             .WithName("CreateExercise")
             .WithSummary("Create a new exercise")
             .Produces(StatusCodes.Status201Created)
-            .Produces(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
 
             // PUT /api/exercises/{id}
             group.MapPut("/{id:guid}", async (Guid id, UpdateExerciseCommand command, IMediator mediator, CancellationToken ct) =>
@@ -90,9 +93,9 @@ namespace Exercise.API
             .WithName("UpdateExercise")
             .WithSummary("Update an existing exercise")
             .Produces(StatusCodes.Status204NoContent)
-            .Produces(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status404NotFound)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
 
             // DELETE /api/exercises/{id}
             group.MapDelete("/{id:guid}", async (Guid id, IMediator mediator, CancellationToken ct) =>
@@ -103,8 +106,8 @@ namespace Exercise.API
             .WithName("DeleteExercise")
             .WithSummary("Delete an exercise by its ID")
             .Produces(StatusCodes.Status204NoContent)
-            .Produces(StatusCodes.Status404NotFound)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
         }
     }
 }

@@ -1,5 +1,6 @@
 using Asp.Versioning;
 using Exercise.Application.Features.Users.Commands.DeleteUser;
+using Exercise.Application.Features.Users.Dtos;
 using Exercise.Application.Features.Users.Commands.RegisterUser;
 using Exercise.Application.Features.Users.Commands.UpdateUserProfile;
 using Exercise.Application.Features.Users.Queries.GetUserById;
@@ -23,8 +24,9 @@ namespace Exercise.API
             .WithOpenApi()
             .WithName("RegisterUser")
             .WithSummary("Register a new user")
+            .WithDescription("Creates a new user account. Returns the new user's ID. No authentication required.")
             .Produces(StatusCodes.Status201Created)
-            .Produces(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
 
             var versionSet = app.NewApiVersionSet()
                 .HasApiVersion(new ApiVersion(1, 0))
@@ -54,9 +56,9 @@ namespace Exercise.API
             })
             .WithName("GetUserById")
             .WithSummary("Get a user by their ID")
-            .Produces(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status404NotFound)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .Produces<UserDto>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
 
             // PUT /api/users/{id}/profile
             group.MapPut("/{id:guid}/profile",
@@ -69,9 +71,9 @@ namespace Exercise.API
             .WithName("UpdateUserProfile")
             .WithSummary("Update a user's profile (username, height, weight)")
             .Produces(StatusCodes.Status204NoContent)
-            .Produces(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status404NotFound)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
 
             // DELETE /api/users/{id}
             group.MapDelete("/{id:guid}", async (Guid id, IMediator mediator, CancellationToken ct) =>
@@ -82,8 +84,8 @@ namespace Exercise.API
             .WithName("DeleteUser")
             .WithSummary("Delete a user by their ID")
             .Produces(StatusCodes.Status204NoContent)
-            .Produces(StatusCodes.Status404NotFound)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
         }
     }
 }

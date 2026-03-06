@@ -1,6 +1,8 @@
 using Exercise.Application.Features.Auth.Commands.Login;
 using Exercise.Application.Features.Auth.Commands.RefreshToken;
+using Exercise.Application.Features.Auth.Dtos;
 using MediatR;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Exercise.API
 {
@@ -19,10 +21,11 @@ namespace Exercise.API
             .WithOpenApi()
             .WithName("Login")
             .WithSummary("Authenticate with email and password; returns a JWT bearer token")
+            .WithDescription("Returns a JWT bearer token and a refresh token. Include the JWT in subsequent requests as: Authorization: Bearer {token}.")
             .RequireRateLimiting("auth")
-            .Produces(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .Produces<LoginResponse>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
 
             // POST /api/auth/refresh — exchange a refresh token for a new JWT + refresh token pair
             app.MapPost("/api/auth/refresh",
@@ -35,10 +38,11 @@ namespace Exercise.API
             .WithOpenApi()
             .WithName("RefreshToken")
             .WithSummary("Exchange a valid refresh token for a new JWT bearer token and refresh token")
+            .WithDescription("On success, both a new JWT and a new refresh token are returned. The previous refresh token is invalidated.")
             .RequireRateLimiting("auth")
-            .Produces(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .Produces<LoginResponse>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
         }
     }
 }

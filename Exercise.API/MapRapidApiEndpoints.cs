@@ -1,4 +1,5 @@
 using Exercise.Application.Abstractions.Repositories;
+using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using ExerciseEntity = Exercise.Domain.Entities.Exercise;
@@ -76,10 +77,11 @@ namespace Exercise.API
             .WithOpenApi()
             .WithName("SyncExercisesFromRapidApi")
             .WithSummary("Sync exercises from the RapidAPI ExerciseDB (admin use)")
+            .WithDescription("Fetches up to 100 exercises from the external ExerciseDB API and inserts any that are not already present. Returns the count of newly added exercises and total fetched. Requires a valid RapidAPI key configured in appsettings.")
             .RequireAuthorization()
             .Produces(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status502BadGateway);
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
+            .Produces<ProblemDetails>(StatusCodes.Status502BadGateway);
         }
 
         private sealed record RapidApiExercise(

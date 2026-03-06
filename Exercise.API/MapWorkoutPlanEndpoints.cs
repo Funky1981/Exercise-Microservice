@@ -1,5 +1,6 @@
 using Asp.Versioning;
 using Exercise.Application.Features.WorkoutPlans.Commands.ActivateWorkoutPlan;
+using Exercise.Application.Features.WorkoutPlans.Dtos;
 using Exercise.Application.Features.WorkoutPlans.Commands.AddWorkoutToWorkoutPlan;
 using Exercise.Application.Features.WorkoutPlans.Commands.CreateWorkoutPlan;
 using Exercise.Application.Features.WorkoutPlans.Commands.DeleteWorkoutPlan;
@@ -51,9 +52,10 @@ namespace Exercise.API
                 })
             .WithName("GetWorkoutPlansByUserId")
             .WithSummary("Get a paged list of the authenticated user's workout plans")
-            .Produces(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .WithDescription("pageNumber and pageSize are required. Results are scoped to the authenticated user's JWT — users can only see their own plans.")
+            .Produces<IReadOnlyList<WorkoutPlanDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
 
             // GET /api/workout-plans/{id}
             group.MapGet("/{id:guid}", async (Guid id, IMediator mediator, CancellationToken ct) =>
@@ -70,9 +72,9 @@ namespace Exercise.API
             })
             .WithName("GetWorkoutPlanById")
             .WithSummary("Get a single workout plan by its ID")
-            .Produces(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status404NotFound)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .Produces<WorkoutPlanDto>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
 
             // POST /api/workout-plans
             // userId is set from the JWT claim — the request body UserId field is ignored
@@ -88,9 +90,10 @@ namespace Exercise.API
             })
             .WithName("CreateWorkoutPlan")
             .WithSummary("Create a new workout plan for the authenticated user")
+            .WithDescription("The userId is extracted from the JWT claim and applied automatically — any UserId in the request body is ignored.")
             .Produces(StatusCodes.Status201Created)
-            .Produces(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
 
             // PUT /api/workout-plans/{id}
             group.MapPut("/{id:guid}",
@@ -103,9 +106,9 @@ namespace Exercise.API
             .WithName("UpdateWorkoutPlan")
             .WithSummary("Update a workout plan's name, dates, and notes")
             .Produces(StatusCodes.Status204NoContent)
-            .Produces(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status404NotFound)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
 
             // POST /api/workout-plans/{id}/activate
             group.MapPost("/{id:guid}/activate", async (Guid id, IMediator mediator, CancellationToken ct) =>
@@ -115,9 +118,10 @@ namespace Exercise.API
             })
             .WithName("ActivateWorkoutPlan")
             .WithSummary("Activate a workout plan")
+            .WithDescription("Sets the plan's status to Active. Only one plan should be active at a time.")
             .Produces(StatusCodes.Status204NoContent)
-            .Produces(StatusCodes.Status404NotFound)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
 
             // DELETE /api/workout-plans/{id}
             group.MapDelete("/{id:guid}", async (Guid id, IMediator mediator, CancellationToken ct) =>
@@ -128,8 +132,8 @@ namespace Exercise.API
             .WithName("DeleteWorkoutPlan")
             .WithSummary("Soft-delete a workout plan by its ID")
             .Produces(StatusCodes.Status204NoContent)
-            .Produces(StatusCodes.Status404NotFound)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
 
             // POST /api/workout-plans/{id}/workouts
             group.MapPost("/{id:guid}/workouts",
@@ -141,9 +145,9 @@ namespace Exercise.API
             .WithName("AddWorkoutToWorkoutPlan")
             .WithSummary("Add a workout to a workout plan")
             .Produces(StatusCodes.Status204NoContent)
-            .Produces(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status404NotFound)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
 
             // DELETE /api/workout-plans/{id}/workouts/{workoutId}
             group.MapDelete("/{id:guid}/workouts/{workoutId:guid}",
@@ -155,8 +159,8 @@ namespace Exercise.API
             .WithName("RemoveWorkoutFromWorkoutPlan")
             .WithSummary("Remove a workout from a workout plan")
             .Produces(StatusCodes.Status204NoContent)
-            .Produces(StatusCodes.Status404NotFound)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
         }
     }
 

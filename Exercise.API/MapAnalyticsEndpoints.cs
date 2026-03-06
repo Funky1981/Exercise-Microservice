@@ -1,6 +1,8 @@
 using Asp.Versioning;
+using Exercise.Application.Features.Analytics.Dtos;
 using Exercise.Application.Features.Analytics.Queries.GetWorkoutSummary;
 using MediatR;
+using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
 namespace Exercise.API
@@ -36,9 +38,10 @@ namespace Exercise.API
                 })
             .WithName("GetWorkoutSummary")
             .WithSummary("Get a workout and exercise log summary for the authenticated user")
-            .Produces(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .WithDescription("Returns aggregated totals for the calling user: workout count, completed workouts, total duration, exercise log count, and total log duration. UserId is derived from the JWT.")
+            .Produces<WorkoutSummaryDto>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
         }
     }
 }
