@@ -1,4 +1,5 @@
 using AutoMapper;
+using Exercise.Application.Common.Models;
 using Exercise.Application.Features.Exercises.Queries.GetAllExercises;
 using Moq;
 using FluentAssertions;
@@ -25,7 +26,7 @@ public class GetAllExercisesQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldReturnAllExercises_WhenExercisesExist()
+    public async Task Handle_ShouldReturnPagedResult_WhenExercisesExist()
     {
         // Arrange
         var exercises = new List<ExerciseEntity>
@@ -53,30 +54,34 @@ public class GetAllExercisesQueryHandlerTests
         };
 
         _mockRepository
-            .Setup(repo => repo.GetAllAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(exercises);
+            .Setup(repo => repo.GetPagedAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(((IReadOnlyList<ExerciseEntity>)exercises, exercises.Count));
 
-        var query = new GetAllExercisesQuery();
+        var query = new GetAllExercisesQuery(pageNumber: 1, pageSize: 20);
 
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
         result.Should().NotBeNull();
-        result.Should().HaveCount(2);
-        result[0].Name.Should().Be("Push Up");
-        result[1].Name.Should().Be("Squat");
+        result.Should().BeOfType<PagedResult<Exercise.Application.Exercises.Dtos.ExerciseDto>>();
+        result.Items.Should().HaveCount(2);
+        result.Items[0].Name.Should().Be("Push Up");
+        result.Items[1].Name.Should().Be("Squat");
+        result.TotalCount.Should().Be(2);
+        result.PageNumber.Should().Be(1);
+        result.PageSize.Should().Be(20);
     }
 
     [Fact]
-    public async Task Handle_ShouldReturnEmptyList_WhenNoExercisesExist()
+    public async Task Handle_ShouldReturnEmptyPagedResult_WhenNoExercisesExist()
     {
         // Arrange
         var emptyList = new List<ExerciseEntity>();
 
         _mockRepository
-            .Setup(repo => repo.GetAllAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(emptyList);
+            .Setup(repo => repo.GetPagedAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(((IReadOnlyList<ExerciseEntity>)emptyList, 0));
 
         var query = new GetAllExercisesQuery();
 
@@ -85,11 +90,11 @@ public class GetAllExercisesQueryHandlerTests
 
         // Assert
         result.Should().NotBeNull();
-        result.Should().BeEmpty();
+        result.Items.Should().BeEmpty();
+        result.TotalCount.Should().Be(0);
 
-        // Verify that the repository method was called once
         _mockRepository.Verify(
-            repo => repo.GetAllAsync(It.IsAny<CancellationToken>()),
+            repo => repo.GetPagedAsync(0, 20, It.IsAny<CancellationToken>()),
             Times.Once
         );
     }
