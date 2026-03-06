@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: exercise-api
+  namespace: default
+  labels:
+    app: exercise-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: exercise-api
+  template:
+    metadata:
+      labels:
+        app: exercise-api
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: exercise-api
+          # Replace with your actual ghcr.io image tag from the CD pipeline
+          image: ghcr.io/funky1981/exercise-api:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: "Production"
+            - name: Jwt__Issuer
+              value: "ExerciseMicroservice"
+            - name: Jwt__Audience
+              value: "ExerciseMicroserviceUsers"
+            - name: Jwt__ExpiryDays
+              value: "7"
+            - name: RapidApi__Host
+              value: "exercisedb.p.rapidapi.com"
+            # Sensitive values come from the Secret
+            - name: Jwt__Key
+              valueFrom:
+                secretKeyRef:
+                  name: exercise-api-secrets
+                  key: JWT_KEY
+            - name: RapidApi__Key
+              valueFrom:
+                secretKeyRef:
+                  name: exercise-api-secrets
+                  key: RAPID_API_KEY
+            - name: ConnectionStrings__DefaultConnection
+              valueFrom:
+                secretKeyRef:
+                  name: exercise-api-secrets
+                  key: ConnectionStrings__DefaultConnection
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 30
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
