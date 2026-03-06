@@ -9,6 +9,7 @@ namespace Exercise.API.IntegrationTests.Tests.Users;
 /// Integration tests for the /api/users endpoints.
 /// Ownership guard tests verify that a user cannot access another user's profile.
 /// </summary>
+[Collection("Integration")]
 public class UserEndpointTests : IClassFixture<ExerciseWebApplicationFactory>,
                                  IClassFixture<AuthBypassWebApplicationFactory>
 {

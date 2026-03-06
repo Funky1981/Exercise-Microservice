@@ -6,6 +6,7 @@ using Exercise.Application;
 using Exercise.Application.Abstractions.Services;
 using Exercise.Infrastructure.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -142,6 +143,15 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 var app = builder.Build();
+
+// Apply any pending EF Core migrations on startup so containers self-migrate.
+// Skipped for SQLite (used by integration tests which call EnsureCreatedAsync instead).
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ExerciseDbContext>();
+    if (db.Database.ProviderName?.Contains("SqlServer", StringComparison.OrdinalIgnoreCase) == true)
+        await db.Database.MigrateAsync();
+}
 
 // ?? HTTP pipeline ??????????????????????????????????????????????????????????
 if (app.Environment.IsDevelopment())

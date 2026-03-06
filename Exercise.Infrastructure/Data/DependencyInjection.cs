@@ -13,7 +13,12 @@ namespace Exercise.Infrastructure.Data
             services.AddDbContext<ExerciseDbContext>(options =>
                 options.UseSqlServer(
                     configuration.GetConnectionString("DefaultConnection"),
-                    b => b.MigrationsAssembly(typeof(ExerciseDbContext).Assembly.FullName)));
+                    b => b
+                        .MigrationsAssembly(typeof(ExerciseDbContext).Assembly.FullName)
+                        .EnableRetryOnFailure(
+                            maxRetryCount: 5,
+                            maxRetryDelay: TimeSpan.FromSeconds(10),
+                            errorNumbersToAdd: null)));
 
             // Register repository implementations
             services.AddScoped<IExerciseRepository, ExerciseRepository>();
