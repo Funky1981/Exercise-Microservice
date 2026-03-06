@@ -24,6 +24,10 @@ builder.Services.AddSerilog(lc => lc
     .ReadFrom.Configuration(builder.Configuration)
     .Enrich.FromLogContext());
 
+// IHttpContextAccessor — used by CorrelationIdMiddleware and any service that
+// needs access to the current HttpContext outside of a controller/endpoint.
+builder.Services.AddHttpContextAccessor();
+
 // 🟧 Application layer (MediatR, AutoMapper, FluentValidation) ??????????????
 builder.Services.AddApplication();
 
@@ -179,6 +183,10 @@ app.Use(async (context, next) =>
         context.Response.Headers.Append("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
     await next();
 });
+
+// Correlation ID — must run before Serilog request logging so the CorrelationId
+// property is in LogContext when UseSerilogRequestLogging fires.
+app.UseMiddleware<CorrelationIdMiddleware>();
 
 // Structured HTTP request logging via Serilog (before auth/endpoint middleware)
 app.UseSerilogRequestLogging();
