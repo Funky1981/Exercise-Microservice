@@ -6,5 +6,7 @@ namespace Exercise.Application.Abstractions.Services
     {
         string GenerateToken(User user);
         DateTime GetExpiry();
+        string GenerateRefreshToken();
+        DateTime GetRefreshTokenExpiry();
     }
 }

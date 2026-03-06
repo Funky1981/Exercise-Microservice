@@ -10,13 +10,15 @@ public class LoginCommandHandlerTests
 {
     private readonly Mock<IUserRepository> _userRepoMock;
     private readonly Mock<ITokenService> _tokenServiceMock;
+    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly LoginCommandHandler _handler;
 
     public LoginCommandHandlerTests()
     {
-        _userRepoMock = MockFactory.CreateUserRepositoryMock();
+        _userRepoMock     = MockFactory.CreateUserRepositoryMock();
         _tokenServiceMock = MockFactory.CreateTokenServiceMock();
-        _handler = new LoginCommandHandler(_userRepoMock.Object, _tokenServiceMock.Object);
+        _unitOfWorkMock   = MockFactory.CreateUnitOfWorkMock();
+        _handler = new LoginCommandHandler(_userRepoMock.Object, _tokenServiceMock.Object, _unitOfWorkMock.Object);
     }
 
     [Fact]
@@ -32,6 +34,12 @@ public class LoginCommandHandlerTests
 
         _tokenServiceMock.Setup(t => t.GenerateToken(user)).Returns("jwt-token");
         _tokenServiceMock.Setup(t => t.GetExpiry()).Returns(DateTime.UtcNow.AddHours(1));
+        _tokenServiceMock.Setup(t => t.GenerateRefreshToken()).Returns("refresh-token-abc");
+        _tokenServiceMock.Setup(t => t.GetRefreshTokenExpiry()).Returns(DateTime.UtcNow.AddDays(30));
+
+        _userRepoMock
+            .Setup(r => r.UpdateAsync(user, It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
 
         var command = new LoginCommand { Email = "alice@example.com", Password = "Str0ng!Pass" };
 

@@ -8,6 +8,7 @@ using Exercise.Application.Features.Workouts.Queries.GetWorkoutById;
 using Exercise.Application.Features.Workouts.Queries.GetWorkoutsByUserId;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Exercise.API
 {
@@ -18,19 +19,25 @@ namespace Exercise.API
             var group = app.MapGroup("/api/workouts")
                            .WithTags("Workouts")
                            .WithOpenApi()
-                           .RequireAuthorization();
+                           .RequireAuthorization()
+                           .RequireRateLimiting("api");
 
-            // GET /api/workouts?userId=&pageNumber=&pageSize=
+            // GET /api/workouts?pageNumber=&pageSize=
+            // userId is derived from the JWT sub claim — users can only see their own workouts
             group.MapGet("/",
-                async ([FromQuery] Guid userId, [FromQuery] int pageNumber, [FromQuery] int pageSize,
+                async (ClaimsPrincipal user, [FromQuery] int pageNumber, [FromQuery] int pageSize,
                        IMediator mediator, CancellationToken ct) =>
                 {
+                    var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
+                    if (!Guid.TryParse(sub, out var userId))
+                        return Results.Unauthorized();
+
                     var result = await mediator.Send(
                         new GetWorkoutsByUserIdQuery(userId, pageNumber, pageSize), ct);
                     return Results.Ok(result);
                 })
             .WithName("GetWorkoutsByUserId")
-            .WithSummary("Get a paged list of workouts for a user")
+            .WithSummary("Get a paged list of the authenticated user's workouts")
             .Produces(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized);
@@ -55,13 +62,19 @@ namespace Exercise.API
             .Produces(StatusCodes.Status401Unauthorized);
 
             // POST /api/workouts
-            group.MapPost("/", async (CreateWorkoutCommand command, IMediator mediator, CancellationToken ct) =>
+            // userId is set from the JWT claim — the request body UserId field is ignored
+            group.MapPost("/", async (ClaimsPrincipal user, CreateWorkoutCommand command, IMediator mediator, CancellationToken ct) =>
             {
+                var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
+                if (!Guid.TryParse(sub, out var userId))
+                    return Results.Unauthorized();
+
+                command.UserId = userId;
                 var id = await mediator.Send(command, ct);
                 return Results.CreatedAtRoute("GetWorkoutById", new { id }, new { id });
             })
             .WithName("CreateWorkout")
-            .WithSummary("Create a new workout session")
+            .WithSummary("Create a new workout session for the authenticated user")
             .Produces(StatusCodes.Status201Created)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized);

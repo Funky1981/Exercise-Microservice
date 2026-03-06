@@ -5,9 +5,11 @@ using Exercise.Application;
 using Exercise.Application.Abstractions.Services;
 using Exercise.Infrastructure.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -48,6 +50,37 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddAuthorization();
+
+// ?? Rate Limiting (built-in .NET 7+, no NuGet required) ????????????????
+// "auth" policy: 10 req/60 s per IP on auth routes to slow brute-force
+// "api"  policy: 30 req/60 s per IP on all other routes
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.AddPolicy("auth", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit          = 10,
+                Window               = TimeSpan.FromSeconds(60),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit           = 0
+            }));
+
+    options.AddPolicy("api", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit          = 30,
+                Window               = TimeSpan.FromSeconds(60),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit           = 0
+            }));
+});
+
 builder.Services.AddHealthChecks();
 
 // ?? OpenAPI / Swagger ??????????????????????????????????????????????????????
@@ -104,6 +137,7 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 // ?? Minimal API endpoints ??????????????????????????????????????????????????
 app.MapAuthEndpointsRoute();
@@ -118,7 +152,6 @@ app.MapHealthChecks("/health");
 
 app.Run();
 
-
-
-
+// Required for integration tests (WebApplicationFactory<Program>)
+public partial class Program { }
 

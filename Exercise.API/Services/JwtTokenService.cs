@@ -47,5 +47,18 @@ namespace Exercise.API.Services
             var days = int.TryParse(_configuration["Jwt:ExpiryDays"], out var d) ? d : 7;
             return DateTime.UtcNow.AddDays(days);
         }
+
+        public string GenerateRefreshToken()
+        {
+            var bytes = new byte[64];
+            System.Security.Cryptography.RandomNumberGenerator.Fill(bytes);
+            return Convert.ToBase64String(bytes);
+        }
+
+        public DateTime GetRefreshTokenExpiry()
+        {
+            var days = int.TryParse(_configuration["Jwt:RefreshTokenExpiryDays"], out var d) ? d : 30;
+            return DateTime.UtcNow.AddDays(days);
+        }
     }
 }

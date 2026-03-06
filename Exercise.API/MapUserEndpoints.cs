@@ -28,7 +28,8 @@ namespace Exercise.API
             var group = app.MapGroup("/api/users")
                            .WithTags("Users")
                            .WithOpenApi()
-                           .RequireAuthorization();
+                           .RequireAuthorization()
+                           .RequireRateLimiting("api");
 
             // GET /api/users/{id}
             group.MapGet("/{id:guid}", async (Guid id, IMediator mediator, CancellationToken ct) =>

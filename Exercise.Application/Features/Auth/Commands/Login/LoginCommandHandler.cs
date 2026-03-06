@@ -9,11 +9,13 @@ namespace Exercise.Application.Features.Auth.Commands.Login
     {
         private readonly IUserRepository _userRepository;
         private readonly ITokenService _tokenService;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public LoginCommandHandler(IUserRepository userRepository, ITokenService tokenService)
+        public LoginCommandHandler(IUserRepository userRepository, ITokenService tokenService, IUnitOfWork unitOfWork)
         {
             _userRepository = userRepository;
-            _tokenService = tokenService;
+            _tokenService   = tokenService;
+            _unitOfWork     = unitOfWork;
         }
 
         public async Task<LoginResponse> Handle(LoginCommand request, CancellationToken cancellationToken)
@@ -23,13 +25,22 @@ namespace Exercise.Application.Features.Auth.Commands.Login
             if (user is null || !user.VerifyPassword(request.Password))
                 throw new UnauthorizedAccessException("Invalid email or password.");
 
+            var refreshToken = _tokenService.GenerateRefreshToken();
+            var refreshExpiry = _tokenService.GetRefreshTokenExpiry();
+
+            user.SetRefreshToken(refreshToken, refreshExpiry);
+            await _userRepository.UpdateAsync(user, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
             return new LoginResponse
             {
-                Token     = _tokenService.GenerateToken(user),
-                ExpiresAt = _tokenService.GetExpiry(),
-                UserId    = user.Id,
-                Name      = user.Name,
-                Email     = user.Email
+                Token            = _tokenService.GenerateToken(user),
+                ExpiresAt        = _tokenService.GetExpiry(),
+                UserId           = user.Id,
+                Name             = user.Name,
+                Email            = user.Email,
+                RefreshToken     = refreshToken,
+                RefreshTokenExpiry = refreshExpiry
             };
         }
     }

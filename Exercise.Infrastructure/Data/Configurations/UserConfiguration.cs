@@ -62,6 +62,11 @@ namespace Exercise.Infrastructure.Data.Configurations
             builder.Property<bool>("IsDeleted").HasDefaultValue(false);
             builder.Property<DateTime?>("UpdatedAt");
             builder.HasQueryFilter(u => !EF.Property<bool>(u, "IsDeleted"));
+
+            builder.Property(u => u.RefreshTokenHash)
+                .HasMaxLength(64);
+
+            builder.Property(u => u.RefreshTokenExpiry);
         }
     }
 }

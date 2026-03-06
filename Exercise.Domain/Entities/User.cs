@@ -17,6 +17,8 @@ namespace Exercise.Domain.Entities
         public Height? Height { get; private set; }
         public Weight? Weight { get; private set; }
         public DateTime CreatedAt { get; private set; }
+        public string? RefreshTokenHash { get; private set; }
+        public DateTime? RefreshTokenExpiry { get; private set; }
 
         private User() { } // For ORM
 
@@ -78,13 +80,37 @@ namespace Exercise.Domain.Entities
             return BCrypt.Net.BCrypt.Verify(password, PasswordHash);
         }
 
-        public void UpdateProfile(string? userName, Height? height, Weight? weight)
-        {
+        public void UpdateProfile(string? userName, Height? height, Weight? weight)        {
             if (!string.IsNullOrWhiteSpace(userName))
                 UserName = userName;
             
             Height = height;
             Weight = weight;
+        }
+
+        public void SetRefreshToken(string token, DateTime expiry)
+        {
+            using var sha = System.Security.Cryptography.SHA256.Create();
+            var bytes = System.Text.Encoding.UTF8.GetBytes(token);
+            RefreshTokenHash = Convert.ToHexString(sha.ComputeHash(bytes));
+            RefreshTokenExpiry = expiry;
+        }
+
+        public bool VerifyRefreshToken(string token)
+        {
+            if (string.IsNullOrWhiteSpace(RefreshTokenHash) || RefreshTokenExpiry <= DateTime.UtcNow)
+                return false;
+
+            using var sha = System.Security.Cryptography.SHA256.Create();
+            var bytes = System.Text.Encoding.UTF8.GetBytes(token);
+            var hash = Convert.ToHexString(sha.ComputeHash(bytes));
+            return hash.Equals(RefreshTokenHash, StringComparison.OrdinalIgnoreCase);
+        }
+
+        public void ClearRefreshToken()
+        {
+            RefreshTokenHash = null;
+            RefreshTokenExpiry = null;
         }
 
         private static bool IsValidEmail(string email)

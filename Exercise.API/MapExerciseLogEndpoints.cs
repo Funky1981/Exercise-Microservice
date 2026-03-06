@@ -6,6 +6,7 @@ using Exercise.Application.Features.ExerciseLogs.Queries.GetExerciseLogById;
 using Exercise.Application.Features.ExerciseLogs.Queries.GetExerciseLogsByUserId;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Exercise.API
 {
@@ -16,13 +17,19 @@ namespace Exercise.API
             var group = app.MapGroup("/api/exercise-logs")
                            .WithTags("ExerciseLogs")
                            .WithOpenApi()
-                           .RequireAuthorization();
+                           .RequireAuthorization()
+                           .RequireRateLimiting("api");
 
-            // GET /api/exercise-logs?userId=&pageNumber=&pageSize=
+            // GET /api/exercise-logs?pageNumber=&pageSize=
+            // userId is derived from the JWT sub claim — users can only see their own logs
             group.MapGet("/",
-                async ([FromQuery] Guid userId, [FromQuery] int pageNumber, [FromQuery] int pageSize,
+                async (ClaimsPrincipal user, [FromQuery] int pageNumber, [FromQuery] int pageSize,
                        IMediator mediator, CancellationToken ct) =>
                 {
+                    var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
+                    if (!Guid.TryParse(sub, out var userId))
+                        return Results.Unauthorized();
+
                     var result = await mediator.Send(
                         new GetExerciseLogsByUserIdQuery
                         {
@@ -33,7 +40,7 @@ namespace Exercise.API
                     return Results.Ok(result);
                 })
             .WithName("GetExerciseLogsByUserId")
-            .WithSummary("Get a paged list of exercise logs for a user")
+            .WithSummary("Get a paged list of the authenticated user's exercise logs")
             .Produces(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized);
@@ -58,13 +65,19 @@ namespace Exercise.API
             .Produces(StatusCodes.Status401Unauthorized);
 
             // POST /api/exercise-logs
-            group.MapPost("/", async (CreateExerciseLogCommand command, IMediator mediator, CancellationToken ct) =>
+            // userId is set from the JWT claim — the request body UserId field is ignored
+            group.MapPost("/", async (ClaimsPrincipal user, CreateExerciseLogCommand command, IMediator mediator, CancellationToken ct) =>
             {
+                var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
+                if (!Guid.TryParse(sub, out var userId))
+                    return Results.Unauthorized();
+
+                command.UserId = userId;
                 var id = await mediator.Send(command, ct);
                 return Results.CreatedAtRoute("GetExerciseLogById", new { id }, new { id });
             })
             .WithName("CreateExerciseLog")
-            .WithSummary("Create a new exercise log")
+            .WithSummary("Create a new exercise log for the authenticated user")
             .Produces(StatusCodes.Status201Created)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized);
