@@ -73,5 +73,14 @@ namespace Exercise.Domain.Entities
         {
             Notes = notes;
         }
+
+        public void Update(string? name, DateTime startDate, DateTime? endDate, string? notes)
+        {
+            Guard.AgainstInvalidDateRange(startDate, endDate, nameof(endDate));
+            Name = name;
+            StartDate = startDate;
+            EndDate = endDate;
+            Notes = notes;
+        }
     }
 }

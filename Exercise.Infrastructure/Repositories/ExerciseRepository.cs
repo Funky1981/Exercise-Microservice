@@ -1,0 +1,66 @@
+using Exercise.Application.Abstractions.Repositories;
+using Exercise.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+using ExerciseEntity = Exercise.Domain.Entities.Exercise;
+
+namespace Exercise.Infrastructure.Repositories
+{
+    /// <summary>
+    /// EF Core implementation of IExerciseRepository.
+    /// Handles all database operations for the Exercise entity.
+    /// </summary>
+    public class ExerciseRepository : IExerciseRepository
+    {
+        private readonly ExerciseDbContext _context;
+
+        public ExerciseRepository(ExerciseDbContext context)
+        {
+            _context = context;
+        }
+
+        /// <inheritdoc />
+        public async Task<IReadOnlyList<ExerciseEntity>> GetAllAsync(CancellationToken cancellationToken = default)
+        {
+            return await _context.Exercises
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+        }
+
+        /// <inheritdoc />
+        public async Task<ExerciseEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            return await _context.Exercises
+                .AsNoTracking()
+                .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+        }
+
+        /// <inheritdoc />
+        public async Task<IReadOnlyList<ExerciseEntity>> GetByBodyPartAsync(string bodyPart, CancellationToken cancellationToken = default)
+        {
+            return await _context.Exercises
+                .AsNoTracking()
+                .Where(e => e.BodyPart.ToLower() == bodyPart.ToLower())
+                .ToListAsync(cancellationToken);
+        }
+
+        /// <inheritdoc />
+        public async Task AddAsync(ExerciseEntity exercise, CancellationToken cancellationToken = default)
+        {
+            await _context.Exercises.AddAsync(exercise, cancellationToken);
+        }
+
+        /// <inheritdoc />
+        public Task UpdateAsync(ExerciseEntity exercise, CancellationToken cancellationToken = default)
+        {
+            _context.Exercises.Update(exercise);
+            return Task.CompletedTask;
+        }
+
+        /// <inheritdoc />
+        public Task DeleteAsync(ExerciseEntity exercise, CancellationToken cancellationToken = default)
+        {
+            _context.Exercises.Remove(exercise);
+            return Task.CompletedTask;
+        }
+    }
+}

@@ -46,6 +46,11 @@ namespace Exercise.Infrastructure.Data.Configurations
                 .HasMaxLength(50);
             
             builder.HasIndex(e => e.BodyPart);
+
+            // Soft delete
+            builder.Property<bool>("IsDeleted").HasDefaultValue(false);
+            builder.Property<DateTime?>("UpdatedAt");
+            builder.HasQueryFilter(e => !EF.Property<bool>(e, "IsDeleted"));
         }
     }
 }

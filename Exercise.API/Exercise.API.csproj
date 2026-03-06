@@ -9,14 +9,25 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Asp.Versioning.Http" Version="8.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.7" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.7" />
-    <PackageReference Include="Microsoft.Identity.Web" Version="3.11.0" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="9.0.10" />
+    <PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
+    <PackageReference Include="Serilog.Formatting.Compact" Version="3.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.10">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.9.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="7.3.1" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
   </ItemGroup>
 
   <ItemGroup>
+    <!-- API is the composition root - references both Application and Infrastructure -->
     <ProjectReference Include="..\Exercise.Application\Exercise.Application.csproj" />
+    <ProjectReference Include="..\Exercise.Infrastructure\Exercise.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

@@ -29,5 +29,20 @@ namespace Exercise.Application.Abstractions.Repositories
         /// <param name="cancellationToken">A cancellation token for the operation</param>
         /// <returns>The exercise that matches the specified identifier, or null if not found</returns>
         Task<ExerciseEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Adds a new exercise to the repository
+        /// </summary>
+        Task AddAsync(ExerciseEntity exercise, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Marks an existing exercise as modified
+        /// </summary>
+        Task UpdateAsync(ExerciseEntity exercise, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Removes an exercise from the repository
+        /// </summary>
+        Task DeleteAsync(ExerciseEntity exercise, CancellationToken cancellationToken = default);
     }
 }

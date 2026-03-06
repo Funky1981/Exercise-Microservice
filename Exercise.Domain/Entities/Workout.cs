@@ -75,5 +75,12 @@ namespace Exercise.Domain.Entities
         {
             Notes = notes;
         }
+
+        public void Update(string? name, DateTime date, string? notes)
+        {
+            Name = name;
+            Date = date;
+            Notes = notes;
+        }
     }
 }

@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Text.RegularExpressions;
+using System.Net.Mail;
 using Exercise.Domain.ValueObjects;
 using Exercise.Domain.Common;
 
@@ -17,6 +17,8 @@ namespace Exercise.Domain.Entities
         public Height? Height { get; private set; }
         public Weight? Weight { get; private set; }
         public DateTime CreatedAt { get; private set; }
+        public string? RefreshTokenHash { get; private set; }
+        public DateTime? RefreshTokenExpiry { get; private set; }
 
         private User() { } // For ORM
 
@@ -46,17 +48,39 @@ namespace Exercise.Domain.Entities
         {
             if (IsSocialLogin())
                 throw new InvalidOperationException("Cannot set a password for a user with an external provider.");
-            
+
             Guard.AgainstNullOrWhiteSpace(password, nameof(password));
-            
+
             if (password.Length < 8)
                 throw new ArgumentException("Password must be at least 8 characters long.", nameof(password));
 
-            PasswordHash = $"HASHED_{password}"; // TODO: Implement proper hashing
+            if (!password.Any(char.IsUpper))
+                throw new ArgumentException("Password must contain at least one uppercase letter.", nameof(password));
+
+            if (!password.Any(char.IsLower))
+                throw new ArgumentException("Password must contain at least one lowercase letter.", nameof(password));
+
+            if (!password.Any(char.IsDigit))
+                throw new ArgumentException("Password must contain at least one digit.", nameof(password));
+
+            if (!password.Any(c => !char.IsLetterOrDigit(c)))
+                throw new ArgumentException("Password must contain at least one special character.", nameof(password));
+
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(password);
         }
 
-        public void UpdateProfile(string? userName, Height? height, Weight? weight)
+        /// <summary>
+        /// Verifies a plain-text password against the stored BCrypt hash.
+        /// </summary>
+        public bool VerifyPassword(string password)
         {
+            if (string.IsNullOrWhiteSpace(PasswordHash))
+                return false;
+
+            return BCrypt.Net.BCrypt.Verify(password, PasswordHash);
+        }
+
+        public void UpdateProfile(string? userName, Height? height, Weight? weight)        {
             if (!string.IsNullOrWhiteSpace(userName))
                 UserName = userName;
             
@@ -64,11 +88,42 @@ namespace Exercise.Domain.Entities
             Weight = weight;
         }
 
-        private static readonly Regex EmailRegex = new Regex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.Compiled);
+        public void SetRefreshToken(string token, DateTime expiry)
+        {
+            using var sha = System.Security.Cryptography.SHA256.Create();
+            var bytes = System.Text.Encoding.UTF8.GetBytes(token);
+            RefreshTokenHash = Convert.ToHexString(sha.ComputeHash(bytes));
+            RefreshTokenExpiry = expiry;
+        }
+
+        public bool VerifyRefreshToken(string token)
+        {
+            if (string.IsNullOrWhiteSpace(RefreshTokenHash) || RefreshTokenExpiry <= DateTime.UtcNow)
+                return false;
+
+            using var sha = System.Security.Cryptography.SHA256.Create();
+            var bytes = System.Text.Encoding.UTF8.GetBytes(token);
+            var hash = Convert.ToHexString(sha.ComputeHash(bytes));
+            return hash.Equals(RefreshTokenHash, StringComparison.OrdinalIgnoreCase);
+        }
+
+        public void ClearRefreshToken()
+        {
+            RefreshTokenHash = null;
+            RefreshTokenExpiry = null;
+        }
 
         private static bool IsValidEmail(string email)
         {
-            return EmailRegex.IsMatch(email);
+            try
+            {
+                var addr = new MailAddress(email);
+                return addr.Address == email;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         public override string ToString()

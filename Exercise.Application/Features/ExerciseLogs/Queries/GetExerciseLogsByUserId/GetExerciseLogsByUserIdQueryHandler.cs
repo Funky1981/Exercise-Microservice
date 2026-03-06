@@ -1,0 +1,33 @@
+using AutoMapper;
+using Exercise.Application.Abstractions.Repositories;
+using Exercise.Application.Common.Models;
+using Exercise.Application.Features.ExerciseLogs.Dtos;
+using MediatR;
+
+namespace Exercise.Application.Features.ExerciseLogs.Queries.GetExerciseLogsByUserId
+{
+    public class GetExerciseLogsByUserIdQueryHandler
+        : IRequestHandler<GetExerciseLogsByUserIdQuery, PagedResult<ExerciseLogDto>>
+    {
+        private readonly IExerciseLogRepository _exerciseLogRepository;
+        private readonly IMapper _mapper;
+
+        public GetExerciseLogsByUserIdQueryHandler(IExerciseLogRepository exerciseLogRepository, IMapper mapper)
+        {
+            _exerciseLogRepository = exerciseLogRepository;
+            _mapper = mapper;
+        }
+
+        public async Task<PagedResult<ExerciseLogDto>> Handle(
+            GetExerciseLogsByUserIdQuery request,
+            CancellationToken cancellationToken)
+        {
+            var skip = (request.PageNumber - 1) * request.PageSize;
+            var (logs, totalCount) = await _exerciseLogRepository.GetPagedByUserIdAsync(
+                request.UserId, skip, request.PageSize, cancellationToken);
+
+            var dtos = _mapper.Map<List<ExerciseLogDto>>(logs);
+            return new PagedResult<ExerciseLogDto>(dtos, totalCount, request.PageNumber, request.PageSize);
+        }
+    }
+}

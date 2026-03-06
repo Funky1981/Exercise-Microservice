@@ -14,11 +14,12 @@
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.9.0" />
     <PackageReference Include="MediatR" Version="11.1.0" />
     <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="11.1.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Application only depends on Domain - Infrastructure is wired at the API (composition root) -->
     <ProjectReference Include="..\Exercise.Domain\Exercise.Domain.csproj" />
-    <ProjectReference Include="..\Exercise.Infrastructure\Exercise.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
