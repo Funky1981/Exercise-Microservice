@@ -9,6 +9,7 @@ using Exercise.Application.Features.Exercises.Queries.GetExercisesByBodyPart;
 using Exercise.Application.Features.Exercises.Queries.GetExercisesById;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace Exercise.API
 {
@@ -40,7 +41,8 @@ namespace Exercise.API
             .WithSummary("Get all exercises (paged)")
             .WithDescription("Returns a paged catalogue of exercises. Use pageNumber and pageSize query params (default: page 1, size 20).")
             .Produces<PagedResult<ExerciseDto>>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
+            .CacheOutput("ExerciseCatalogue");
 
             // GET /api/exercises/{id}
             group.MapGet("/{id:guid}", async (Guid id, IMediator mediator, CancellationToken ct) =>
@@ -75,9 +77,11 @@ namespace Exercise.API
             .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
 
             // POST /api/exercises
-            group.MapPost("/", async (CreateExerciseCommand command, IMediator mediator, CancellationToken ct) =>
+            group.MapPost("/", async (CreateExerciseCommand command, IMediator mediator,
+                                     IOutputCacheStore cache, CancellationToken ct) =>
             {
                 var id = await mediator.Send(command, ct);
+                await cache.EvictByTagAsync("exercises", ct);
                 return Results.CreatedAtRoute("GetExerciseById", new { id }, new { id });
             })
             .WithName("CreateExercise")
@@ -87,10 +91,12 @@ namespace Exercise.API
             .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
 
             // PUT /api/exercises/{id}
-            group.MapPut("/{id:guid}", async (Guid id, UpdateExerciseCommand command, IMediator mediator, CancellationToken ct) =>
+            group.MapPut("/{id:guid}", async (Guid id, UpdateExerciseCommand command, IMediator mediator,
+                                              IOutputCacheStore cache, CancellationToken ct) =>
             {
                 command.Id = id;
                 await mediator.Send(command, ct);
+                await cache.EvictByTagAsync("exercises", ct);
                 return Results.NoContent();
             })
             .WithName("UpdateExercise")
@@ -101,9 +107,11 @@ namespace Exercise.API
             .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
 
             // DELETE /api/exercises/{id}
-            group.MapDelete("/{id:guid}", async (Guid id, IMediator mediator, CancellationToken ct) =>
+            group.MapDelete("/{id:guid}", async (Guid id, IMediator mediator,
+                                                 IOutputCacheStore cache, CancellationToken ct) =>
             {
                 await mediator.Send(new DeleteExerciseCommand(id), ct);
+                await cache.EvictByTagAsync("exercises", ct);
                 return Results.NoContent();
             })
             .WithName("DeleteExercise")

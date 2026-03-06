@@ -22,7 +22,22 @@ namespace Exercise.Application.Features.Auth.Commands.RefreshToken
         {
             var user = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
 
-            if (user is null || !user.VerifyRefreshToken(request.RefreshToken))
+            if (user is null)
+                throw new UnauthorizedAccessException("Invalid or expired refresh token.");
+
+            // ── Token-reuse / replay attack detection ────────────────────────────
+            // If the presented token matches the PREVIOUS (already-rotated) hash,
+            // an attacker is replaying a stolen old token.  Revoke everything and
+            // let the legitimate user re-authenticate from scratch.
+            if (user.IsRefreshTokenReused(request.RefreshToken))
+            {
+                user.ClearRefreshToken();
+                await _userRepository.UpdateAsync(user, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                throw new UnauthorizedAccessException("Token reuse detected — session revoked. Please log in again.");
+            }
+
+            if (!user.VerifyRefreshToken(request.RefreshToken))
                 throw new UnauthorizedAccessException("Invalid or expired refresh token.");
 
             var newRefreshToken  = _tokenService.GenerateRefreshToken();

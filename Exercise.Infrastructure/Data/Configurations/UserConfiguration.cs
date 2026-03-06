@@ -66,6 +66,9 @@ namespace Exercise.Infrastructure.Data.Configurations
             builder.Property(u => u.RefreshTokenHash)
                 .HasMaxLength(64);
 
+            builder.Property(u => u.RefreshTokenPreviousHash)
+                .HasMaxLength(64);
+
             builder.Property(u => u.RefreshTokenExpiry);
         }
     }

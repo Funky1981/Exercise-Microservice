@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: exercise-api
-  namespace: default
+  namespace: exercise-prod
   labels:
     app: exercise-api
 spec:
@@ -20,7 +20,9 @@ spec:
         runAsUser: 1000
       containers:
         - name: exercise-api
-          # Replace with your actual ghcr.io image tag from the CD pipeline
+          # Pin to an immutable digest for production:
+          #   image: ghcr.io/funky1981/exercise-api@sha256:<digest>
+          # The CD pipeline prints the digest after each push (see cd.yml).
           image: ghcr.io/funky1981/exercise-api:latest
           imagePullPolicy: Always
           ports:

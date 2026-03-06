@@ -1,0 +1,11 @@
+# docker-compose.override.yml — local development only.
+# Docker Compose automatically merges this file with docker-compose.yml
+# when you run `docker compose up` (no extra flags needed).
+# This file should NOT be deployed to any environment other than a developer laptop.
+
+services:
+  api:
+    environment:
+      # Restore the Development environment so Swagger UI and detailed error
+      # pages are available at http://localhost:8080/swagger
+      ASPNETCORE_ENVIRONMENT: Development
