@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Exercise.API;
 using Exercise.API.Middleware;
 using Exercise.API.Services;
@@ -5,15 +6,24 @@ using Exercise.Application;
 using Exercise.Application.Abstractions.Services;
 using Exercise.Infrastructure.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Serilog;
 using System.Text;
 using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ?? Application layer (MediatR, AutoMapper, FluentValidation) ??????????????
+// 🟧 Serilog — reads from appsettings.json; AddSerilog does not freeze the static
+// Log.Logger so WebApplicationFactory test factories can run cleanly.
+builder.Services.AddSerilog(lc => lc
+    .ReadFrom.Configuration(builder.Configuration)
+    .Enrich.FromLogContext());
+
+// 🟧 Application layer (MediatR, AutoMapper, FluentValidation) ??????????????
 builder.Services.AddApplication();
 
 // ?? Infrastructure layer (EF Core + ExerciseRepository) ???????????????????
@@ -51,6 +61,19 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+// ?? API Versioning ???????????????????????????????????????????????????????????
+// Header-based (api-version: 1.0) + query-string (?api-version=1.0).
+// Routes are unchanged — existing clients need no modification.
+builder.Services.AddApiVersioning(options =>
+{
+    options.DefaultApiVersion                   = new ApiVersion(1, 0);
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    options.ReportApiVersions                   = true;
+    options.ApiVersionReader = ApiVersionReader.Combine(
+        new HeaderApiVersionReader("api-version"),
+        new QueryStringApiVersionReader("api-version"));
+});
+
 // ?? Rate Limiting (built-in .NET 7+, no NuGet required) ????????????????
 // "auth" policy: 10 req/60 s per IP on auth routes to slow brute-force
 // "api"  policy: 30 req/60 s per IP on all other routes
@@ -81,7 +104,8 @@ builder.Services.AddRateLimiter(options =>
             }));
 });
 
-builder.Services.AddHealthChecks();
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<ExerciseDbContext>("database");
 
 // ?? OpenAPI / Swagger ??????????????????????????????????????????????????????
 builder.Services.AddEndpointsApiExplorer();
@@ -133,6 +157,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// Structured HTTP request logging via Serilog (before auth/endpoint middleware)
+app.UseSerilogRequestLogging();
+
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseAuthentication();
@@ -148,7 +175,30 @@ app.MapWorkoutPlanEndpointsRoute();
 app.MapExerciseLogEndpointsRoute();
 app.MapRapidApiEndpoints();
 app.MapAnalyticsEndpointsRoute();
+
+// ?? Health checks ??????????????????????????????????????????????????????????
+// GET /health          — simple liveness probe (200/503)
+// GET /health/detail   — detailed JSON with per-check duration and status
 app.MapHealthChecks("/health");
+app.MapHealthChecks("/health/detail", new HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsJsonAsync(new
+        {
+            status   = report.Status.ToString(),
+            duration = report.TotalDuration.TotalMilliseconds,
+            checks   = report.Entries.Select(e => new
+            {
+                name     = e.Key,
+                status   = e.Value.Status.ToString(),
+                duration = e.Value.Duration.TotalMilliseconds,
+                error    = e.Value.Exception?.Message
+            })
+        });
+    }
+});
 
 app.Run();
 

@@ -1,4 +1,5 @@
-﻿using Exercise.Application.Features.Exercises.Commands.CreateExercise;
+﻿using Asp.Versioning;
+using Exercise.Application.Features.Exercises.Commands.CreateExercise;
 using Exercise.Application.Features.Exercises.Commands.DeleteExercise;
 using Exercise.Application.Features.Exercises.Commands.UpdateExercise;
 using Exercise.Application.Features.Exercises.Queries.GetAllExercises;
@@ -13,10 +14,17 @@ namespace Exercise.API
     {
         public static void MapExerciseEndpoints(this WebApplication app)
         {
+            var versionSet = app.NewApiVersionSet()
+                               .HasApiVersion(new ApiVersion(1, 0))
+                               .ReportApiVersions()
+                               .Build();
+
             var group = app.MapGroup("/api/exercises")
                            .WithTags("Exercises")
                            .WithOpenApi()
-                           .RequireAuthorization();
+                           .RequireAuthorization()
+                           .WithApiVersionSet(versionSet)
+                           .HasApiVersion(new ApiVersion(1, 0));
 
             // GET /api/exercises
             group.MapGet("/", async (IMediator mediator, CancellationToken ct) =>

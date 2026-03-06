@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Exercise.Application.Features.Analytics.Queries.GetWorkoutSummary;
 using MediatR;
 using System.Security.Claims;
@@ -8,11 +9,18 @@ namespace Exercise.API
     {
         public static void MapAnalyticsEndpointsRoute(this WebApplication app)
         {
+            var versionSet = app.NewApiVersionSet()
+                .HasApiVersion(new ApiVersion(1, 0))
+                .ReportApiVersions()
+                .Build();
+
             var group = app.MapGroup("/api/analytics")
                            .WithTags("Analytics")
                            .WithOpenApi()
                            .RequireAuthorization()
-                           .RequireRateLimiting("api");
+                           .RequireRateLimiting("api")
+                           .WithApiVersionSet(versionSet)
+                           .HasApiVersion(new ApiVersion(1, 0));
 
             // GET /api/analytics/workout-summary
             // userId is derived from the JWT sub claim — users can only see their own summary

@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Exercise.Application.Features.ExerciseLogs.Commands.AddExerciseLogEntry;
 using Exercise.Application.Features.ExerciseLogs.Commands.CompleteExerciseLog;
 using Exercise.Application.Features.ExerciseLogs.Commands.CreateExerciseLog;
@@ -14,11 +15,18 @@ namespace Exercise.API
     {
         public static void MapExerciseLogEndpointsRoute(this WebApplication app)
         {
+            var versionSet = app.NewApiVersionSet()
+                               .HasApiVersion(new ApiVersion(1, 0))
+                               .ReportApiVersions()
+                               .Build();
+
             var group = app.MapGroup("/api/exercise-logs")
                            .WithTags("ExerciseLogs")
                            .WithOpenApi()
                            .RequireAuthorization()
-                           .RequireRateLimiting("api");
+                           .RequireRateLimiting("api")
+                           .WithApiVersionSet(versionSet)
+                           .HasApiVersion(new ApiVersion(1, 0));
 
             // GET /api/exercise-logs?pageNumber=&pageSize=
             // userId is derived from the JWT sub claim — users can only see their own logs

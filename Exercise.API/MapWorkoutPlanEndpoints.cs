@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Exercise.Application.Features.WorkoutPlans.Commands.ActivateWorkoutPlan;
 using Exercise.Application.Features.WorkoutPlans.Commands.AddWorkoutToWorkoutPlan;
 using Exercise.Application.Features.WorkoutPlans.Commands.CreateWorkoutPlan;
@@ -16,11 +17,18 @@ namespace Exercise.API
     {
         public static void MapWorkoutPlanEndpointsRoute(this WebApplication app)
         {
+            var versionSet = app.NewApiVersionSet()
+                               .HasApiVersion(new ApiVersion(1, 0))
+                               .ReportApiVersions()
+                               .Build();
+
             var group = app.MapGroup("/api/workout-plans")
                            .WithTags("WorkoutPlans")
                            .WithOpenApi()
                            .RequireAuthorization()
-                           .RequireRateLimiting("api");
+                           .RequireRateLimiting("api")
+                           .WithApiVersionSet(versionSet)
+                           .HasApiVersion(new ApiVersion(1, 0));
 
             // GET /api/workout-plans?pageNumber=&pageSize=
             // userId is derived from the JWT sub claim — users can only see their own plans

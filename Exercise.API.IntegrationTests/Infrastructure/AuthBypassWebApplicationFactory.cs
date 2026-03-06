@@ -37,6 +37,7 @@ public class AuthBypassWebApplicationFactory : WebApplicationFactory<Program>, I
                 ["ConnectionStrings:DefaultConnection"] = "DataSource=:memory:",
                 ["RapidApi:Host"]                       = "placeholder.example.com",
                 ["RapidApi:Key"]                        = "placeholder",
+                ["Serilog:MinimumLevel:Default"]         = "Error",
             });
         });
 

@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Exercise.Application.Features.Users.Commands.DeleteUser;
 using Exercise.Application.Features.Users.Commands.RegisterUser;
 using Exercise.Application.Features.Users.Commands.UpdateUserProfile;
@@ -25,11 +26,18 @@ namespace Exercise.API
             .Produces(StatusCodes.Status201Created)
             .Produces(StatusCodes.Status400BadRequest);
 
+            var versionSet = app.NewApiVersionSet()
+                .HasApiVersion(new ApiVersion(1, 0))
+                .ReportApiVersions()
+                .Build();
+
             var group = app.MapGroup("/api/users")
                            .WithTags("Users")
                            .WithOpenApi()
                            .RequireAuthorization()
-                           .RequireRateLimiting("api");
+                           .RequireRateLimiting("api")
+                           .WithApiVersionSet(versionSet)
+                           .HasApiVersion(new ApiVersion(1, 0));
 
             // GET /api/users/{id}
             group.MapGet("/{id:guid}", async (Guid id, IMediator mediator, CancellationToken ct) =>

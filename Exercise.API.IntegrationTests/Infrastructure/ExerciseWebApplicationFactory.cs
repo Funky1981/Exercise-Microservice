@@ -37,6 +37,7 @@ public class ExerciseWebApplicationFactory : WebApplicationFactory<Program>, IAs
                 // Logging
                 ["Logging:LogLevel:Default"]                        = "Warning",
                 ["Logging:LogLevel:Microsoft.EntityFrameworkCore"]  = "Warning",
+                ["Serilog:MinimumLevel:Default"]                    = "Error",
             });
         });
 

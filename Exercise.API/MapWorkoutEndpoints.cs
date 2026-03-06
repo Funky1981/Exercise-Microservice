@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Exercise.Application.Features.Workouts.Commands.AddExerciseToWorkout;
 using Exercise.Application.Features.Workouts.Commands.CompleteWorkout;
 using Exercise.Application.Features.Workouts.Commands.CreateWorkout;
@@ -16,11 +17,18 @@ namespace Exercise.API
     {
         public static void MapWorkoutEndpointsRoute(this WebApplication app)
         {
+            var versionSet = app.NewApiVersionSet()
+                               .HasApiVersion(new ApiVersion(1, 0))
+                               .ReportApiVersions()
+                               .Build();
+
             var group = app.MapGroup("/api/workouts")
                            .WithTags("Workouts")
                            .WithOpenApi()
                            .RequireAuthorization()
-                           .RequireRateLimiting("api");
+                           .RequireRateLimiting("api")
+                           .WithApiVersionSet(versionSet)
+                           .HasApiVersion(new ApiVersion(1, 0));
 
             // GET /api/workouts?pageNumber=&pageSize=
             // userId is derived from the JWT sub claim — users can only see their own workouts
