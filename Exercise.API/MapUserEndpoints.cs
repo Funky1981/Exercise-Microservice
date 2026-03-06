@@ -6,6 +6,7 @@ using Exercise.Application.Features.Users.Commands.UpdateUserProfile;
 using Exercise.Application.Features.Users.Queries.GetUserById;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Exercise.API
 {
@@ -42,8 +43,12 @@ namespace Exercise.API
                            .HasApiVersion(new ApiVersion(1, 0));
 
             // GET /api/users/{id}
-            group.MapGet("/{id:guid}", async (Guid id, IMediator mediator, CancellationToken ct) =>
+            group.MapGet("/{id:guid}", async (Guid id, ClaimsPrincipal user, IMediator mediator, CancellationToken ct) =>
             {
+                var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
+                if (!Guid.TryParse(sub, out var userId)) return Results.Unauthorized();
+                if (id != userId) return Results.Forbid();
+
                 var result = await mediator.Send(new GetUserByIdQuery(id), ct);
                 return result is null
                     ? Results.NotFound(new ProblemDetails
@@ -57,13 +62,18 @@ namespace Exercise.API
             .WithName("GetUserById")
             .WithSummary("Get a user by their ID")
             .Produces<UserDto>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
 
             // PUT /api/users/{id}/profile
             group.MapPut("/{id:guid}/profile",
-                async (Guid id, UpdateUserProfileCommand command, IMediator mediator, CancellationToken ct) =>
+                async (Guid id, ClaimsPrincipal user, UpdateUserProfileCommand command, IMediator mediator, CancellationToken ct) =>
                 {
+                    var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
+                    if (!Guid.TryParse(sub, out var userId)) return Results.Unauthorized();
+                    if (id != userId) return Results.Forbid();
+
                     command.UserId = id;
                     await mediator.Send(command, ct);
                     return Results.NoContent();
@@ -72,18 +82,25 @@ namespace Exercise.API
             .WithSummary("Update a user's profile (username, height, weight)")
             .Produces(StatusCodes.Status204NoContent)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
 
             // DELETE /api/users/{id}
-            group.MapDelete("/{id:guid}", async (Guid id, IMediator mediator, CancellationToken ct) =>
-            {
-                await mediator.Send(new DeleteUserCommand(id), ct);
-                return Results.NoContent();
-            })
+            group.MapDelete("/{id:guid}",
+                async (Guid id, ClaimsPrincipal user, IMediator mediator, CancellationToken ct) =>
+                {
+                    var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
+                    if (!Guid.TryParse(sub, out var userId)) return Results.Unauthorized();
+                    if (id != userId) return Results.Forbid();
+
+                    await mediator.Send(new DeleteUserCommand(id), ct);
+                    return Results.NoContent();
+                })
             .WithName("DeleteUser")
             .WithSummary("Delete a user by their ID")
             .Produces(StatusCodes.Status204NoContent)
+            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
         }
