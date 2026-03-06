@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Exercise.API.IntegrationTests.Infrastructure;
 using FluentAssertions;
 
@@ -73,5 +74,56 @@ public class ExerciseLogEndpointTests : IClassFixture<ExerciseWebApplicationFact
 
         var body = await listResp.Content.ReadAsStringAsync();
         body.Should().Contain("Evening Stretch");
+    }
+
+    // ── Ownership guard (403) ────────────────────────────────────────────────
+
+    private async Task<Guid> CreateExerciseLogAsCurrentUserAsync(HttpClient client)
+    {
+        var resp = await client.PostAsJsonAsync("/api/exercise-logs", new
+        {
+            name  = "Ownership Test Log",
+            date  = DateTime.UtcNow,
+            notes = "ownership guard"
+        });
+        resp.StatusCode.Should().Be(HttpStatusCode.Created);
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        return body.GetProperty("id").GetGuid();
+    }
+
+    [Fact]
+    public async Task GetExerciseLogById_ByDifferentUser_ReturnsForbidden()
+    {
+        var original = _bypassFactory.AuthenticatedUserId;
+        try
+        {
+            _bypassFactory.AuthenticatedUserId = Guid.NewGuid();
+            var client = _bypassFactory.CreateClient();
+            var logId = await CreateExerciseLogAsCurrentUserAsync(client);
+
+            _bypassFactory.AuthenticatedUserId = Guid.NewGuid();
+            var response = await client.GetAsync($"/api/exercise-logs/{logId}");
+
+            response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        }
+        finally { _bypassFactory.AuthenticatedUserId = original; }
+    }
+
+    [Fact]
+    public async Task DeleteExerciseLog_ByDifferentUser_ReturnsForbidden()
+    {
+        var original = _bypassFactory.AuthenticatedUserId;
+        try
+        {
+            _bypassFactory.AuthenticatedUserId = Guid.NewGuid();
+            var client = _bypassFactory.CreateClient();
+            var logId = await CreateExerciseLogAsCurrentUserAsync(client);
+
+            _bypassFactory.AuthenticatedUserId = Guid.NewGuid();
+            var response = await client.DeleteAsync($"/api/exercise-logs/{logId}");
+
+            response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        }
+        finally { _bypassFactory.AuthenticatedUserId = original; }
     }
 }
