@@ -27,6 +27,20 @@ namespace Exercise.Infrastructure.Repositories
         }
 
         /// <inheritdoc />
+        public async Task<(IReadOnlyList<ExerciseEntity> Items, int TotalCount)> GetPagedAsync(
+            int skip, int pageSize, CancellationToken cancellationToken = default)
+        {
+            var query = _context.Exercises.AsNoTracking();
+            var totalCount = await query.CountAsync(cancellationToken);
+            var items = await query
+                .OrderBy(e => e.Name)
+                .Skip(skip)
+                .Take(pageSize)
+                .ToListAsync(cancellationToken);
+            return (items, totalCount);
+        }
+
+        /// <inheritdoc />
         public async Task<ExerciseEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
             return await _context.Exercises

@@ -1,4 +1,5 @@
 ﻿using Asp.Versioning;
+using Exercise.Application.Common.Models;
 using Exercise.Application.Exercises.Dtos;
 using Exercise.Application.Features.Exercises.Commands.CreateExercise;
 using Exercise.Application.Features.Exercises.Commands.DeleteExercise;
@@ -27,16 +28,18 @@ namespace Exercise.API
                            .WithApiVersionSet(versionSet)
                            .HasApiVersion(new ApiVersion(1, 0));
 
-            // GET /api/exercises
-            group.MapGet("/", async (IMediator mediator, CancellationToken ct) =>
-            {
-                var result = await mediator.Send(new GetAllExercisesQuery(), ct);
-                return Results.Ok(result);
-            })
+            // GET /api/exercises?pageNumber=1&pageSize=20
+            group.MapGet("/",
+                async (IMediator mediator, CancellationToken ct,
+                       [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20) =>
+                {
+                    var result = await mediator.Send(new GetAllExercisesQuery(pageNumber, pageSize), ct);
+                    return Results.Ok(result);
+                })
             .WithName("GetAllExercises")
-            .WithSummary("Get all exercises")
-            .WithDescription("Returns the full catalogue of exercises. For a filtered view use GET /api/exercises/bodypart/{bodyPart}.")
-            .Produces<IReadOnlyList<ExerciseDto>>(StatusCodes.Status200OK)
+            .WithSummary("Get all exercises (paged)")
+            .WithDescription("Returns a paged catalogue of exercises. Use pageNumber and pageSize query params (default: page 1, size 20).")
+            .Produces<PagedResult<ExerciseDto>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
 
             // GET /api/exercises/{id}
