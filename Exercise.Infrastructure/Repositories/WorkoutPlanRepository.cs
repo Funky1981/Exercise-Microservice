@@ -24,7 +24,7 @@ namespace Exercise.Infrastructure.Repositories
         public async Task<WorkoutPlan?> GetByIdWithWorkoutsAsync(Guid id, CancellationToken cancellationToken = default)
         {
             return await _context.WorkoutPlans
-                .Include("_workouts")
+                .Include(wp => wp.Workouts)
                 .FirstOrDefaultAsync(wp => wp.Id == id, cancellationToken);
         }
 

@@ -37,8 +37,7 @@ namespace Exercise.API
                 async (ClaimsPrincipal user, [FromQuery] int pageNumber, [FromQuery] int pageSize,
                        IMediator mediator, CancellationToken ct) =>
                 {
-                    var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
-                    if (!Guid.TryParse(sub, out var userId))
+                    if (!user.TryGetUserId(out var userId))
                         return Results.Unauthorized();
 
                     var result = await mediator.Send(
@@ -60,8 +59,7 @@ namespace Exercise.API
             // GET /api/exercise-logs/{id}
             group.MapGet("/{id:guid}", async (Guid id, ClaimsPrincipal user, IMediator mediator, CancellationToken ct) =>
             {
-                var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
-                if (!Guid.TryParse(sub, out var userId))
+                if (!user.TryGetUserId(out var userId))
                     return Results.Unauthorized();
 
                 var result = await mediator.Send(new GetExerciseLogByIdQuery { Id = id }, ct);
@@ -89,8 +87,7 @@ namespace Exercise.API
             // userId is set from the JWT claim — the request body UserId field is ignored
             group.MapPost("/", async (ClaimsPrincipal user, CreateExerciseLogCommand command, IMediator mediator, CancellationToken ct) =>
             {
-                var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
-                if (!Guid.TryParse(sub, out var userId))
+                if (!user.TryGetUserId(out var userId))
                     return Results.Unauthorized();
 
                 command.UserId = userId;
@@ -109,8 +106,7 @@ namespace Exercise.API
                 async (Guid id, ClaimsPrincipal user, AddExerciseLogEntryCommand command,
                        IExerciseLogRepository logRepo, IMediator mediator, CancellationToken ct) =>
                 {
-                    var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
-                    if (!Guid.TryParse(sub, out var userId)) return Results.Unauthorized();
+                    if (!user.TryGetUserId(out var userId)) return Results.Unauthorized();
 
                     var log = await logRepo.GetByIdAsync(id, ct);
                     if (log is null)
@@ -141,8 +137,7 @@ namespace Exercise.API
                 async (Guid id, ClaimsPrincipal user, [FromBody] CompleteExerciseLogRequest? body,
                        IExerciseLogRepository logRepo, IMediator mediator, CancellationToken ct) =>
                 {
-                    var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
-                    if (!Guid.TryParse(sub, out var userId)) return Results.Unauthorized();
+                    if (!user.TryGetUserId(out var userId)) return Results.Unauthorized();
 
                     var log = await logRepo.GetByIdAsync(id, ct);
                     if (log is null)
@@ -172,8 +167,7 @@ namespace Exercise.API
             group.MapDelete("/{id:guid}",
                 async (Guid id, ClaimsPrincipal user, IExerciseLogRepository logRepo, IMediator mediator, CancellationToken ct) =>
                 {
-                    var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
-                    if (!Guid.TryParse(sub, out var userId)) return Results.Unauthorized();
+                    if (!user.TryGetUserId(out var userId)) return Results.Unauthorized();
 
                     var log = await logRepo.GetByIdAsync(id, ct);
                     if (log is null)

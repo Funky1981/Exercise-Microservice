@@ -1,4 +1,4 @@
-﻿using Asp.Versioning;
+using Asp.Versioning;
 using Exercise.Application.Common.Models;
 using Exercise.Application.Exercises.Dtos;
 using Exercise.Application.Features.Exercises.Commands.CreateExercise;

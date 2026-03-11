@@ -32,13 +32,14 @@ namespace Exercise.Infrastructure.Data.Configurations
 
             builder.HasIndex(wp => wp.UserId);
 
-            // Ignore the public read-only wrapper; map via the private backing field
-            builder.Ignore(wp => wp.Workouts);
-
-            // WorkoutPlan owns a collection of Workouts
-            builder.HasMany<Workout>("_workouts")
+            // Many-to-many: WorkoutPlan <-> Workout via join table.
+            // UsePropertyAccessMode.Field tells EF Core to populate the private _workouts
+            // backing field directly, making .Include(wp => wp.Workouts) type-safe.
+            builder.HasMany(wp => wp.Workouts)
                 .WithMany()
                 .UsingEntity(j => j.ToTable("WorkoutPlanWorkouts"));
+            builder.Navigation(wp => wp.Workouts)
+                .UsePropertyAccessMode(PropertyAccessMode.Field);
 
             // Soft delete
             builder.Property<bool>("IsDeleted").HasDefaultValue(false);

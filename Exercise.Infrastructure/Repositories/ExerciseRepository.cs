@@ -53,7 +53,7 @@ namespace Exercise.Infrastructure.Repositories
         {
             return await _context.Exercises
                 .AsNoTracking()
-                .Where(e => e.BodyPart.ToLower() == bodyPart.ToLower())
+                .Where(e => EF.Functions.Like(e.BodyPart, bodyPart))
                 .ToListAsync(cancellationToken);
         }
 

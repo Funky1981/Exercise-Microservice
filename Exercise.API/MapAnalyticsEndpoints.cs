@@ -29,8 +29,7 @@ namespace Exercise.API
             group.MapGet("/workout-summary",
                 async (ClaimsPrincipal user, IMediator mediator, CancellationToken ct) =>
                 {
-                    var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
-                    if (!Guid.TryParse(sub, out var userId))
+                    if (!user.TryGetUserId(out var userId))
                         return Results.Unauthorized();
 
                     var result = await mediator.Send(new GetWorkoutSummaryQuery { UserId = userId }, ct);
