@@ -13,24 +13,17 @@ namespace Exercise.API.IntegrationTests.Tests.Analytics;
 /// The endpoint derives UserId from the JWT sub claim, so every call is self-scoped.
 /// </summary>
 [Collection("Integration")]
-public class AnalyticsEndpointTests : IClassFixture<ExerciseWebApplicationFactory>,
-                                      IClassFixture<AuthBypassWebApplicationFactory>
+public class AnalyticsEndpointTests : DualFactoryIntegrationTestBase
 {
-    private readonly ExerciseWebApplicationFactory   _realFactory;
-    private readonly AuthBypassWebApplicationFactory _bypassFactory;
-
     public AnalyticsEndpointTests(
         ExerciseWebApplicationFactory   realFactory,
         AuthBypassWebApplicationFactory bypassFactory)
-    {
-        _realFactory   = realFactory;
-        _bypassFactory = bypassFactory;
-    }
+        : base(realFactory, bypassFactory) { }
 
     [Fact]
     public async Task GetWorkoutSummary_WithoutToken_ReturnsUnauthorized()
     {
-        var client   = _realFactory.CreateClient();
+        var client   = RealFactory.CreateClient();
         var response = await client.GetAsync("/api/analytics/workout-summary");
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -39,7 +32,7 @@ public class AnalyticsEndpointTests : IClassFixture<ExerciseWebApplicationFactor
     [Fact]
     public async Task GetWorkoutSummary_WithValidToken_ReturnsOk()
     {
-        var client   = _bypassFactory.CreateClient();
+        var client   = BypassFactory.CreateClient();
         var response = await client.GetAsync("/api/analytics/workout-summary");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -48,7 +41,7 @@ public class AnalyticsEndpointTests : IClassFixture<ExerciseWebApplicationFactor
     [Fact]
     public async Task GetWorkoutSummary_WithValidToken_ReturnsValidSummaryShape()
     {
-        var client   = _bypassFactory.CreateClient();
+        var client   = BypassFactory.CreateClient();
         var response = await client.GetAsync("/api/analytics/workout-summary");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);

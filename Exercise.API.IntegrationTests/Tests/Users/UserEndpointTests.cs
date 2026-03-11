@@ -10,24 +10,17 @@ namespace Exercise.API.IntegrationTests.Tests.Users;
 /// Ownership guard tests verify that a user cannot access another user's profile.
 /// </summary>
 [Collection("Integration")]
-public class UserEndpointTests : IClassFixture<ExerciseWebApplicationFactory>,
-                                 IClassFixture<AuthBypassWebApplicationFactory>
+public class UserEndpointTests : DualFactoryIntegrationTestBase
 {
-    private readonly ExerciseWebApplicationFactory   _realFactory;
-    private readonly AuthBypassWebApplicationFactory _bypassFactory;
-
     public UserEndpointTests(
         ExerciseWebApplicationFactory   realFactory,
         AuthBypassWebApplicationFactory bypassFactory)
-    {
-        _realFactory   = realFactory;
-        _bypassFactory = bypassFactory;
-    }
+        : base(realFactory, bypassFactory) { }
 
     [Fact]
     public async Task GetUser_WithoutToken_ReturnsUnauthorized()
     {
-        var client   = _realFactory.CreateClient();
+        var client   = RealFactory.CreateClient();
         var response = await client.GetAsync($"/api/users/{Guid.NewGuid()}");
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -38,14 +31,14 @@ public class UserEndpointTests : IClassFixture<ExerciseWebApplicationFactory>,
     [Fact]
     public async Task GetUser_ByDifferentUser_ReturnsForbidden()
     {
-        var original = _bypassFactory.AuthenticatedUserId;
+        var original = BypassFactory.AuthenticatedUserId;
         try
         {
             // JWT sub belongs to user A
             var userAId = Guid.NewGuid();
-            _bypassFactory.AuthenticatedUserId = userAId;
+            BypassFactory.AuthenticatedUserId = userAId;
 
-            var client = _bypassFactory.CreateClient();
+            var client = BypassFactory.CreateClient();
 
             // Request user B's profile while authenticated as user A → 403
             var userBId  = Guid.NewGuid();
@@ -53,19 +46,19 @@ public class UserEndpointTests : IClassFixture<ExerciseWebApplicationFactory>,
 
             response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
         }
-        finally { _bypassFactory.AuthenticatedUserId = original; }
+        finally { BypassFactory.AuthenticatedUserId = original; }
     }
 
     [Fact]
     public async Task UpdateUserProfile_ByDifferentUser_ReturnsForbidden()
     {
-        var original = _bypassFactory.AuthenticatedUserId;
+        var original = BypassFactory.AuthenticatedUserId;
         try
         {
             var userAId = Guid.NewGuid();
-            _bypassFactory.AuthenticatedUserId = userAId;
+            BypassFactory.AuthenticatedUserId = userAId;
 
-            var client  = _bypassFactory.CreateClient();
+            var client  = BypassFactory.CreateClient();
             var userBId = Guid.NewGuid();
 
             var response = await client.PutAsJsonAsync($"/api/users/{userBId}/profile", new
@@ -77,25 +70,25 @@ public class UserEndpointTests : IClassFixture<ExerciseWebApplicationFactory>,
 
             response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
         }
-        finally { _bypassFactory.AuthenticatedUserId = original; }
+        finally { BypassFactory.AuthenticatedUserId = original; }
     }
 
     [Fact]
     public async Task DeleteUser_ByDifferentUser_ReturnsForbidden()
     {
-        var original = _bypassFactory.AuthenticatedUserId;
+        var original = BypassFactory.AuthenticatedUserId;
         try
         {
             var userAId = Guid.NewGuid();
-            _bypassFactory.AuthenticatedUserId = userAId;
+            BypassFactory.AuthenticatedUserId = userAId;
 
-            var client  = _bypassFactory.CreateClient();
+            var client  = BypassFactory.CreateClient();
             var userBId = Guid.NewGuid();
 
             var response = await client.DeleteAsync($"/api/users/{userBId}");
 
             response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
         }
-        finally { _bypassFactory.AuthenticatedUserId = original; }
+        finally { BypassFactory.AuthenticatedUserId = original; }
     }
 }
