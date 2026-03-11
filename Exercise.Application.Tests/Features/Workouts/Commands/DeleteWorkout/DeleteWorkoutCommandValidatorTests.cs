@@ -8,7 +8,10 @@ public class DeleteWorkoutCommandValidatorTests
     [Fact]
     public void Validate_ValidId_ShouldHaveNoErrors()
     {
-        var result = _validator.TestValidate(new DeleteWorkoutCommand(Guid.NewGuid()));
+        var result = _validator.TestValidate(new DeleteWorkoutCommand(Guid.NewGuid())
+        {
+            CurrentUserId = Guid.NewGuid()
+        });
 
         result.ShouldNotHaveAnyValidationErrors();
     }
@@ -16,7 +19,10 @@ public class DeleteWorkoutCommandValidatorTests
     [Fact]
     public void Validate_EmptyId_ShouldHaveErrorWithCustomMessage()
     {
-        var result = _validator.TestValidate(new DeleteWorkoutCommand(Guid.Empty));
+        var result = _validator.TestValidate(new DeleteWorkoutCommand(Guid.Empty)
+        {
+            CurrentUserId = Guid.NewGuid()
+        });
 
         result.ShouldHaveValidationErrorFor(x => x.Id)
               .WithErrorMessage("Workout Id must not be empty.");

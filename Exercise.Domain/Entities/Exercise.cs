@@ -6,10 +6,10 @@ namespace Exercise.Domain.Entities
     public class Exercise
     {
         public Guid Id { get; private set; }
-        public string Name { get; private set; }
-        public string BodyPart { get; private set; }
+        public string Name { get; private set; } = null!;
+        public string BodyPart { get; private set; } = null!;
         public string? Equipment { get; private set; }
-        public string TargetMuscle { get; private set; }
+        public string TargetMuscle { get; private set; } = null!;
         public string? GifUrl { get; private set; }
         public string? Description { get; private set; }
         public string? Difficulty { get; private set; }

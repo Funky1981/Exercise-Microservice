@@ -6,6 +6,7 @@ namespace Exercise.Application.Features.Workouts.Queries.GetWorkoutById
     public class GetWorkoutByIdQuery : IRequest<WorkoutDto?>
     {
         public Guid Id { get; set; }
+        public Guid CurrentUserId { get; set; }
         public GetWorkoutByIdQuery(Guid id) => Id = id;
     }
 }

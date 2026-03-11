@@ -6,5 +6,6 @@ namespace Exercise.Application.Features.ExerciseLogs.Queries.GetExerciseLogById
     public class GetExerciseLogByIdQuery : IRequest<ExerciseLogDto?>
     {
         public Guid Id { get; set; }
+        public Guid CurrentUserId { get; set; }
     }
 }

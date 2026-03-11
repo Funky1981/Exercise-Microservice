@@ -20,7 +20,7 @@ namespace Exercise.Application.Features.Auth.Commands.RefreshToken
 
         public async Task<LoginResponse> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
         {
-            var user = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
+            var user = await _userRepository.GetByEmailForUpdateAsync(request.Email, cancellationToken);
 
             if (user is null)
                 throw new UnauthorizedAccessException("Invalid or expired refresh token.");
@@ -32,7 +32,6 @@ namespace Exercise.Application.Features.Auth.Commands.RefreshToken
             if (user.IsRefreshTokenReused(request.RefreshToken))
             {
                 user.ClearRefreshToken();
-                await _userRepository.UpdateAsync(user, cancellationToken);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
                 throw new UnauthorizedAccessException("Token reuse detected — session revoked. Please log in again.");
             }
@@ -44,7 +43,6 @@ namespace Exercise.Application.Features.Auth.Commands.RefreshToken
             var newRefreshExpiry = _tokenService.GetRefreshTokenExpiry();
 
             user.SetRefreshToken(newRefreshToken, newRefreshExpiry);
-            await _userRepository.UpdateAsync(user, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return new LoginResponse

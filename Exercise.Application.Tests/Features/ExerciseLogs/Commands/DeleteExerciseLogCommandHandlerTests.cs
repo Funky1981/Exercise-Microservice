@@ -24,11 +24,12 @@ public class DeleteExerciseLogCommandHandlerTests
     {
         // Arrange
         var log = TestDataBuilder.BuildExerciseLog();
+        var currentUserId = log.UserId;
         _exerciseLogRepoMock
-            .Setup(r => r.GetByIdAsync(log.Id, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetOwnedByIdForUpdateAsync(log.Id, currentUserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(log);
 
-        var command = new DeleteExerciseLogCommand(log.Id);
+        var command = new DeleteExerciseLogCommand(log.Id) { CurrentUserId = currentUserId };
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
@@ -44,10 +45,13 @@ public class DeleteExerciseLogCommandHandlerTests
     {
         // Arrange
         _exerciseLogRepoMock
-            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetOwnedByIdForUpdateAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((ExerciseLog?)null);
+        _exerciseLogRepoMock
+            .Setup(r => r.ExistsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
 
-        var command = new DeleteExerciseLogCommand(Guid.NewGuid());
+        var command = new DeleteExerciseLogCommand(Guid.NewGuid()) { CurrentUserId = Guid.NewGuid() };
 
         // Act
         var act = async () => await _handler.Handle(command, CancellationToken.None);

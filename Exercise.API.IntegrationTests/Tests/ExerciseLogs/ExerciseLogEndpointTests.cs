@@ -120,4 +120,14 @@ public class ExerciseLogEndpointTests : DualFactoryIntegrationTestBase
         }
         finally { BypassFactory.AuthenticatedUserId = original; }
     }
+
+    [Fact]
+    public async Task DeleteExerciseLog_WithMissingId_ReturnsNotFound()
+    {
+        var client = BypassFactory.CreateClient();
+
+        var response = await client.DeleteAsync($"/api/exercise-logs/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
 }

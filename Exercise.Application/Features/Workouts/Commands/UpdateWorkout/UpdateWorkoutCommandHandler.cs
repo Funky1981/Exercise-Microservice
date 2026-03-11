@@ -17,13 +17,18 @@ namespace Exercise.Application.Features.Workouts.Commands.UpdateWorkout
 
         public async Task<bool> Handle(UpdateWorkoutCommand request, CancellationToken cancellationToken)
         {
-            var workout = await _workoutRepository.GetByIdAsync(request.WorkoutId, cancellationToken);
+            var workout = await _workoutRepository.GetOwnedByIdForUpdateAsync(
+                request.WorkoutId, request.CurrentUserId, cancellationToken);
             if (workout is null)
-                throw new NotFoundException(nameof(workout), request.WorkoutId);
+            {
+                if (await _workoutRepository.ExistsAsync(request.WorkoutId, cancellationToken))
+                    throw new ForbiddenException("You do not have access to this workout.");
+
+                throw new NotFoundException(nameof(Exercise.Domain.Entities.Workout), request.WorkoutId);
+            }
 
             workout.Update(request.Name, request.Date, request.Notes);
 
-            await _workoutRepository.UpdateAsync(workout, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return true;

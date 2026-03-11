@@ -26,8 +26,10 @@ namespace Exercise.API
             .WithName("RegisterUser")
             .WithSummary("Register a new user")
             .WithDescription("Creates a new user account. Returns the new user's ID. No authentication required.")
+            .RequireRateLimiting("auth")
             .Produces(StatusCodes.Status201Created)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status429TooManyRequests);
 
             var versionSet = app.NewApiVersionSet()
                 .HasApiVersion(new ApiVersion(1, 0))

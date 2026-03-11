@@ -20,7 +20,7 @@ namespace Exercise.Application.Features.Auth.Commands.Login
 
         public async Task<LoginResponse> Handle(LoginCommand request, CancellationToken cancellationToken)
         {
-            var user = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
+            var user = await _userRepository.GetByEmailForUpdateAsync(request.Email, cancellationToken);
 
             if (user is null || !user.VerifyPassword(request.Password))
                 throw new UnauthorizedAccessException("Invalid email or password.");
@@ -29,7 +29,6 @@ namespace Exercise.Application.Features.Auth.Commands.Login
             var refreshExpiry = _tokenService.GetRefreshTokenExpiry();
 
             user.SetRefreshToken(refreshToken, refreshExpiry);
-            await _userRepository.UpdateAsync(user, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return new LoginResponse

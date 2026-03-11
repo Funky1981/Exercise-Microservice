@@ -143,4 +143,14 @@ public class WorkoutPlanEndpointTests : DualFactoryIntegrationTestBase
         }
         finally { BypassFactory.AuthenticatedUserId = original; }
     }
+
+    [Fact]
+    public async Task DeleteWorkoutPlan_WithMissingId_ReturnsNotFound()
+    {
+        var client = BypassFactory.CreateClient();
+
+        var response = await client.DeleteAsync($"/api/workout-plans/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
 }

@@ -5,6 +5,7 @@ namespace Exercise.Application.Features.WorkoutPlans.Commands.AddWorkoutToWorkou
     public class AddWorkoutToWorkoutPlanCommand : IRequest<bool>
     {
         public Guid WorkoutPlanId { get; set; }
+        public Guid CurrentUserId { get; set; }
         public Guid WorkoutId { get; set; }
 
         public AddWorkoutToWorkoutPlanCommand(Guid workoutPlanId, Guid workoutId)

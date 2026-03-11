@@ -74,7 +74,7 @@ public class UpdateExerciseCommandHandlerTests
         var id       = Guid.NewGuid();
         var exercise = MakeExercise(id);
 
-        _repoMock.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
+        _repoMock.Setup(r => r.GetByIdForUpdateAsync(id, It.IsAny<CancellationToken>()))
                  .ReturnsAsync(exercise);
 
         var command = new UpdateExerciseCommand
@@ -89,14 +89,13 @@ public class UpdateExerciseCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         result.Should().BeTrue();
-        _repoMock.Verify(r => r.UpdateAsync(exercise, It.IsAny<CancellationToken>()), Times.Once);
         _uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task Handle_ExerciseNotFound_ThrowsNotFoundException()
     {
-        _repoMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+        _repoMock.Setup(r => r.GetByIdForUpdateAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync((ExerciseEntity?)null);
 
         var act = () => _handler.Handle(
@@ -127,7 +126,7 @@ public class DeleteExerciseCommandHandlerTests
         var id       = Guid.NewGuid();
         var exercise = MakeExercise(id);
 
-        _repoMock.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
+        _repoMock.Setup(r => r.GetByIdForUpdateAsync(id, It.IsAny<CancellationToken>()))
                  .ReturnsAsync(exercise);
 
         var result = await _handler.Handle(new DeleteExerciseCommand(id), CancellationToken.None);
@@ -140,7 +139,7 @@ public class DeleteExerciseCommandHandlerTests
     [Fact]
     public async Task Handle_ExerciseNotFound_ThrowsNotFoundException()
     {
-        _repoMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+        _repoMock.Setup(r => r.GetByIdForUpdateAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync((ExerciseEntity?)null);
 
         var act = () => _handler.Handle(

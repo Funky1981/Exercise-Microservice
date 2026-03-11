@@ -36,6 +36,16 @@ namespace Exercise.API.Middleware
                 _logger.LogWarning(ex, "Unauthorized access attempt for request {Path}", context.Request.Path);
                 await HandleUnauthorizedExceptionAsync(context, ex);
             }
+            catch (ForbiddenException ex)
+            {
+                _logger.LogWarning(ex, "Forbidden request {Path}", context.Request.Path);
+                await HandleForbiddenExceptionAsync(context, ex);
+            }
+            catch (ConcurrencyException ex)
+            {
+                _logger.LogWarning(ex, "Concurrency conflict for request {Path}", context.Request.Path);
+                await HandleConcurrencyExceptionAsync(context, ex);
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unhandled exception for request {Path}", context.Request.Path);
@@ -61,7 +71,7 @@ namespace Exercise.API.Middleware
                 Instance = context.Request.Path
             };
 
-            return context.Response.WriteAsJsonAsync(problemDetails);
+            return context.Response.WriteAsJsonAsync(problemDetails, options: null, contentType: "application/problem+json");
         }
 
         private static Task HandleNotFoundExceptionAsync(HttpContext context, NotFoundException ex)
@@ -77,7 +87,7 @@ namespace Exercise.API.Middleware
                 Instance = context.Request.Path
             };
 
-            return context.Response.WriteAsJsonAsync(problemDetails);
+            return context.Response.WriteAsJsonAsync(problemDetails, options: null, contentType: "application/problem+json");
         }
 
         private static Task HandleUnauthorizedExceptionAsync(HttpContext context, UnauthorizedAccessException ex)
@@ -93,7 +103,39 @@ namespace Exercise.API.Middleware
                 Instance = context.Request.Path
             };
 
-            return context.Response.WriteAsJsonAsync(problemDetails);
+            return context.Response.WriteAsJsonAsync(problemDetails, options: null, contentType: "application/problem+json");
+        }
+
+        private static Task HandleForbiddenExceptionAsync(HttpContext context, ForbiddenException ex)
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            context.Response.ContentType = "application/problem+json";
+
+            var problemDetails = new ProblemDetails
+            {
+                Title = "Forbidden.",
+                Detail = ex.Message,
+                Status = StatusCodes.Status403Forbidden,
+                Instance = context.Request.Path
+            };
+
+            return context.Response.WriteAsJsonAsync(problemDetails, options: null, contentType: "application/problem+json");
+        }
+
+        private static Task HandleConcurrencyExceptionAsync(HttpContext context, ConcurrencyException ex)
+        {
+            context.Response.StatusCode = StatusCodes.Status409Conflict;
+            context.Response.ContentType = "application/problem+json";
+
+            var problemDetails = new ProblemDetails
+            {
+                Title = "Concurrency conflict.",
+                Detail = ex.Message,
+                Status = StatusCodes.Status409Conflict,
+                Instance = context.Request.Path
+            };
+
+            return context.Response.WriteAsJsonAsync(problemDetails, options: null, contentType: "application/problem+json");
         }
 
         private static Task HandleGenericExceptionAsync(HttpContext context)
@@ -109,7 +151,7 @@ namespace Exercise.API.Middleware
                 Instance = context.Request.Path
             };
 
-            return context.Response.WriteAsJsonAsync(problemDetails);
+            return context.Response.WriteAsJsonAsync(problemDetails, options: null, contentType: "application/problem+json");
         }
     }
 }

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Exercise.Domain.Entities;
 using ExerciseEntity = Exercise.Domain.Entities.Exercise;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Exercise.Infrastructure.Data
 {
@@ -72,7 +73,7 @@ namespace Exercise.Infrastructure.Data
         {
             var now = DateTime.UtcNow;
 
-            foreach (var entry in ChangeTracker.Entries())
+            foreach (var entry in ChangeTracker.Entries().Where(e => e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted))
             {
                 if (entry.State == EntityState.Deleted && entry.Metadata.FindProperty("IsDeleted") is not null)
                 {
@@ -81,14 +82,25 @@ namespace Exercise.Infrastructure.Data
                     entry.Property("IsDeleted").CurrentValue = true;
                     entry.Property("UpdatedAt").CurrentValue = now;
                 }
-                else if ((entry.State == EntityState.Added || entry.State == EntityState.Modified)
-                         && entry.Metadata.FindProperty("UpdatedAt") is not null)
+
+                if ((entry.State == EntityState.Added || entry.State == EntityState.Modified)
+                    && entry.Metadata.FindProperty("UpdatedAt") is not null)
                 {
                     entry.Property("UpdatedAt").CurrentValue = now;
                 }
+
+                StampConcurrencyToken(entry);
             }
 
             return base.SaveChangesAsync(cancellationToken);
+        }
+
+        private static void StampConcurrencyToken(EntityEntry entry)
+        {
+            if (entry.Metadata.FindProperty("ConcurrencyToken") is null)
+                return;
+
+            entry.Property("ConcurrencyToken").CurrentValue = Guid.NewGuid().ToString("N");
         }
     }
 }

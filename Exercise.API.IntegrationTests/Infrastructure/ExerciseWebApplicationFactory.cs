@@ -38,6 +38,9 @@ public class ExerciseWebApplicationFactory : WebApplicationFactory<Program>, IAs
                 ["Logging:LogLevel:Default"]                        = "Warning",
                 ["Logging:LogLevel:Microsoft.EntityFrameworkCore"]  = "Warning",
                 ["Serilog:MinimumLevel:Default"]                    = "Error",
+                ["RateLimiting:Auth:PermitLimit"]                   = "1000",
+                ["RateLimiting:Api:PermitLimit"]                    = "1000",
+                ["RateLimiting:Enabled"]                            = "false",
             });
         });
 

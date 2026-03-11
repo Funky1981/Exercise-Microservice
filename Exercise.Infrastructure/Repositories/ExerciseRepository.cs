@@ -48,12 +48,23 @@ namespace Exercise.Infrastructure.Repositories
                 .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
         }
 
+        public async Task<ExerciseEntity?> GetByIdForUpdateAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            return await _context.Exercises
+                .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+        }
+
+        public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            return await _context.Exercises.AnyAsync(e => e.Id == id, cancellationToken);
+        }
+
         /// <inheritdoc />
         public async Task<IReadOnlyList<ExerciseEntity>> GetByBodyPartAsync(string bodyPart, CancellationToken cancellationToken = default)
         {
             return await _context.Exercises
                 .AsNoTracking()
-                .Where(e => EF.Functions.Like(e.BodyPart, bodyPart))
+                .Where(e => e.BodyPart == bodyPart)
                 .ToListAsync(cancellationToken);
         }
 

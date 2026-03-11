@@ -17,7 +17,7 @@ namespace Exercise.Application.Features.Users.Commands.DeleteUser
 
         public async Task<bool> Handle(DeleteUserCommand request, CancellationToken cancellationToken)
         {
-            var user = await _userRepository.GetByIdAsync(request.UserId, cancellationToken);
+            var user = await _userRepository.GetByIdForUpdateAsync(request.UserId, cancellationToken);
             if (user is null)
                 throw new NotFoundException(nameof(Domain.Entities.User), request.UserId);
 

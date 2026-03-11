@@ -30,7 +30,7 @@ namespace Exercise.Infrastructure.Data.Configurations
             builder.Property(wp => wp.IsActive)
                 .IsRequired();
 
-            builder.HasIndex(wp => wp.UserId);
+            builder.HasIndex(wp => new { wp.UserId, wp.StartDate });
 
             // Many-to-many: WorkoutPlan <-> Workout via join table.
             // UsePropertyAccessMode.Field tells EF Core to populate the private _workouts
@@ -44,6 +44,10 @@ namespace Exercise.Infrastructure.Data.Configurations
             // Soft delete
             builder.Property<bool>("IsDeleted").HasDefaultValue(false);
             builder.Property<DateTime?>("UpdatedAt");
+            builder.Property<string>("ConcurrencyToken")
+                .HasMaxLength(32)
+                .HasDefaultValue(string.Empty)
+                .IsConcurrencyToken();
             builder.HasQueryFilter(wp => !EF.Property<bool>(wp, "IsDeleted"));
         }
     }

@@ -19,13 +19,18 @@ namespace Exercise.Application.Features.Workouts.Commands.RemoveExerciseFromWork
 
         public async Task<bool> Handle(RemoveExerciseFromWorkoutCommand request, CancellationToken cancellationToken)
         {
-            var workout = await _workoutRepository.GetByIdWithExercisesAsync(request.WorkoutId, cancellationToken);
+            var workout = await _workoutRepository.GetOwnedByIdWithExercisesForUpdateAsync(
+                request.WorkoutId, request.CurrentUserId, cancellationToken);
             if (workout is null)
-                throw new NotFoundException(nameof(workout), request.WorkoutId);
+            {
+                if (await _workoutRepository.ExistsAsync(request.WorkoutId, cancellationToken))
+                    throw new ForbiddenException("You do not have access to this workout.");
+
+                throw new NotFoundException(nameof(Exercise.Domain.Entities.Workout), request.WorkoutId);
+            }
 
             workout.RemoveExercise(request.ExerciseId);
 
-            await _workoutRepository.UpdateAsync(workout, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return true;

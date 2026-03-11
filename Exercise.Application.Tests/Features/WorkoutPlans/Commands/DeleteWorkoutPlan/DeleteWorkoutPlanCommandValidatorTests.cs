@@ -10,7 +10,8 @@ public class DeleteWorkoutPlanCommandValidatorTests
     {
         var result = _validator.TestValidate(new DeleteWorkoutPlanCommand
         {
-            WorkoutPlanId = Guid.NewGuid()
+            WorkoutPlanId = Guid.NewGuid(),
+            CurrentUserId = Guid.NewGuid()
         });
 
         result.ShouldNotHaveAnyValidationErrors();
@@ -21,7 +22,8 @@ public class DeleteWorkoutPlanCommandValidatorTests
     {
         var result = _validator.TestValidate(new DeleteWorkoutPlanCommand
         {
-            WorkoutPlanId = Guid.Empty
+            WorkoutPlanId = Guid.Empty,
+            CurrentUserId = Guid.NewGuid()
         });
 
         result.ShouldHaveValidationErrorFor(x => x.WorkoutPlanId)

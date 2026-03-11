@@ -8,6 +8,8 @@ namespace Exercise.Application.Features.WorkoutPlans.Queries.GetWorkoutPlanById
         {
             RuleFor(x => x.Id)
                 .NotEmpty().WithMessage("WorkoutPlan Id is required.");
+            RuleFor(x => x.CurrentUserId)
+                .NotEmpty().WithMessage("CurrentUserId is required.");
         }
     }
 }

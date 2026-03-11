@@ -17,9 +17,15 @@ namespace Exercise.Application.Features.ExerciseLogs.Commands.DeleteExerciseLog
 
         public async Task<bool> Handle(DeleteExerciseLogCommand request, CancellationToken cancellationToken)
         {
-            var log = await _exerciseLogRepository.GetByIdAsync(request.LogId, cancellationToken);
+            var log = await _exerciseLogRepository.GetOwnedByIdForUpdateAsync(
+                request.LogId, request.CurrentUserId, cancellationToken);
             if (log is null)
-                throw new NotFoundException(nameof(Domain.Entities.ExerciseLog), request.LogId);
+            {
+                if (await _exerciseLogRepository.ExistsAsync(request.LogId, cancellationToken))
+                    throw new ForbiddenException("You do not have access to this exercise log.");
+
+                throw new NotFoundException(nameof(Exercise.Domain.Entities.ExerciseLog), request.LogId);
+            }
 
             await _exerciseLogRepository.DeleteAsync(log, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);

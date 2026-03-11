@@ -8,6 +8,8 @@ namespace Exercise.Application.Features.ExerciseLogs.Commands.AddExerciseLogEntr
         {
             RuleFor(x => x.LogId)
                 .NotEmpty().WithMessage("LogId is required.");
+            RuleFor(x => x.CurrentUserId)
+                .NotEmpty().WithMessage("CurrentUserId is required.");
 
             RuleFor(x => x.ExerciseId)
                 .NotEmpty().WithMessage("ExerciseId is required.");

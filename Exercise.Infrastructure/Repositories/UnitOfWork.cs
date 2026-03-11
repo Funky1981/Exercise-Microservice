@@ -1,5 +1,7 @@
 using Exercise.Application.Abstractions.Repositories;
+using Exercise.Application.Common.Exceptions;
 using Exercise.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace Exercise.Infrastructure.Repositories
 {
@@ -12,7 +14,16 @@ namespace Exercise.Infrastructure.Repositories
             _context = context;
         }
 
-        public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-            => _context.SaveChangesAsync(cancellationToken);
+        public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                return await _context.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                throw new ConcurrencyException("The resource was modified by another request. Reload and try again.", ex);
+            }
+        }
     }
 }

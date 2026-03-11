@@ -81,17 +81,23 @@ builder.Services.AddApiVersioning(options =>
 // ?? Rate Limiting (built-in .NET 7+, no NuGet required) ????????????????
 // "auth" policy: 10 req/60 s per IP on auth routes to slow brute-force
 // "api"  policy: 30 req/60 s per IP on all other routes
+var authPermitLimit = builder.Configuration.GetValue("RateLimiting:Auth:PermitLimit", 10);
+var authWindowSeconds = builder.Configuration.GetValue("RateLimiting:Auth:WindowSeconds", 60);
+var apiPermitLimit = builder.Configuration.GetValue("RateLimiting:Api:PermitLimit", 30);
+var apiWindowSeconds = builder.Configuration.GetValue("RateLimiting:Api:WindowSeconds", 60);
+var rateLimitingEnabled = builder.Configuration.GetValue("RateLimiting:Enabled", true);
+
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
     options.AddPolicy("auth", httpContext =>
         RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            partitionKey: $"{httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown"}:{httpContext.Request.Path.Value?.ToLowerInvariant() ?? "/"}",
             factory: _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit          = 10,
-                Window               = TimeSpan.FromSeconds(60),
+                PermitLimit          = authPermitLimit,
+                Window               = TimeSpan.FromSeconds(authWindowSeconds),
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                 QueueLimit           = 0
             }));
@@ -101,8 +107,8 @@ builder.Services.AddRateLimiter(options =>
             partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             factory: _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit          = 30,
-                Window               = TimeSpan.FromSeconds(60),
+                PermitLimit          = apiPermitLimit,
+                Window               = TimeSpan.FromSeconds(apiWindowSeconds),
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                 QueueLimit           = 0
             }));
@@ -202,7 +208,10 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseOutputCache();
-app.UseRateLimiter();
+if (rateLimitingEnabled)
+{
+    app.UseRateLimiter();
+}
 
 // ?? Minimal API endpoints ??????????????????????????????????????????????????
 app.MapAuthEndpointsRoute();

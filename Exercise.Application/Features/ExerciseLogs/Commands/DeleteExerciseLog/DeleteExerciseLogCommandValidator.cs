@@ -7,6 +7,7 @@ namespace Exercise.Application.Features.ExerciseLogs.Commands.DeleteExerciseLog
         public DeleteExerciseLogCommandValidator()
         {
             RuleFor(x => x.LogId).NotEmpty();
+            RuleFor(x => x.CurrentUserId).NotEmpty();
         }
     }
 }

@@ -37,6 +37,16 @@ namespace Exercise.Application.Abstractions.Repositories
         Task<ExerciseEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Retrieves a specific exercise as a tracked entity for command-side updates.
+        /// </summary>
+        Task<ExerciseEntity?> GetByIdForUpdateAsync(Guid id, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Returns true when an exercise exists with the specified identifier.
+        /// </summary>
+        Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Adds a new exercise to the repository
         /// </summary>
         Task AddAsync(ExerciseEntity exercise, CancellationToken cancellationToken = default);

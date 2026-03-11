@@ -8,11 +8,11 @@ namespace Exercise.Domain.Entities
     public class User
     {
         public Guid Id { get; private set; }
-        public string Email { get; private set; }
+        public string Email { get; private set; } = null!;
         public string? PasswordHash { get; private set; }
         public string? Provider { get; private set; }
         public string? ProviderId { get; private set; }
-        public string Name { get; private set; }
+        public string Name { get; private set; } = null!;
         public string? UserName { get; private set; }
         public string Role { get; private set; } = "User";
         public Height? Height { get; private set; }

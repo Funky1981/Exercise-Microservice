@@ -1,5 +1,4 @@
 using Asp.Versioning;
-using Exercise.Application.Abstractions.Repositories;
 using Exercise.Application.Common.Models;
 using Exercise.Application.Features.Workouts.Commands.AddExerciseToWorkout;
 using Exercise.Application.Features.Workouts.Dtos;
@@ -59,18 +58,7 @@ namespace Exercise.API
                 if (!user.TryGetUserId(out var userId))
                     return Results.Unauthorized();
 
-                var result = await mediator.Send(new GetWorkoutByIdQuery(id), ct);
-                if (result is null)
-                    return Results.NotFound(new ProblemDetails
-                    {
-                        Title = "Resource not found.",
-                        Detail = $"Workout with id '{id}' was not found.",
-                        Status = StatusCodes.Status404NotFound
-                    });
-
-                if (result.UserId != userId)
-                    return Results.Forbid();
-
+                var result = await mediator.Send(new GetWorkoutByIdQuery(id) { CurrentUserId = userId }, ct);
                 return Results.Ok(result);
             })
             .WithName("GetWorkoutById")
@@ -101,22 +89,12 @@ namespace Exercise.API
             // PUT /api/workouts/{id}
             group.MapPut("/{id:guid}",
                 async (Guid id, ClaimsPrincipal user, UpdateWorkoutCommand command,
-                       IWorkoutRepository workoutRepo, IMediator mediator, CancellationToken ct) =>
+                       IMediator mediator, CancellationToken ct) =>
                 {
                     if (!user.TryGetUserId(out var userId)) return Results.Unauthorized();
 
-                    var workout = await workoutRepo.GetByIdAsync(id, ct);
-                    if (workout is null)
-                        return Results.NotFound(new ProblemDetails
-                        {
-                            Title = "Resource not found.",
-                            Detail = $"Workout with id '{id}' was not found.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-
-                    if (workout.UserId != userId) return Results.Forbid();
-
                     command.WorkoutId = id;
+                    command.CurrentUserId = userId;
                     await mediator.Send(command, ct);
                     return Results.NoContent();
                 })
@@ -124,6 +102,7 @@ namespace Exercise.API
             .WithSummary("Update a workout's name, date, and notes")
             .Produces(StatusCodes.Status204NoContent)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
@@ -131,22 +110,10 @@ namespace Exercise.API
             // POST /api/workouts/{id}/complete
             group.MapPost("/{id:guid}/complete",
                 async (Guid id, ClaimsPrincipal user, [FromBody] CompleteWorkoutRequest body,
-                       IWorkoutRepository workoutRepo, IMediator mediator, CancellationToken ct) =>
+                       IMediator mediator, CancellationToken ct) =>
                 {
                     if (!user.TryGetUserId(out var userId)) return Results.Unauthorized();
-
-                    var workout = await workoutRepo.GetByIdAsync(id, ct);
-                    if (workout is null)
-                        return Results.NotFound(new ProblemDetails
-                        {
-                            Title = "Resource not found.",
-                            Detail = $"Workout with id '{id}' was not found.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-
-                    if (workout.UserId != userId) return Results.Forbid();
-
-                    await mediator.Send(new CompleteWorkoutCommand(id, body.Duration), ct);
+                    await mediator.Send(new CompleteWorkoutCommand(id, body.Duration) { CurrentUserId = userId }, ct);
                     return Results.NoContent();
                 })
             .WithName("CompleteWorkout")
@@ -154,33 +121,23 @@ namespace Exercise.API
             .WithDescription("Supply Duration as a TimeSpan string in the request body, e.g. \"00:45:00\" for 45 minutes.")
             .Produces(StatusCodes.Status204NoContent)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
 
             // DELETE /api/workouts/{id}
             group.MapDelete("/{id:guid}",
-                async (Guid id, ClaimsPrincipal user, IWorkoutRepository workoutRepo, IMediator mediator, CancellationToken ct) =>
+                async (Guid id, ClaimsPrincipal user, IMediator mediator, CancellationToken ct) =>
                 {
                     if (!user.TryGetUserId(out var userId)) return Results.Unauthorized();
-
-                    var workout = await workoutRepo.GetByIdAsync(id, ct);
-                    if (workout is null)
-                        return Results.NotFound(new ProblemDetails
-                        {
-                            Title = "Resource not found.",
-                            Detail = $"Workout with id '{id}' was not found.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-
-                    if (workout.UserId != userId) return Results.Forbid();
-
-                    await mediator.Send(new DeleteWorkoutCommand(id), ct);
+                    await mediator.Send(new DeleteWorkoutCommand(id) { CurrentUserId = userId }, ct);
                     return Results.NoContent();
                 })
             .WithName("DeleteWorkout")
             .WithSummary("Soft-delete a workout by its ID")
             .Produces(StatusCodes.Status204NoContent)
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
@@ -188,28 +145,17 @@ namespace Exercise.API
             // POST /api/workouts/{id}/exercises
             group.MapPost("/{id:guid}/exercises",
                 async (Guid id, ClaimsPrincipal user, [FromBody] AddExerciseRequest body,
-                       IWorkoutRepository workoutRepo, IMediator mediator, CancellationToken ct) =>
+                       IMediator mediator, CancellationToken ct) =>
                 {
                     if (!user.TryGetUserId(out var userId)) return Results.Unauthorized();
-
-                    var workout = await workoutRepo.GetByIdAsync(id, ct);
-                    if (workout is null)
-                        return Results.NotFound(new ProblemDetails
-                        {
-                            Title = "Resource not found.",
-                            Detail = $"Workout with id '{id}' was not found.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-
-                    if (workout.UserId != userId) return Results.Forbid();
-
-                    await mediator.Send(new AddExerciseToWorkoutCommand(id, body.ExerciseId), ct);
+                    await mediator.Send(new AddExerciseToWorkoutCommand(id, body.ExerciseId) { CurrentUserId = userId }, ct);
                     return Results.NoContent();
                 })
             .WithName("AddExerciseToWorkout")
             .WithSummary("Add an exercise to a workout")
             .Produces(StatusCodes.Status204NoContent)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
@@ -217,27 +163,16 @@ namespace Exercise.API
             // DELETE /api/workouts/{id}/exercises/{exerciseId}
             group.MapDelete("/{id:guid}/exercises/{exerciseId:guid}",
                 async (Guid id, Guid exerciseId, ClaimsPrincipal user,
-                       IWorkoutRepository workoutRepo, IMediator mediator, CancellationToken ct) =>
+                       IMediator mediator, CancellationToken ct) =>
                 {
                     if (!user.TryGetUserId(out var userId)) return Results.Unauthorized();
-
-                    var workout = await workoutRepo.GetByIdAsync(id, ct);
-                    if (workout is null)
-                        return Results.NotFound(new ProblemDetails
-                        {
-                            Title = "Resource not found.",
-                            Detail = $"Workout with id '{id}' was not found.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-
-                    if (workout.UserId != userId) return Results.Forbid();
-
-                    await mediator.Send(new RemoveExerciseFromWorkoutCommand(id, exerciseId), ct);
+                    await mediator.Send(new RemoveExerciseFromWorkoutCommand(id, exerciseId) { CurrentUserId = userId }, ct);
                     return Results.NoContent();
                 })
             .WithName("RemoveExerciseFromWorkout")
             .WithSummary("Remove an exercise from a workout")
             .Produces(StatusCodes.Status204NoContent)
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);

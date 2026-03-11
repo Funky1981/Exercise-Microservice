@@ -5,6 +5,7 @@ namespace Exercise.Application.Features.ExerciseLogs.Commands.CompleteExerciseLo
     public class CompleteExerciseLogCommand : IRequest<bool>
     {
         public Guid LogId { get; set; }
+        public Guid CurrentUserId { get; set; }
         public TimeSpan? TotalDuration { get; set; }
     }
 }

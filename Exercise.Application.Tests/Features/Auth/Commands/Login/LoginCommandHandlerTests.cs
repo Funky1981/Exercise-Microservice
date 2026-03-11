@@ -29,17 +29,13 @@ public class LoginCommandHandlerTests
         user.SetPassword("Str0ng!Pass");
 
         _userRepoMock
-            .Setup(r => r.GetByEmailAsync("alice@example.com", It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByEmailForUpdateAsync("alice@example.com", It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         _tokenServiceMock.Setup(t => t.GenerateToken(user)).Returns("jwt-token");
         _tokenServiceMock.Setup(t => t.GetExpiry()).Returns(DateTime.UtcNow.AddHours(1));
         _tokenServiceMock.Setup(t => t.GenerateRefreshToken()).Returns("refresh-token-abc");
         _tokenServiceMock.Setup(t => t.GetRefreshTokenExpiry()).Returns(DateTime.UtcNow.AddDays(30));
-
-        _userRepoMock
-            .Setup(r => r.UpdateAsync(user, It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
 
         var command = new LoginCommand { Email = "alice@example.com", Password = "Str0ng!Pass" };
 
@@ -50,6 +46,7 @@ public class LoginCommandHandlerTests
         result.Token.Should().Be("jwt-token");
         result.Email.Should().Be("alice@example.com");
         result.UserId.Should().Be(user.Id);
+        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -57,7 +54,7 @@ public class LoginCommandHandlerTests
     {
         // Arrange
         _userRepoMock
-            .Setup(r => r.GetByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByEmailForUpdateAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Exercise.Domain.Entities.User?)null);
 
         var command = new LoginCommand { Email = "nobody@example.com", Password = "Anything1!" };
@@ -78,7 +75,7 @@ public class LoginCommandHandlerTests
         user.SetPassword("Correct1!Pass");
 
         _userRepoMock
-            .Setup(r => r.GetByEmailAsync("bob@example.com", It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByEmailForUpdateAsync("bob@example.com", It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         var command = new LoginCommand { Email = "bob@example.com", Password = "WrongPass1!" };

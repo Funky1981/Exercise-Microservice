@@ -30,7 +30,7 @@ namespace Exercise.Infrastructure.Data.Configurations
             builder.Property(el => el.IsCompleted)
                 .IsRequired();
 
-            builder.HasIndex(el => el.UserId);
+            builder.HasIndex(el => new { el.UserId, el.Date });
 
             // The public IReadOnlyList property is a wrapper - tell EF to use the private backing field
             builder.Ignore(el => el.ExercisesCompleted);
@@ -50,6 +50,10 @@ namespace Exercise.Infrastructure.Data.Configurations
             // Soft delete
             builder.Property<bool>("IsDeleted").HasDefaultValue(false);
             builder.Property<DateTime?>("UpdatedAt");
+            builder.Property<string>("ConcurrencyToken")
+                .HasMaxLength(32)
+                .HasDefaultValue(string.Empty)
+                .IsConcurrencyToken();
             builder.HasQueryFilter(el => !EF.Property<bool>(el, "IsDeleted"));
         }
     }

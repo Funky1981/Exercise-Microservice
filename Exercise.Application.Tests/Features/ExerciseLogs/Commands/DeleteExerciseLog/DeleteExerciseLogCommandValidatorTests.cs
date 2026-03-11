@@ -8,7 +8,10 @@ public class DeleteExerciseLogCommandValidatorTests
     [Fact]
     public void Validate_ValidLogId_ShouldHaveNoErrors()
     {
-        var result = _validator.TestValidate(new DeleteExerciseLogCommand(Guid.NewGuid()));
+        var result = _validator.TestValidate(new DeleteExerciseLogCommand(Guid.NewGuid())
+        {
+            CurrentUserId = Guid.NewGuid()
+        });
 
         result.ShouldNotHaveAnyValidationErrors();
     }
@@ -16,7 +19,10 @@ public class DeleteExerciseLogCommandValidatorTests
     [Fact]
     public void Validate_EmptyLogId_ShouldHaveErrorForLogId()
     {
-        var result = _validator.TestValidate(new DeleteExerciseLogCommand(Guid.Empty));
+        var result = _validator.TestValidate(new DeleteExerciseLogCommand(Guid.Empty)
+        {
+            CurrentUserId = Guid.NewGuid()
+        });
 
         result.ShouldHaveValidationErrorFor(x => x.LogId);
     }

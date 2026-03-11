@@ -25,7 +25,7 @@ public class DeleteUserCommandHandlerTests
         // Arrange
         var user = TestDataBuilder.BuildUser();
         _userRepoMock
-            .Setup(r => r.GetByIdAsync(user.Id, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdForUpdateAsync(user.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         var command = new DeleteUserCommand(user.Id);
@@ -44,7 +44,7 @@ public class DeleteUserCommandHandlerTests
     {
         // Arrange
         _userRepoMock
-            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdForUpdateAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
 
         var command = new DeleteUserCommand(Guid.NewGuid());

@@ -143,24 +143,27 @@ public class AddExerciseToWorkoutCommandHandlerTests
     {
         // Arrange
         var workout = TestDataBuilder.BuildWorkout();
+        var userId = workout.UserId;
         var exercise = TestDataBuilder.BuildExercise();
 
         _workoutRepoMock
-            .Setup(r => r.GetByIdWithExercisesAsync(workout.Id, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetOwnedByIdWithExercisesForUpdateAsync(workout.Id, userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(workout);
 
         _exerciseRepoMock
             .Setup(r => r.GetByIdAsync(exercise.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(exercise);
 
-        var command = new AddExerciseToWorkoutCommand(workout.Id, exercise.Id);
+        var command = new AddExerciseToWorkoutCommand(workout.Id, exercise.Id)
+        {
+            CurrentUserId = userId
+        };
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
         result.Should().BeTrue();
-        _workoutRepoMock.Verify(r => r.UpdateAsync(workout, It.IsAny<CancellationToken>()), Times.Once);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -169,10 +172,16 @@ public class AddExerciseToWorkoutCommandHandlerTests
     {
         // Arrange
         _workoutRepoMock
-            .Setup(r => r.GetByIdWithExercisesAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetOwnedByIdWithExercisesForUpdateAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Workout?)null);
+        _workoutRepoMock
+            .Setup(r => r.ExistsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
 
-        var command = new AddExerciseToWorkoutCommand(Guid.NewGuid(), Guid.NewGuid());
+        var command = new AddExerciseToWorkoutCommand(Guid.NewGuid(), Guid.NewGuid())
+        {
+            CurrentUserId = Guid.NewGuid()
+        };
 
         // Act
         var act = () => _handler.Handle(command, CancellationToken.None);
@@ -188,14 +197,17 @@ public class AddExerciseToWorkoutCommandHandlerTests
         var workout = TestDataBuilder.BuildWorkout();
 
         _workoutRepoMock
-            .Setup(r => r.GetByIdWithExercisesAsync(workout.Id, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetOwnedByIdWithExercisesForUpdateAsync(workout.Id, workout.UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(workout);
 
         _exerciseRepoMock
             .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((ExerciseEntity?)null);
 
-        var command = new AddExerciseToWorkoutCommand(workout.Id, Guid.NewGuid());
+        var command = new AddExerciseToWorkoutCommand(workout.Id, Guid.NewGuid())
+        {
+            CurrentUserId = workout.UserId
+        };
 
         // Act
         var act = () => _handler.Handle(command, CancellationToken.None);

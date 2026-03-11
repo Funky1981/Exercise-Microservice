@@ -18,7 +18,7 @@ namespace Exercise.Application.Features.Users.Commands.UpdateUserProfile
 
         public async Task<bool> Handle(UpdateUserProfileCommand request, CancellationToken cancellationToken)
         {
-            var user = await _userRepository.GetByIdAsync(request.UserId, cancellationToken);
+            var user = await _userRepository.GetByIdForUpdateAsync(request.UserId, cancellationToken);
             if (user is null)
                 throw new NotFoundException(nameof(user), request.UserId);
 
@@ -27,7 +27,6 @@ namespace Exercise.Application.Features.Users.Commands.UpdateUserProfile
 
             user.UpdateProfile(request.UserName, height, weight);
 
-            await _userRepository.UpdateAsync(user, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return true;

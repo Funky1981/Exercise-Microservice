@@ -8,6 +8,8 @@ namespace Exercise.Application.Features.ExerciseLogs.Commands.CompleteExerciseLo
         {
             RuleFor(x => x.LogId)
                 .NotEmpty().WithMessage("LogId is required.");
+            RuleFor(x => x.CurrentUserId)
+                .NotEmpty().WithMessage("CurrentUserId is required.");
 
             RuleFor(x => x.TotalDuration)
                 .GreaterThan(TimeSpan.Zero).WithMessage("TotalDuration must be positive.")

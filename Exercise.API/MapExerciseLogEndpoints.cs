@@ -1,5 +1,4 @@
 using Asp.Versioning;
-using Exercise.Application.Abstractions.Repositories;
 using Exercise.Application.Common.Models;
 using Exercise.Application.Features.ExerciseLogs.Commands.AddExerciseLogEntry;
 using Exercise.Application.Features.ExerciseLogs.Dtos;
@@ -62,18 +61,7 @@ namespace Exercise.API
                 if (!user.TryGetUserId(out var userId))
                     return Results.Unauthorized();
 
-                var result = await mediator.Send(new GetExerciseLogByIdQuery { Id = id }, ct);
-                if (result is null)
-                    return Results.NotFound(new ProblemDetails
-                    {
-                        Title = "Resource not found.",
-                        Detail = $"ExerciseLog with id '{id}' was not found.",
-                        Status = StatusCodes.Status404NotFound
-                    });
-
-                if (result.UserId != userId)
-                    return Results.Forbid();
-
+                var result = await mediator.Send(new GetExerciseLogByIdQuery { Id = id, CurrentUserId = userId }, ct);
                 return Results.Ok(result);
             })
             .WithName("GetExerciseLogById")
@@ -104,22 +92,12 @@ namespace Exercise.API
             // POST /api/exercise-logs/{id}/entries
             group.MapPost("/{id:guid}/entries",
                 async (Guid id, ClaimsPrincipal user, AddExerciseLogEntryCommand command,
-                       IExerciseLogRepository logRepo, IMediator mediator, CancellationToken ct) =>
+                       IMediator mediator, CancellationToken ct) =>
                 {
                     if (!user.TryGetUserId(out var userId)) return Results.Unauthorized();
 
-                    var log = await logRepo.GetByIdAsync(id, ct);
-                    if (log is null)
-                        return Results.NotFound(new ProblemDetails
-                        {
-                            Title = "Resource not found.",
-                            Detail = $"ExerciseLog with id '{id}' was not found.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-
-                    if (log.UserId != userId) return Results.Forbid();
-
                     command.LogId = id;
+                    command.CurrentUserId = userId;
                     await mediator.Send(command, ct);
                     return Results.NoContent();
                 })
@@ -128,6 +106,7 @@ namespace Exercise.API
             .WithDescription("Sets the sets, reps, and optional duration for a specific exercise within a log session.")
             .Produces(StatusCodes.Status204NoContent)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
@@ -135,23 +114,12 @@ namespace Exercise.API
             // POST /api/exercise-logs/{id}/complete
             group.MapPost("/{id:guid}/complete",
                 async (Guid id, ClaimsPrincipal user, [FromBody] CompleteExerciseLogRequest? body,
-                       IExerciseLogRepository logRepo, IMediator mediator, CancellationToken ct) =>
+                       IMediator mediator, CancellationToken ct) =>
                 {
                     if (!user.TryGetUserId(out var userId)) return Results.Unauthorized();
 
-                    var log = await logRepo.GetByIdAsync(id, ct);
-                    if (log is null)
-                        return Results.NotFound(new ProblemDetails
-                        {
-                            Title = "Resource not found.",
-                            Detail = $"ExerciseLog with id '{id}' was not found.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-
-                    if (log.UserId != userId) return Results.Forbid();
-
                     await mediator.Send(
-                        new CompleteExerciseLogCommand { LogId = id, TotalDuration = body?.TotalDuration }, ct);
+                        new CompleteExerciseLogCommand { LogId = id, CurrentUserId = userId, TotalDuration = body?.TotalDuration }, ct);
                     return Results.NoContent();
                 })
             .WithName("CompleteExerciseLog")
@@ -159,33 +127,23 @@ namespace Exercise.API
             .WithDescription("Optionally supply TotalDuration as a TimeSpan string (e.g. \"00:45:00\"). If omitted, duration is left as null.")
             .Produces(StatusCodes.Status204NoContent)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
 
             // DELETE /api/exercise-logs/{id}
             group.MapDelete("/{id:guid}",
-                async (Guid id, ClaimsPrincipal user, IExerciseLogRepository logRepo, IMediator mediator, CancellationToken ct) =>
+                async (Guid id, ClaimsPrincipal user, IMediator mediator, CancellationToken ct) =>
                 {
                     if (!user.TryGetUserId(out var userId)) return Results.Unauthorized();
-
-                    var log = await logRepo.GetByIdAsync(id, ct);
-                    if (log is null)
-                        return Results.NotFound(new ProblemDetails
-                        {
-                            Title = "Resource not found.",
-                            Detail = $"ExerciseLog with id '{id}' was not found.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-
-                    if (log.UserId != userId) return Results.Forbid();
-
-                    await mediator.Send(new DeleteExerciseLogCommand(id), ct);
+                    await mediator.Send(new DeleteExerciseLogCommand(id) { CurrentUserId = userId }, ct);
                     return Results.NoContent();
                 })
             .WithName("DeleteExerciseLog")
             .WithSummary("Delete an exercise log by its ID")
             .Produces(StatusCodes.Status204NoContent)
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);

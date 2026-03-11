@@ -1,7 +1,6 @@
 using Exercise.Application.Abstractions.Repositories;
 using Exercise.Application.Features.Analytics.Queries.GetWorkoutSummary;
 using Exercise.Application.Tests.TestHelpers;
-using Exercise.Domain.Entities;
 using FluentAssertions;
 using Moq;
 using MockFactory = Exercise.Application.Tests.TestHelpers.MockFactory;
@@ -24,20 +23,13 @@ public class GetWorkoutSummaryQueryHandlerTests
     {
         // Arrange
         var userId = Guid.NewGuid();
-        var workouts = TestDataBuilder.BuildWorkoutList(userId, count: 3);
-        var logs = new List<ExerciseLog>
-        {
-            TestDataBuilder.BuildExerciseLog(userId: userId),
-            TestDataBuilder.BuildExerciseLog(userId: userId)
-        };
-
         _workoutRepoMock
-            .Setup(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((IReadOnlyList<Workout>)workouts);
+            .Setup(r => r.GetSummaryByUserIdAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((3, 0, TimeSpan.Zero));
 
         _exerciseLogRepoMock
-            .Setup(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((IReadOnlyList<ExerciseLog>)logs);
+            .Setup(r => r.GetSummaryByUserIdAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((2, 0, TimeSpan.Zero));
 
         var query = new GetWorkoutSummaryQuery { UserId = userId };
 
@@ -62,12 +54,12 @@ public class GetWorkoutSummaryQueryHandlerTests
         var userId = Guid.NewGuid();
 
         _workoutRepoMock
-            .Setup(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((IReadOnlyList<Workout>)new List<Workout>());
+            .Setup(r => r.GetSummaryByUserIdAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((0, 0, TimeSpan.Zero));
 
         _exerciseLogRepoMock
-            .Setup(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((IReadOnlyList<ExerciseLog>)new List<ExerciseLog>());
+            .Setup(r => r.GetSummaryByUserIdAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((0, 0, TimeSpan.Zero));
 
         var query = new GetWorkoutSummaryQuery { UserId = userId };
 

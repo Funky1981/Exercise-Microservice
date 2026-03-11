@@ -17,7 +17,7 @@ namespace Exercise.Application.Features.Exercises.Commands.UpdateExercise
 
         public async Task<bool> Handle(UpdateExerciseCommand request, CancellationToken cancellationToken)
         {
-            var exercise = await _exerciseRepository.GetByIdAsync(request.Id, cancellationToken);
+            var exercise = await _exerciseRepository.GetByIdForUpdateAsync(request.Id, cancellationToken);
 
             if (exercise is null)
                 throw new NotFoundException(nameof(exercise), request.Id);
@@ -31,7 +31,6 @@ namespace Exercise.Application.Features.Exercises.Commands.UpdateExercise
                 request.Description,
                 request.Difficulty);
 
-            await _exerciseRepository.UpdateAsync(exercise, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return true;

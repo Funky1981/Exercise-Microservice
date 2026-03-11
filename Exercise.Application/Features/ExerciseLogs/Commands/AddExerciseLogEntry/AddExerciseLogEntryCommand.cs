@@ -5,6 +5,7 @@ namespace Exercise.Application.Features.ExerciseLogs.Commands.AddExerciseLogEntr
     public class AddExerciseLogEntryCommand : IRequest<bool>
     {
         public Guid LogId { get; set; }
+        public Guid CurrentUserId { get; set; }
         public Guid ExerciseId { get; set; }
         public int Sets { get; set; }
         public int Reps { get; set; }

@@ -68,21 +68,23 @@ public class AddWorkoutToWorkoutPlanCommandHandlerTests
         var workout = TestDataBuilder.BuildWorkout(userId: userId);
 
         _workoutPlanRepoMock
-            .Setup(r => r.GetByIdWithWorkoutsAsync(plan.Id, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetOwnedByIdWithWorkoutsForUpdateAsync(plan.Id, userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(plan);
 
         _workoutRepoMock
             .Setup(r => r.GetByIdAsync(workout.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(workout);
 
-        var command = new AddWorkoutToWorkoutPlanCommand(plan.Id, workout.Id);
+        var command = new AddWorkoutToWorkoutPlanCommand(plan.Id, workout.Id)
+        {
+            CurrentUserId = userId
+        };
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
         result.Should().BeTrue();
-        _workoutPlanRepoMock.Verify(r => r.UpdateAsync(plan, It.IsAny<CancellationToken>()), Times.Once);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -91,10 +93,16 @@ public class AddWorkoutToWorkoutPlanCommandHandlerTests
     {
         // Arrange
         _workoutPlanRepoMock
-            .Setup(r => r.GetByIdWithWorkoutsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetOwnedByIdWithWorkoutsForUpdateAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((WorkoutPlan?)null);
+        _workoutPlanRepoMock
+            .Setup(r => r.ExistsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
 
-        var command = new AddWorkoutToWorkoutPlanCommand(Guid.NewGuid(), Guid.NewGuid());
+        var command = new AddWorkoutToWorkoutPlanCommand(Guid.NewGuid(), Guid.NewGuid())
+        {
+            CurrentUserId = Guid.NewGuid()
+        };
 
         // Act
         var act = () => _handler.Handle(command, CancellationToken.None);

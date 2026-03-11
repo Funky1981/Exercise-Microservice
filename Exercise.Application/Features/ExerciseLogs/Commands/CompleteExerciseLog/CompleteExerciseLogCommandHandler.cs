@@ -17,13 +17,18 @@ namespace Exercise.Application.Features.ExerciseLogs.Commands.CompleteExerciseLo
 
         public async Task<bool> Handle(CompleteExerciseLogCommand request, CancellationToken cancellationToken)
         {
-            var log = await _exerciseLogRepository.GetByIdAsync(request.LogId, cancellationToken);
+            var log = await _exerciseLogRepository.GetOwnedByIdForUpdateAsync(
+                request.LogId, request.CurrentUserId, cancellationToken);
             if (log is null)
-                throw new NotFoundException(nameof(Domain.Entities.ExerciseLog), request.LogId);
+            {
+                if (await _exerciseLogRepository.ExistsAsync(request.LogId, cancellationToken))
+                    throw new ForbiddenException("You do not have access to this exercise log.");
+
+                throw new NotFoundException(nameof(Exercise.Domain.Entities.ExerciseLog), request.LogId);
+            }
 
             log.CompleteLog(request.TotalDuration);
 
-            await _exerciseLogRepository.UpdateAsync(log, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return true;

@@ -8,7 +8,7 @@ namespace Exercise.Domain.Entities
     {
         public Guid Id { get; private set; }
         public Guid UserId { get; private set; }
-        public string AnalyticsType { get; private set; }
+        public string AnalyticsType { get; private set; } = null!;
         public DateTime PeriodStart { get; private set; }
         public DateTime PeriodEnd { get; private set; }
         public Dictionary<string, object> Data { get; private set; } = new();

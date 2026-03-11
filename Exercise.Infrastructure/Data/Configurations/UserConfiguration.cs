@@ -66,6 +66,10 @@ namespace Exercise.Infrastructure.Data.Configurations
             // Soft delete
             builder.Property<bool>("IsDeleted").HasDefaultValue(false);
             builder.Property<DateTime?>("UpdatedAt");
+            builder.Property<string>("ConcurrencyToken")
+                .HasMaxLength(32)
+                .HasDefaultValue(string.Empty)
+                .IsConcurrencyToken();
             builder.HasQueryFilter(u => !EF.Property<bool>(u, "IsDeleted"));
 
             builder.Property(u => u.RefreshTokenHash)

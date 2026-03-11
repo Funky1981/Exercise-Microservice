@@ -21,10 +21,22 @@ namespace Exercise.Infrastructure.Repositories
                 .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
         }
 
+        public async Task<User?> GetByIdForUpdateAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            return await _context.Users
+                .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+        }
+
         public async Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
         {
             return await _context.Users
                 .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
+        }
+
+        public async Task<User?> GetByEmailForUpdateAsync(string email, CancellationToken cancellationToken = default)
+        {
+            return await _context.Users
                 .FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
         }
 

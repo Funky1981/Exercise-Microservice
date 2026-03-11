@@ -21,6 +21,30 @@ namespace Exercise.Infrastructure.Repositories
                 .FirstOrDefaultAsync(el => el.Id == id, cancellationToken);
         }
 
+        public async Task<ExerciseLog?> GetByIdForUpdateAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            return await _context.ExerciseLogs
+                .FirstOrDefaultAsync(el => el.Id == id, cancellationToken);
+        }
+
+        public async Task<ExerciseLog?> GetOwnedByIdAsync(Guid id, Guid userId, CancellationToken cancellationToken = default)
+        {
+            return await _context.ExerciseLogs
+                .AsNoTracking()
+                .FirstOrDefaultAsync(el => el.Id == id && el.UserId == userId, cancellationToken);
+        }
+
+        public async Task<ExerciseLog?> GetOwnedByIdForUpdateAsync(Guid id, Guid userId, CancellationToken cancellationToken = default)
+        {
+            return await _context.ExerciseLogs
+                .FirstOrDefaultAsync(el => el.Id == id && el.UserId == userId, cancellationToken);
+        }
+
+        public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            return await _context.ExerciseLogs.AnyAsync(el => el.Id == id, cancellationToken);
+        }
+
         public async Task<IReadOnlyList<ExerciseLog>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
         {
             return await _context.ExerciseLogs
@@ -40,6 +64,32 @@ namespace Exercise.Infrastructure.Repositories
             var totalCount = await query.CountAsync(cancellationToken);
             var items = await query.Skip(skip).Take(take).ToListAsync(cancellationToken);
             return (items, totalCount);
+        }
+
+        public async Task<(int TotalCount, int CompletedCount, TimeSpan TotalDuration)> GetSummaryByUserIdAsync(
+            Guid userId, CancellationToken cancellationToken = default)
+        {
+            var counts = await _context.ExerciseLogs
+                .AsNoTracking()
+                .Where(el => el.UserId == userId)
+                .GroupBy(_ => 1)
+                .Select(g => new
+                {
+                    TotalCount = g.Count(),
+                    CompletedCount = g.Count(el => el.IsCompleted)
+                })
+                .SingleOrDefaultAsync(cancellationToken);
+
+            var totalDurationTicks = (await _context.ExerciseLogs
+                    .AsNoTracking()
+                    .Where(el => el.UserId == userId && el.IsCompleted && el.Duration.HasValue)
+                    .Select(el => el.Duration!.Value)
+                    .ToListAsync(cancellationToken))
+                .Sum(duration => duration.Ticks);
+
+            return counts is null
+                ? (0, 0, TimeSpan.Zero)
+                : (counts.TotalCount, counts.CompletedCount, TimeSpan.FromTicks(totalDurationTicks));
         }
 
         public async Task AddAsync(ExerciseLog exerciseLog, CancellationToken cancellationToken = default)

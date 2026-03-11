@@ -17,7 +17,7 @@ namespace Exercise.Application.Features.Exercises.Commands.DeleteExercise
 
         public async Task<bool> Handle(DeleteExerciseCommand request, CancellationToken cancellationToken)
         {
-            var exercise = await _exerciseRepository.GetByIdAsync(request.Id, cancellationToken);
+            var exercise = await _exerciseRepository.GetByIdForUpdateAsync(request.Id, cancellationToken);
 
             if (exercise is null)
                 throw new NotFoundException(nameof(exercise), request.Id);

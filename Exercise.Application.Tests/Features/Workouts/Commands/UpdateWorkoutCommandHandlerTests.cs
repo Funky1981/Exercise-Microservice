@@ -25,12 +25,13 @@ public class UpdateWorkoutCommandHandlerTests
         // Arrange
         var workout = TestDataBuilder.BuildWorkout();
         _workoutRepoMock
-            .Setup(r => r.GetByIdAsync(workout.Id, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetOwnedByIdForUpdateAsync(workout.Id, workout.UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(workout);
 
         var command = new UpdateWorkoutCommand
         {
             WorkoutId = workout.Id,
+            CurrentUserId = workout.UserId,
             Name = "Updated Name",
             Date = DateTime.UtcNow.AddDays(1),
             Notes = "Updated notes"
@@ -41,7 +42,6 @@ public class UpdateWorkoutCommandHandlerTests
 
         // Assert
         result.Should().BeTrue();
-        _workoutRepoMock.Verify(r => r.UpdateAsync(workout, It.IsAny<CancellationToken>()), Times.Once);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -50,12 +50,16 @@ public class UpdateWorkoutCommandHandlerTests
     {
         // Arrange
         _workoutRepoMock
-            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetOwnedByIdForUpdateAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Workout?)null);
+        _workoutRepoMock
+            .Setup(r => r.ExistsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
 
         var command = new UpdateWorkoutCommand
         {
             WorkoutId = Guid.NewGuid(),
+            CurrentUserId = Guid.NewGuid(),
             Name = "Name",
             Date = DateTime.UtcNow
         };

@@ -38,6 +38,9 @@ public class AuthBypassWebApplicationFactory : WebApplicationFactory<Program>, I
                 ["RapidApi:Host"]                       = "placeholder.example.com",
                 ["RapidApi:Key"]                        = "placeholder",
                 ["Serilog:MinimumLevel:Default"]         = "Error",
+                ["RateLimiting:Auth:PermitLimit"]        = "1000",
+                ["RateLimiting:Api:PermitLimit"]         = "1000",
+                ["RateLimiting:Enabled"]                 = "false",
             });
         });
 

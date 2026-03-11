@@ -7,6 +7,7 @@ namespace Exercise.Application.Features.Workouts.Commands.CompleteWorkout
         public CompleteWorkoutCommandValidator()
         {
             RuleFor(x => x.WorkoutId).NotEmpty().WithMessage("WorkoutId is required.");
+            RuleFor(x => x.CurrentUserId).NotEmpty().WithMessage("CurrentUserId is required.");
             RuleFor(x => x.Duration).GreaterThan(TimeSpan.Zero).WithMessage("Duration must be greater than zero.");
         }
     }

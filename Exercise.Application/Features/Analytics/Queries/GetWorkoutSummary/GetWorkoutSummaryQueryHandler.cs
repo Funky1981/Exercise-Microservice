@@ -19,25 +19,18 @@ namespace Exercise.Application.Features.Analytics.Queries.GetWorkoutSummary
 
         public async Task<WorkoutSummaryDto> Handle(GetWorkoutSummaryQuery request, CancellationToken cancellationToken)
         {
-            var workouts = await _workoutRepository.GetByUserIdAsync(request.UserId, cancellationToken);
-            var exerciseLogs = await _exerciseLogRepository.GetByUserIdAsync(request.UserId, cancellationToken);
-
-            var completedWorkouts = workouts.Where(w => w.IsCompleted).ToList();
-            var completedLogs = exerciseLogs.Where(l => l.IsCompleted).ToList();
+            var workouts = await _workoutRepository.GetSummaryByUserIdAsync(request.UserId, cancellationToken);
+            var exerciseLogs = await _exerciseLogRepository.GetSummaryByUserIdAsync(request.UserId, cancellationToken);
 
             return new WorkoutSummaryDto
             {
                 UserId = request.UserId,
-                TotalWorkouts = workouts.Count,
-                CompletedWorkouts = completedWorkouts.Count,
-                TotalWorkoutDuration = completedWorkouts
-                    .Where(w => w.Duration.HasValue)
-                    .Aggregate(TimeSpan.Zero, (sum, w) => sum + w.Duration!.Value),
-                TotalExerciseLogs = exerciseLogs.Count,
-                CompletedExerciseLogs = completedLogs.Count,
-                TotalExerciseLogDuration = completedLogs
-                    .Where(l => l.Duration.HasValue)
-                    .Aggregate(TimeSpan.Zero, (sum, l) => sum + l.Duration!.Value)
+                TotalWorkouts = workouts.TotalCount,
+                CompletedWorkouts = workouts.CompletedCount,
+                TotalWorkoutDuration = workouts.TotalDuration,
+                TotalExerciseLogs = exerciseLogs.TotalCount,
+                CompletedExerciseLogs = exerciseLogs.CompletedCount,
+                TotalExerciseLogDuration = exerciseLogs.TotalDuration
             };
         }
     }

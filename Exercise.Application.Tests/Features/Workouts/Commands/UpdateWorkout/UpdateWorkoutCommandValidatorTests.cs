@@ -11,6 +11,7 @@ public class UpdateWorkoutCommandValidatorTests
         var result = _validator.TestValidate(new UpdateWorkoutCommand
         {
             WorkoutId = Guid.NewGuid(),
+            CurrentUserId = Guid.NewGuid(),
             Date      = DateTime.UtcNow
         });
 
@@ -23,6 +24,7 @@ public class UpdateWorkoutCommandValidatorTests
         var result = _validator.TestValidate(new UpdateWorkoutCommand
         {
             WorkoutId = Guid.Empty,
+            CurrentUserId = Guid.NewGuid(),
             Date      = DateTime.UtcNow
         });
 
@@ -36,6 +38,7 @@ public class UpdateWorkoutCommandValidatorTests
         var result = _validator.TestValidate(new UpdateWorkoutCommand
         {
             WorkoutId = Guid.NewGuid(),
+            CurrentUserId = Guid.NewGuid(),
             Date      = default
         });
 
