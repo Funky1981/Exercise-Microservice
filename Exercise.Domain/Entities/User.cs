@@ -14,6 +14,7 @@ namespace Exercise.Domain.Entities
         public string? ProviderId { get; private set; }
         public string Name { get; private set; }
         public string? UserName { get; private set; }
+        public string Role { get; private set; } = "User";
         public Height? Height { get; private set; }
         public Weight? Weight { get; private set; }
         public DateTime CreatedAt { get; private set; }
@@ -38,6 +39,12 @@ namespace Exercise.Domain.Entities
             Provider = provider;
             ProviderId = providerId;
             CreatedAt = DateTime.UtcNow;
+            Role = "User";
+        }
+
+        public void PromoteToAdmin()
+        {
+            Role = "Admin";
         }
 
         public bool IsSocialLogin()

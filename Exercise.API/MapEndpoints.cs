@@ -76,7 +76,7 @@ namespace Exercise.API
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
 
-            // POST /api/exercises
+            // POST /api/exercises (Admin only)
             group.MapPost("/", async (CreateExerciseCommand command, IMediator mediator,
                                      IOutputCacheStore cache, CancellationToken ct) =>
             {
@@ -85,12 +85,14 @@ namespace Exercise.API
                 return Results.CreatedAtRoute("GetExerciseById", new { id }, new { id });
             })
             .WithName("CreateExercise")
-            .WithSummary("Create a new exercise")
+            .WithSummary("Create a new exercise (Admin only)")
+            .RequireAuthorization("Admin")
             .Produces(StatusCodes.Status201Created)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
+            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden);
 
-            // PUT /api/exercises/{id}
+            // PUT /api/exercises/{id} (Admin only)
             group.MapPut("/{id:guid}", async (Guid id, UpdateExerciseCommand command, IMediator mediator,
                                               IOutputCacheStore cache, CancellationToken ct) =>
             {
@@ -100,13 +102,15 @@ namespace Exercise.API
                 return Results.NoContent();
             })
             .WithName("UpdateExercise")
-            .WithSummary("Update an existing exercise")
+            .WithSummary("Update an existing exercise (Admin only)")
+            .RequireAuthorization("Admin")
             .Produces(StatusCodes.Status204NoContent)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
+            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden);
 
-            // DELETE /api/exercises/{id}
+            // DELETE /api/exercises/{id} (Admin only)
             group.MapDelete("/{id:guid}", async (Guid id, IMediator mediator,
                                                  IOutputCacheStore cache, CancellationToken ct) =>
             {
@@ -115,10 +119,12 @@ namespace Exercise.API
                 return Results.NoContent();
             })
             .WithName("DeleteExercise")
-            .WithSummary("Delete an exercise by its ID")
+            .WithSummary("Delete an exercise by its ID (Admin only)")
+            .RequireAuthorization("Admin")
             .Produces(StatusCodes.Status204NoContent)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
+            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden);
         }
     }
 }

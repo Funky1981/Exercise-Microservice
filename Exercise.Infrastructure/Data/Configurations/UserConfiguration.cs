@@ -33,6 +33,11 @@ namespace Exercise.Infrastructure.Data.Configurations
             builder.Property(u => u.PasswordHash)
                 .HasMaxLength(500);
 
+            builder.Property(u => u.Role)
+                .IsRequired()
+                .HasMaxLength(50)
+                .HasDefaultValue("User");
+
             builder.Property(u => u.Provider)
                 .HasMaxLength(100);
 

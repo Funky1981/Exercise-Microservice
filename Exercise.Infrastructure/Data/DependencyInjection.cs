@@ -1,4 +1,6 @@
 using Exercise.Application.Abstractions.Repositories;
+using Exercise.Application.Abstractions.Services;
+using Exercise.Infrastructure.ExternalApis;
 using Exercise.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -29,6 +31,17 @@ namespace Exercise.Infrastructure.Data
 
             // Unit of Work
             services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+            // External API provider — swap implementation here to change providers
+            services.AddScoped<IExerciseDataProvider, RapidApiExerciseProvider>();
+
+            // Named HttpClient for RapidAPI (with standard resilience pipeline)
+            services.AddHttpClient("ExerciseApi", client =>
+            {
+                client.BaseAddress = new Uri("https://exercisedb.p.rapidapi.com/");
+                client.DefaultRequestHeaders.Add("x-rapidapi-host", configuration["RapidApi:Host"]);
+                client.DefaultRequestHeaders.Add("x-rapidapi-key", configuration["RapidApi:Key"]);
+            }).AddStandardResilienceHandler();
 
             return services;
         }

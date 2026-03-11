@@ -6,7 +6,6 @@ using Exercise.Application;
 using Exercise.Application.Abstractions.Services;
 using Exercise.Infrastructure.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -37,15 +36,7 @@ builder.Services.AddInfrastructure(builder.Configuration);
 // ?? JWT Token Service ??????????????????????????????????????????????????????????
 builder.Services.AddSingleton<ITokenService, JwtTokenService>();
 
-// 🟧 External HTTP client for RapidAPI (optional integration) ──────────────────
-// Standard resilience pipeline: retry (3x with exponential back-off),
-// circuit breaker (opens after 5 failures), and a 10-second total timeout.
-builder.Services.AddHttpClient("ExerciseApi", client =>
-{
-    client.BaseAddress = new Uri("https://exercisedb.p.rapidapi.com/");
-    client.DefaultRequestHeaders.Add("x-rapidapi-host", builder.Configuration["RapidApi:Host"]);
-    client.DefaultRequestHeaders.Add("x-rapidapi-key", builder.Configuration["RapidApi:Key"]);
-}).AddStandardResilienceHandler();
+// HttpClient for RapidAPI is now registered in Infrastructure DI (AddInfrastructure).
 
 // ?? JWT Bearer Authentication ??????????????????????????????????????????????
 var jwtKey = builder.Configuration["Jwt:Key"]
@@ -66,7 +57,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    // "Admin" policy — only users with Role=Admin can call admin endpoints
+    // (exercise catalogue mutations, sync, etc.).
+    options.AddPolicy("Admin", policy =>
+        policy.RequireRole("Admin"));
+});
 
 // ?? API Versioning ???????????????????????????????????????????????????????????
 // Header-based (api-version: 1.0) + query-string (?api-version=1.0).
@@ -161,14 +158,10 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// Apply any pending EF Core migrations on startup so containers self-migrate.
-// Skipped for SQLite (used by integration tests which call EnsureCreatedAsync instead).
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<ExerciseDbContext>();
-    if (db.Database.ProviderName?.Contains("SqlServer", StringComparison.OrdinalIgnoreCase) == true)
-        await db.Database.MigrateAsync();
-}
+// ⚠️ Migrations are NOT auto-applied on startup to avoid race conditions
+// with multiple replicas. Run migrations externally:
+//   dotnet ef database update --project Exercise.Infrastructure --startup-project Exercise.API
+// Or use a Kubernetes init container / CI pipeline step.
 
 // ?? HTTP pipeline ??????????????????????????????????????????????????????????
 if (app.Environment.IsDevelopment())
