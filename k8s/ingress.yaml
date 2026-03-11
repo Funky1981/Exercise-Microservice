@@ -1,0 +1,39 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: exercise-api-ingress
+  namespace: exercise-prod         # change to exercise-staging for staging
+  annotations:
+    # ── TLS via cert-manager (Let's Encrypt) ──────────────────────────────────
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+
+    # ── nginx rate-limiting — distributed across all pods ────────────────────
+    # 30 req/min per client IP on all API routes (matches the in-process policy)
+    nginx.ingress.kubernetes.io/limit-rps: "1"          # 1 req/s burst window
+    nginx.ingress.kubernetes.io/limit-connections: "10"  # max concurrent per IP
+
+    # ── Security headers ──────────────────────────────────────────────────────
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "Strict-Transport-Security: max-age=31536000; includeSubDomains; preload";
+
+    # ── Proxy settings ────────────────────────────────────────────────────────
+    nginx.ingress.kubernetes.io/proxy-body-size: "1m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "30"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "30"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - api.yourdomain.com          # ← replace with your actual domain
+      secretName: exercise-api-tls   # cert-manager will populate this Secret
+  rules:
+    - host: api.yourdomain.com        # ← replace with your actual domain
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: exercise-api-service
+                port:
+                  number: 80

@@ -14,10 +14,12 @@ namespace Exercise.Domain.Entities
         public string? ProviderId { get; private set; }
         public string Name { get; private set; }
         public string? UserName { get; private set; }
+        public string Role { get; private set; } = "User";
         public Height? Height { get; private set; }
         public Weight? Weight { get; private set; }
         public DateTime CreatedAt { get; private set; }
         public string? RefreshTokenHash { get; private set; }
+        public string? RefreshTokenPreviousHash { get; private set; }   // for reuse detection
         public DateTime? RefreshTokenExpiry { get; private set; }
 
         private User() { } // For ORM
@@ -37,6 +39,12 @@ namespace Exercise.Domain.Entities
             Provider = provider;
             ProviderId = providerId;
             CreatedAt = DateTime.UtcNow;
+            Role = "User";
+        }
+
+        public void PromoteToAdmin()
+        {
+            Role = "Admin";
         }
 
         public bool IsSocialLogin()
@@ -90,10 +98,28 @@ namespace Exercise.Domain.Entities
 
         public void SetRefreshToken(string token, DateTime expiry)
         {
+            // Preserve current hash so reuse of the old token can be detected.
+            RefreshTokenPreviousHash = RefreshTokenHash;
             using var sha = System.Security.Cryptography.SHA256.Create();
             var bytes = System.Text.Encoding.UTF8.GetBytes(token);
             RefreshTokenHash = Convert.ToHexString(sha.ComputeHash(bytes));
             RefreshTokenExpiry = expiry;
+        }
+
+        /// <summary>
+        /// Returns true when the presented token matches the PREVIOUS (already-rotated)
+        /// hash, indicating a token-reuse / replay attack.
+        /// When true the caller MUST revoke all tokens for this user.
+        /// </summary>
+        public bool IsRefreshTokenReused(string token)
+        {
+            if (string.IsNullOrWhiteSpace(RefreshTokenPreviousHash))
+                return false;
+
+            using var sha = System.Security.Cryptography.SHA256.Create();
+            var bytes = System.Text.Encoding.UTF8.GetBytes(token);
+            var hash  = Convert.ToHexString(sha.ComputeHash(bytes));
+            return hash.Equals(RefreshTokenPreviousHash, StringComparison.OrdinalIgnoreCase);
         }
 
         public bool VerifyRefreshToken(string token)
@@ -109,8 +135,9 @@ namespace Exercise.Domain.Entities
 
         public void ClearRefreshToken()
         {
-            RefreshTokenHash = null;
-            RefreshTokenExpiry = null;
+            RefreshTokenHash         = null;
+            RefreshTokenPreviousHash = null;
+            RefreshTokenExpiry       = null;
         }
 
         private static bool IsValidEmail(string email)

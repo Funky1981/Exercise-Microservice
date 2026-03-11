@@ -33,6 +33,11 @@ namespace Exercise.Infrastructure.Data.Configurations
             builder.Property(u => u.PasswordHash)
                 .HasMaxLength(500);
 
+            builder.Property(u => u.Role)
+                .IsRequired()
+                .HasMaxLength(50)
+                .HasDefaultValue("User");
+
             builder.Property(u => u.Provider)
                 .HasMaxLength(100);
 
@@ -64,6 +69,9 @@ namespace Exercise.Infrastructure.Data.Configurations
             builder.HasQueryFilter(u => !EF.Property<bool>(u, "IsDeleted"));
 
             builder.Property(u => u.RefreshTokenHash)
+                .HasMaxLength(64);
+
+            builder.Property(u => u.RefreshTokenPreviousHash)
                 .HasMaxLength(64);
 
             builder.Property(u => u.RefreshTokenExpiry);

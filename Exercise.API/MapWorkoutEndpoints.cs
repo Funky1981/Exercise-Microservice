@@ -39,8 +39,7 @@ namespace Exercise.API
                 async (ClaimsPrincipal user, [FromQuery] int pageNumber, [FromQuery] int pageSize,
                        IMediator mediator, CancellationToken ct) =>
                 {
-                    var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
-                    if (!Guid.TryParse(sub, out var userId))
+                    if (!user.TryGetUserId(out var userId))
                         return Results.Unauthorized();
 
                     var result = await mediator.Send(
@@ -57,8 +56,7 @@ namespace Exercise.API
             // GET /api/workouts/{id}
             group.MapGet("/{id:guid}", async (Guid id, ClaimsPrincipal user, IMediator mediator, CancellationToken ct) =>
             {
-                var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
-                if (!Guid.TryParse(sub, out var userId))
+                if (!user.TryGetUserId(out var userId))
                     return Results.Unauthorized();
 
                 var result = await mediator.Send(new GetWorkoutByIdQuery(id), ct);
@@ -86,8 +84,7 @@ namespace Exercise.API
             // userId is set from the JWT claim — the request body UserId field is ignored
             group.MapPost("/", async (ClaimsPrincipal user, CreateWorkoutCommand command, IMediator mediator, CancellationToken ct) =>
             {
-                var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
-                if (!Guid.TryParse(sub, out var userId))
+                if (!user.TryGetUserId(out var userId))
                     return Results.Unauthorized();
 
                 command.UserId = userId;
@@ -106,8 +103,7 @@ namespace Exercise.API
                 async (Guid id, ClaimsPrincipal user, UpdateWorkoutCommand command,
                        IWorkoutRepository workoutRepo, IMediator mediator, CancellationToken ct) =>
                 {
-                    var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
-                    if (!Guid.TryParse(sub, out var userId)) return Results.Unauthorized();
+                    if (!user.TryGetUserId(out var userId)) return Results.Unauthorized();
 
                     var workout = await workoutRepo.GetByIdAsync(id, ct);
                     if (workout is null)
@@ -137,8 +133,7 @@ namespace Exercise.API
                 async (Guid id, ClaimsPrincipal user, [FromBody] CompleteWorkoutRequest body,
                        IWorkoutRepository workoutRepo, IMediator mediator, CancellationToken ct) =>
                 {
-                    var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
-                    if (!Guid.TryParse(sub, out var userId)) return Results.Unauthorized();
+                    if (!user.TryGetUserId(out var userId)) return Results.Unauthorized();
 
                     var workout = await workoutRepo.GetByIdAsync(id, ct);
                     if (workout is null)
@@ -167,8 +162,7 @@ namespace Exercise.API
             group.MapDelete("/{id:guid}",
                 async (Guid id, ClaimsPrincipal user, IWorkoutRepository workoutRepo, IMediator mediator, CancellationToken ct) =>
                 {
-                    var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
-                    if (!Guid.TryParse(sub, out var userId)) return Results.Unauthorized();
+                    if (!user.TryGetUserId(out var userId)) return Results.Unauthorized();
 
                     var workout = await workoutRepo.GetByIdAsync(id, ct);
                     if (workout is null)
@@ -196,8 +190,7 @@ namespace Exercise.API
                 async (Guid id, ClaimsPrincipal user, [FromBody] AddExerciseRequest body,
                        IWorkoutRepository workoutRepo, IMediator mediator, CancellationToken ct) =>
                 {
-                    var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
-                    if (!Guid.TryParse(sub, out var userId)) return Results.Unauthorized();
+                    if (!user.TryGetUserId(out var userId)) return Results.Unauthorized();
 
                     var workout = await workoutRepo.GetByIdAsync(id, ct);
                     if (workout is null)
@@ -226,8 +219,7 @@ namespace Exercise.API
                 async (Guid id, Guid exerciseId, ClaimsPrincipal user,
                        IWorkoutRepository workoutRepo, IMediator mediator, CancellationToken ct) =>
                 {
-                    var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
-                    if (!Guid.TryParse(sub, out var userId)) return Results.Unauthorized();
+                    if (!user.TryGetUserId(out var userId)) return Results.Unauthorized();
 
                     var workout = await workoutRepo.GetByIdAsync(id, ct);
                     if (workout is null)

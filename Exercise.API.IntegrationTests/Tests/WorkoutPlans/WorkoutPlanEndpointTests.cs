@@ -11,24 +11,17 @@ namespace Exercise.API.IntegrationTests.Tests.WorkoutPlans;
 /// Unauthorized tests use the real JWT factory; authorized tests bypass JWT via TestAuthHandler.
 /// </summary>
 [Collection("Integration")]
-public class WorkoutPlanEndpointTests : IClassFixture<ExerciseWebApplicationFactory>,
-                                        IClassFixture<AuthBypassWebApplicationFactory>
+public class WorkoutPlanEndpointTests : DualFactoryIntegrationTestBase
 {
-    private readonly ExerciseWebApplicationFactory   _realFactory;
-    private readonly AuthBypassWebApplicationFactory _bypassFactory;
-
     public WorkoutPlanEndpointTests(
         ExerciseWebApplicationFactory   realFactory,
         AuthBypassWebApplicationFactory bypassFactory)
-    {
-        _realFactory   = realFactory;
-        _bypassFactory = bypassFactory;
-    }
+        : base(realFactory, bypassFactory) { }
 
     [Fact]
     public async Task GetWorkoutPlans_WithoutToken_ReturnsUnauthorized()
     {
-        var client   = _realFactory.CreateClient();
+        var client   = RealFactory.CreateClient();
         var response = await client.GetAsync("/api/workout-plans?pageNumber=1&pageSize=20");
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -37,7 +30,7 @@ public class WorkoutPlanEndpointTests : IClassFixture<ExerciseWebApplicationFact
     [Fact]
     public async Task GetWorkoutPlans_WithValidToken_ReturnsOk()
     {
-        var client   = _bypassFactory.CreateClient();
+        var client   = BypassFactory.CreateClient();
         var response = await client.GetAsync("/api/workout-plans?pageNumber=1&pageSize=20");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -46,7 +39,7 @@ public class WorkoutPlanEndpointTests : IClassFixture<ExerciseWebApplicationFact
     [Fact]
     public async Task CreateWorkoutPlan_WithValidToken_Returns201()
     {
-        var client = _bypassFactory.CreateClient();
+        var client = BypassFactory.CreateClient();
 
         var response = await client.PostAsJsonAsync("/api/workout-plans", new
         {
@@ -61,7 +54,7 @@ public class WorkoutPlanEndpointTests : IClassFixture<ExerciseWebApplicationFact
     [Fact]
     public async Task CreateWorkoutPlan_ThenGetWorkoutPlans_ReturnsThatPlan()
     {
-        var client = _bypassFactory.CreateClient();
+        var client = BypassFactory.CreateClient();
 
         await client.PostAsJsonAsync("/api/workout-plans", new
         {
@@ -95,32 +88,32 @@ public class WorkoutPlanEndpointTests : IClassFixture<ExerciseWebApplicationFact
     [Fact]
     public async Task GetWorkoutPlanById_ByDifferentUser_ReturnsForbidden()
     {
-        var original = _bypassFactory.AuthenticatedUserId;
+        var original = BypassFactory.AuthenticatedUserId;
         try
         {
-            _bypassFactory.AuthenticatedUserId = Guid.NewGuid();
-            var client = _bypassFactory.CreateClient();
+            BypassFactory.AuthenticatedUserId = Guid.NewGuid();
+            var client = BypassFactory.CreateClient();
             var planId = await CreateWorkoutPlanAsCurrentUserAsync(client);
 
-            _bypassFactory.AuthenticatedUserId = Guid.NewGuid();
+            BypassFactory.AuthenticatedUserId = Guid.NewGuid();
             var response = await client.GetAsync($"/api/workout-plans/{planId}");
 
             response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
         }
-        finally { _bypassFactory.AuthenticatedUserId = original; }
+        finally { BypassFactory.AuthenticatedUserId = original; }
     }
 
     [Fact]
     public async Task UpdateWorkoutPlan_ByDifferentUser_ReturnsForbidden()
     {
-        var original = _bypassFactory.AuthenticatedUserId;
+        var original = BypassFactory.AuthenticatedUserId;
         try
         {
-            _bypassFactory.AuthenticatedUserId = Guid.NewGuid();
-            var client = _bypassFactory.CreateClient();
+            BypassFactory.AuthenticatedUserId = Guid.NewGuid();
+            var client = BypassFactory.CreateClient();
             var planId = await CreateWorkoutPlanAsCurrentUserAsync(client);
 
-            _bypassFactory.AuthenticatedUserId = Guid.NewGuid();
+            BypassFactory.AuthenticatedUserId = Guid.NewGuid();
             var response = await client.PutAsJsonAsync($"/api/workout-plans/{planId}", new
             {
                 name      = "Hacked Plan",
@@ -130,24 +123,24 @@ public class WorkoutPlanEndpointTests : IClassFixture<ExerciseWebApplicationFact
 
             response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
         }
-        finally { _bypassFactory.AuthenticatedUserId = original; }
+        finally { BypassFactory.AuthenticatedUserId = original; }
     }
 
     [Fact]
     public async Task DeleteWorkoutPlan_ByDifferentUser_ReturnsForbidden()
     {
-        var original = _bypassFactory.AuthenticatedUserId;
+        var original = BypassFactory.AuthenticatedUserId;
         try
         {
-            _bypassFactory.AuthenticatedUserId = Guid.NewGuid();
-            var client = _bypassFactory.CreateClient();
+            BypassFactory.AuthenticatedUserId = Guid.NewGuid();
+            var client = BypassFactory.CreateClient();
             var planId = await CreateWorkoutPlanAsCurrentUserAsync(client);
 
-            _bypassFactory.AuthenticatedUserId = Guid.NewGuid();
+            BypassFactory.AuthenticatedUserId = Guid.NewGuid();
             var response = await client.DeleteAsync($"/api/workout-plans/{planId}");
 
             response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
         }
-        finally { _bypassFactory.AuthenticatedUserId = original; }
+        finally { BypassFactory.AuthenticatedUserId = original; }
     }
 }

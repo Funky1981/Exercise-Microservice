@@ -1,7 +1,6 @@
 using Exercise.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using ExerciseEntity = Exercise.Domain.Entities.Exercise;
 
 namespace Exercise.Infrastructure.Data.Configurations
 {
@@ -34,13 +33,14 @@ namespace Exercise.Infrastructure.Data.Configurations
             // Index for common query pattern: fetch workouts by user
             builder.HasIndex(w => w.UserId);
 
-            // Ignore the public read-only wrapper; map via the private backing field
-            builder.Ignore(w => w.Exercises);
-
-            // Many-to-many: Workout <-> Exercise via join table
-            builder.HasMany<ExerciseEntity>("_exercises")
+            // Many-to-many: Workout <-> Exercise via join table.
+            // UsePropertyAccessMode.Field tells EF Core to populate the private _exercises
+            // backing field directly, making .Include(w => w.Exercises) type-safe.
+            builder.HasMany(w => w.Exercises)
                 .WithMany()
                 .UsingEntity(j => j.ToTable("WorkoutExercises"));
+            builder.Navigation(w => w.Exercises)
+                .UsePropertyAccessMode(PropertyAccessMode.Field);
 
             // Soft delete
             builder.Property<bool>("IsDeleted").HasDefaultValue(false);

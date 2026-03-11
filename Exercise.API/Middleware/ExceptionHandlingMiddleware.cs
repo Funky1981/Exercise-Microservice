@@ -1,7 +1,6 @@
 using Exercise.Application.Common.Exceptions;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
-using System.Text.Json;
 
 namespace Exercise.API.Middleware
 {
@@ -62,7 +61,7 @@ namespace Exercise.API.Middleware
                 Instance = context.Request.Path
             };
 
-            return context.Response.WriteAsync(JsonSerializer.Serialize(problemDetails));
+            return context.Response.WriteAsJsonAsync(problemDetails);
         }
 
         private static Task HandleNotFoundExceptionAsync(HttpContext context, NotFoundException ex)
@@ -78,7 +77,7 @@ namespace Exercise.API.Middleware
                 Instance = context.Request.Path
             };
 
-            return context.Response.WriteAsync(JsonSerializer.Serialize(problemDetails));
+            return context.Response.WriteAsJsonAsync(problemDetails);
         }
 
         private static Task HandleUnauthorizedExceptionAsync(HttpContext context, UnauthorizedAccessException ex)
@@ -94,7 +93,7 @@ namespace Exercise.API.Middleware
                 Instance = context.Request.Path
             };
 
-            return context.Response.WriteAsync(JsonSerializer.Serialize(problemDetails));
+            return context.Response.WriteAsJsonAsync(problemDetails);
         }
 
         private static Task HandleGenericExceptionAsync(HttpContext context)
@@ -110,7 +109,7 @@ namespace Exercise.API.Middleware
                 Instance = context.Request.Path
             };
 
-            return context.Response.WriteAsync(JsonSerializer.Serialize(problemDetails));
+            return context.Response.WriteAsJsonAsync(problemDetails);
         }
     }
 }

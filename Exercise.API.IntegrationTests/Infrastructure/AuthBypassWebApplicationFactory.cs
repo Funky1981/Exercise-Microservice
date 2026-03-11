@@ -82,6 +82,12 @@ public class AuthBypassWebApplicationFactory : WebApplicationFactory<Program>, I
                 options.DefaultPolicy = new AuthorizationPolicyBuilder("Test")
                     .RequireAuthenticatedUser()
                     .Build();
+
+                // Mirror the Admin policy from production but use the "Test" scheme
+                options.AddPolicy("Admin", policy =>
+                    policy.AddAuthenticationSchemes("Test")
+                          .RequireRole("Admin"));
+
                 options.FallbackPolicy = null;
             });
         });

@@ -45,8 +45,7 @@ namespace Exercise.API
             // GET /api/users/{id}
             group.MapGet("/{id:guid}", async (Guid id, ClaimsPrincipal user, IMediator mediator, CancellationToken ct) =>
             {
-                var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
-                if (!Guid.TryParse(sub, out var userId)) return Results.Unauthorized();
+                if (!user.TryGetUserId(out var userId)) return Results.Unauthorized();
                 if (id != userId) return Results.Forbid();
 
                 var result = await mediator.Send(new GetUserByIdQuery(id), ct);
@@ -70,8 +69,7 @@ namespace Exercise.API
             group.MapPut("/{id:guid}/profile",
                 async (Guid id, ClaimsPrincipal user, UpdateUserProfileCommand command, IMediator mediator, CancellationToken ct) =>
                 {
-                    var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
-                    if (!Guid.TryParse(sub, out var userId)) return Results.Unauthorized();
+                    if (!user.TryGetUserId(out var userId)) return Results.Unauthorized();
                     if (id != userId) return Results.Forbid();
 
                     command.UserId = id;
@@ -90,8 +88,7 @@ namespace Exercise.API
             group.MapDelete("/{id:guid}",
                 async (Guid id, ClaimsPrincipal user, IMediator mediator, CancellationToken ct) =>
                 {
-                    var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
-                    if (!Guid.TryParse(sub, out var userId)) return Results.Unauthorized();
+                    if (!user.TryGetUserId(out var userId)) return Results.Unauthorized();
                     if (id != userId) return Results.Forbid();
 
                     await mediator.Send(new DeleteUserCommand(id), ct);

@@ -50,6 +50,12 @@ namespace Exercise.Infrastructure.Data
         public DbSet<ExerciseLog> ExerciseLogs { get; set; } = null!;
 
         /// <summary>
+        /// Gets or sets the Analytics entity set
+        /// Represents the Analytics table in the database
+        /// </summary>
+        public DbSet<Analytics> Analytics { get; set; } = null!;
+
+        /// <summary>
         /// Configures the entity models using Fluent API
         /// Applies all IEntityTypeConfiguration implementations from this assembly
         /// </summary>
