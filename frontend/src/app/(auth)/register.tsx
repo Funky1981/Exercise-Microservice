@@ -4,11 +4,13 @@ import { StyleSheet, Text, View } from 'react-native';
 import { PrimaryButton } from '@/components/ui/primary-button';
 import { TextField } from '@/components/ui/text-field';
 import { AuthShell } from '@/features/auth/auth-shell';
+import { useToast } from '@/providers/toast-provider';
 import { useSession } from '@/state/session-context';
 import { tokens } from '@/theme/tokens';
 
 export default function RegisterScreen() {
   const { register } = useSession();
+  const { showToast } = useToast();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,6 +22,11 @@ export default function RegisterScreen() {
       setBusy(true);
       setError(null);
       await register({ name, email, password });
+      showToast({
+        tone: 'success',
+        title: 'Account created',
+        message: 'You are signed in and ready to start planning sessions.',
+      });
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : 'Unable to register.');
     } finally {

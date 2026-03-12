@@ -70,6 +70,29 @@ public class WorkoutPlanEndpointTests : DualFactoryIntegrationTestBase
         body.Should().Contain("Endurance Block");
     }
 
+    [Fact]
+    public async Task GetWorkoutPlanById_ReturnsAttachedWorkouts()
+    {
+        var client = BypassFactory.CreateClient();
+        var workoutId = await CreateWorkoutAsync(client, "Plan linked workout");
+        var planId = await CreateWorkoutPlanAsCurrentUserAsync(client);
+
+        var addResponse = await client.PostAsJsonAsync($"/api/workout-plans/{planId}/workouts", new
+        {
+            workoutId
+        });
+        addResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var response = await client.GetAsync($"/api/workout-plans/{planId}");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("workouts").EnumerateArray()
+            .Select(item => item.GetProperty("id").GetGuid())
+            .Should()
+            .Contain(workoutId);
+    }
+
     // ── Ownership guard (403) ────────────────────────────────────────────────
 
     private async Task<Guid> CreateWorkoutPlanAsCurrentUserAsync(HttpClient client)
@@ -82,6 +105,20 @@ public class WorkoutPlanEndpointTests : DualFactoryIntegrationTestBase
         });
         resp.StatusCode.Should().Be(HttpStatusCode.Created);
         var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        return body.GetProperty("id").GetGuid();
+    }
+
+    private static async Task<Guid> CreateWorkoutAsync(HttpClient client, string name)
+    {
+        var response = await client.PostAsJsonAsync("/api/workouts", new
+        {
+            name,
+            date = DateTime.UtcNow,
+            notes = "Created for workout plan integration test"
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
         return body.GetProperty("id").GetGuid();
     }
 

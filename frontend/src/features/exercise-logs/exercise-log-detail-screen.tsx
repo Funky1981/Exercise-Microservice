@@ -1,5 +1,5 @@
-import { useDeferredValue, useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import {
   QueryClient,
@@ -10,14 +10,16 @@ import {
 
 import { apiClient } from '@/api/client';
 import { queryKeys } from '@/api/query-keys';
-import type { Exercise, ExerciseLogEntry } from '@/api/types';
+import type { ExerciseLogEntry } from '@/api/types';
 import { AppScreen } from '@/components/ui/app-screen';
 import { GlowCard } from '@/components/ui/glow-card';
 import { PrimaryButton } from '@/components/ui/primary-button';
 import { SectionHeading } from '@/components/ui/section-heading';
 import { StatusCard } from '@/components/ui/status-card';
 import { TextField } from '@/components/ui/text-field';
+import { ExerciseSearchPicker } from '@/features/exercises/exercise-search-picker';
 import { formatDateTime, formatDuration, minutesToDuration } from '@/lib/format';
+import { useToast } from '@/providers/toast-provider';
 import { useSession } from '@/state/session-context';
 import { tokens } from '@/theme/tokens';
 
@@ -28,9 +30,7 @@ type ExerciseLogDetailScreenProps = {
 export function ExerciseLogDetailScreen({ logId }: ExerciseLogDetailScreenProps) {
   const queryClient = useQueryClient();
   const { session } = useSession();
-  const [search, setSearch] = useState('');
-  const deferredSearch = useDeferredValue(search);
-  const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
+  const { showToast } = useToast();
   const [sets, setSets] = useState('3');
   const [reps, setReps] = useState('10');
   const [minutes, setMinutes] = useState('');
@@ -50,29 +50,8 @@ export function ExerciseLogDetailScreen({ logId }: ExerciseLogDetailScreenProps)
     queryFn: () => apiClient.getExercises(1, 100),
   });
 
-  const matchingExercises = useMemo(() => {
-    const source = exercisesQuery.data?.items ?? [];
-    const query = deferredSearch.trim().toLowerCase();
-
-    if (!query) {
-      return source.slice(0, 8);
-    }
-
-    return source
-      .filter((exercise) =>
-        [exercise.name, exercise.bodyPart, exercise.targetMuscle]
-          .filter(Boolean)
-          .some((value) => value.toLowerCase().includes(query))
-      )
-      .slice(0, 8);
-  }, [deferredSearch, exercisesQuery.data?.items]);
-
   const addEntryMutation = useMutation({
-    mutationFn: async () => {
-      if (!selectedExercise) {
-        throw new Error('Select an exercise before adding an entry.');
-      }
-
+    mutationFn: async (exerciseId: string) => {
       const parsedSets = Number(sets);
       const parsedReps = Number(reps);
       const parsedMinutes = minutes ? Number(minutes) : 0;
@@ -90,17 +69,19 @@ export function ExerciseLogDetailScreen({ logId }: ExerciseLogDetailScreenProps)
       }
 
       return apiClient.addExerciseLogEntry(logId!, {
-        exerciseId: selectedExercise.id,
+        exerciseId,
         sets: parsedSets,
         reps: parsedReps,
         duration: minutes ? minutesToDuration(parsedMinutes) : null,
       });
     },
     onSuccess: async () => {
-      setSearch('');
-      setSelectedExercise(null);
       setMinutes('');
       await invalidateLogQueries(queryClient, session?.userId, logId);
+      showToast({
+        tone: 'success',
+        title: 'Entry added',
+      });
     },
   });
 
@@ -122,6 +103,10 @@ export function ExerciseLogDetailScreen({ logId }: ExerciseLogDetailScreenProps)
       await queryClient.invalidateQueries({
         queryKey: queryKeys.analytics.summary(session?.userId),
       });
+      showToast({
+        tone: 'success',
+        title: 'Log completed',
+      });
     },
   });
 
@@ -129,10 +114,14 @@ export function ExerciseLogDetailScreen({ logId }: ExerciseLogDetailScreenProps)
     mutationFn: () => apiClient.deleteExerciseLog(logId!),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: queryKeys.exerciseLogs.list(session?.userId, 1, 20),
+        queryKey: ['exercise-logs', 'list', session?.userId],
       });
       await queryClient.invalidateQueries({
         queryKey: queryKeys.analytics.summary(session?.userId),
+      });
+      showToast({
+        tone: 'success',
+        title: 'Log deleted',
       });
       router.back();
     },
@@ -172,7 +161,7 @@ export function ExerciseLogDetailScreen({ logId }: ExerciseLogDetailScreenProps)
       <SectionHeading
         eyebrow={log.isCompleted ? 'Completed log' : 'Live log'}
         title={log.name ?? 'Untitled log'}
-        subtitle="This detail screen supports searchable exercise selection, entry creation, completion, and deletion against the current backend contract."
+        subtitle="This detail screen keeps entry creation, completion, and deletion in one place, with toast feedback for each mutation."
       />
 
       <GlowCard>
@@ -186,30 +175,6 @@ export function ExerciseLogDetailScreen({ logId }: ExerciseLogDetailScreenProps)
 
       <GlowCard>
         <Text style={styles.panelTitle}>Add entry</Text>
-        <TextField
-          label="Find exercise"
-          value={search}
-          onChangeText={setSearch}
-          placeholder="Bench press, hamstrings, shoulders..."
-        />
-        <View style={styles.exerciseResults}>
-          {matchingExercises.map((exercise) => (
-            <Pressable
-              key={exercise.id}
-              onPress={() => setSelectedExercise(exercise)}
-              style={[
-                styles.exerciseChip,
-                selectedExercise?.id === exercise.id && styles.exerciseChipSelected,
-              ]}>
-              <Text style={styles.exerciseChipText}>{exercise.name}</Text>
-            </Pressable>
-          ))}
-        </View>
-        {selectedExercise ? (
-          <Text style={styles.selectionText}>
-            Selected: {selectedExercise.name} ({selectedExercise.targetMuscle})
-          </Text>
-        ) : null}
         <View style={styles.inlineFields}>
           <TextField label="Sets" value={sets} onChangeText={setSets} keyboardType="number-pad" />
           <TextField label="Reps" value={reps} onChangeText={setReps} keyboardType="number-pad" />
@@ -221,11 +186,11 @@ export function ExerciseLogDetailScreen({ logId }: ExerciseLogDetailScreenProps)
             helperText="Optional"
           />
         </View>
-        <PrimaryButton
-          label="Add entry"
-          onPress={() => addEntryMutation.mutate()}
-          busy={addEntryMutation.isPending}
-          disabled={log.isCompleted}
+        <ExerciseSearchPicker
+          label="Find exercise"
+          buttonLabel="Add entry"
+          disabled={addEntryMutation.isPending || log.isCompleted}
+          onAdd={(exercise) => addEntryMutation.mutate(exercise.id)}
         />
         {addEntryMutation.isError ? (
           <Text style={styles.error}>
@@ -245,7 +210,12 @@ export function ExerciseLogDetailScreen({ logId }: ExerciseLogDetailScreenProps)
             data={log.entries}
             keyExtractor={(item, index) => `${item.exerciseId}-${index}`}
             renderItem={({ item }) => (
-              <ExerciseLogEntryCard entry={item} exercises={exercisesQuery.data?.items ?? []} />
+              <ExerciseLogEntryCard
+                entry={item}
+                exerciseName={
+                  exercisesQuery.data?.items.find((exercise) => exercise.id === item.exerciseId)?.name
+                }
+              />
             )}
             scrollEnabled={false}
             contentContainerStyle={styles.entryList}
@@ -299,16 +269,14 @@ export function ExerciseLogDetailScreen({ logId }: ExerciseLogDetailScreenProps)
 
 function ExerciseLogEntryCard({
   entry,
-  exercises,
+  exerciseName,
 }: {
   entry: ExerciseLogEntry;
-  exercises: Exercise[];
+  exerciseName?: string;
 }) {
-  const exercise = exercises.find((item) => item.id === entry.exerciseId);
-
   return (
     <GlowCard style={styles.entryCard}>
-      <Text style={styles.entryTitle}>{exercise?.name ?? entry.exerciseId}</Text>
+      <Text style={styles.entryTitle}>{exerciseName ?? entry.exerciseId}</Text>
       <Text style={styles.entryMeta}>
         {entry.sets} sets | {entry.reps} reps | {formatDuration(entry.duration)}
       </Text>
@@ -321,8 +289,14 @@ async function invalidateLogQueries(
   userId: string | undefined,
   logId?: string
 ) {
+  for (const pageSize of [8, 20]) {
+    await queryClient.invalidateQueries({
+      queryKey: queryKeys.exerciseLogs.list(userId, 1, pageSize),
+    });
+  }
+
   await queryClient.invalidateQueries({
-    queryKey: queryKeys.exerciseLogs.list(userId, 1, 20),
+    queryKey: ['exercise-logs', 'list', userId],
   });
 
   if (logId) {
@@ -355,33 +329,6 @@ const styles = StyleSheet.create({
     color: tokens.colors.text,
     fontFamily: tokens.typography.heading,
     fontSize: 20,
-  },
-  exerciseResults: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: tokens.spacing.sm,
-  },
-  exerciseChip: {
-    borderRadius: tokens.radius.pill,
-    borderWidth: 1,
-    borderColor: tokens.colors.border,
-    backgroundColor: tokens.colors.surfaceRaised,
-    paddingHorizontal: tokens.spacing.md,
-    paddingVertical: tokens.spacing.sm,
-  },
-  exerciseChipSelected: {
-    borderColor: tokens.colors.accent,
-    backgroundColor: tokens.colors.surfaceStrong,
-  },
-  exerciseChipText: {
-    color: tokens.colors.text,
-    fontFamily: tokens.typography.bodyStrong,
-    fontSize: 14,
-  },
-  selectionText: {
-    color: tokens.colors.accent,
-    fontFamily: tokens.typography.bodyStrong,
-    fontSize: 14,
   },
   inlineFields: {
     gap: tokens.spacing.md,

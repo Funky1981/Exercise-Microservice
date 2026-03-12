@@ -4,11 +4,13 @@ import { StyleSheet, Text, View } from 'react-native';
 import { AuthShell } from '@/features/auth/auth-shell';
 import { PrimaryButton } from '@/components/ui/primary-button';
 import { TextField } from '@/components/ui/text-field';
+import { useToast } from '@/providers/toast-provider';
 import { useSession } from '@/state/session-context';
 import { tokens } from '@/theme/tokens';
 
 export default function SignInScreen() {
   const { signIn } = useSession();
+  const { showToast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -19,6 +21,11 @@ export default function SignInScreen() {
       setBusy(true);
       setError(null);
       await signIn({ email, password });
+      showToast({
+        tone: 'success',
+        title: 'Signed in',
+        message: 'Session restored and app data is ready.',
+      });
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : 'Unable to sign in.');
     } finally {

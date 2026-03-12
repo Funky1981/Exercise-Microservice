@@ -151,7 +151,7 @@ public class AddExerciseToWorkoutCommandHandlerTests
             .ReturnsAsync(workout);
 
         _exerciseRepoMock
-            .Setup(r => r.GetByIdAsync(exercise.Id, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdForUpdateAsync(exercise.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(exercise);
 
         var command = new AddExerciseToWorkoutCommand(workout.Id, exercise.Id)
@@ -201,7 +201,7 @@ public class AddExerciseToWorkoutCommandHandlerTests
             .ReturnsAsync(workout);
 
         _exerciseRepoMock
-            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdForUpdateAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((ExerciseEntity?)null);
 
         var command = new AddExerciseToWorkoutCommand(workout.Id, Guid.NewGuid())

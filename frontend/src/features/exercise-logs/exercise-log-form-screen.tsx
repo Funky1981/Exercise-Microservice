@@ -4,18 +4,19 @@ import { router } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { apiClient } from '@/api/client';
-import { queryKeys } from '@/api/query-keys';
 import { AppScreen } from '@/components/ui/app-screen';
 import { GlowCard } from '@/components/ui/glow-card';
 import { PrimaryButton } from '@/components/ui/primary-button';
 import { TextField } from '@/components/ui/text-field';
 import { inputDateFromIso, isoDateFromInput, normalizeOptionalText } from '@/lib/format';
+import { useToast } from '@/providers/toast-provider';
 import { useSession } from '@/state/session-context';
 import { tokens } from '@/theme/tokens';
 
 export function ExerciseLogFormScreen() {
   const queryClient = useQueryClient();
   const { session } = useSession();
+  const { showToast } = useToast();
   const [name, setName] = useState('');
   const [date, setDate] = useState(inputDateFromIso(new Date().toISOString()));
   const [notes, setNotes] = useState('');
@@ -35,7 +36,11 @@ export function ExerciseLogFormScreen() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: queryKeys.exerciseLogs.list(session?.userId, 1, 20),
+        queryKey: ['exercise-logs', 'list', session?.userId],
+      });
+      showToast({
+        tone: 'success',
+        title: 'Exercise log created',
       });
       router.back();
     },

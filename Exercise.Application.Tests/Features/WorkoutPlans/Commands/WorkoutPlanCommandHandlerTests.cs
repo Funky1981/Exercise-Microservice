@@ -72,7 +72,7 @@ public class AddWorkoutToWorkoutPlanCommandHandlerTests
             .ReturnsAsync(plan);
 
         _workoutRepoMock
-            .Setup(r => r.GetByIdAsync(workout.Id, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdForUpdateAsync(workout.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(workout);
 
         var command = new AddWorkoutToWorkoutPlanCommand(plan.Id, workout.Id)

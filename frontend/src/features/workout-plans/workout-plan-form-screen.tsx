@@ -16,6 +16,7 @@ import {
   normalizeOptionalNullableText,
   normalizeOptionalText,
 } from '@/lib/format';
+import { useToast } from '@/providers/toast-provider';
 import { useSession } from '@/state/session-context';
 import { tokens } from '@/theme/tokens';
 
@@ -27,6 +28,7 @@ type WorkoutPlanFormScreenProps = {
 export function WorkoutPlanFormScreen({ mode, planId }: WorkoutPlanFormScreenProps) {
   const queryClient = useQueryClient();
   const { session } = useSession();
+  const { showToast } = useToast();
   const [name, setName] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -74,7 +76,7 @@ export function WorkoutPlanFormScreen({ mode, planId }: WorkoutPlanFormScreenPro
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: queryKeys.workoutPlans.list(session?.userId, 1, 20),
+        queryKey: ['workout-plans', 'list', session?.userId],
       });
 
       if (planId) {
@@ -83,6 +85,10 @@ export function WorkoutPlanFormScreen({ mode, planId }: WorkoutPlanFormScreenPro
         });
       }
 
+      showToast({
+        tone: 'success',
+        title: mode === 'create' ? 'Plan created' : 'Plan updated',
+      });
       router.back();
     },
     onError: (mutationError) => {

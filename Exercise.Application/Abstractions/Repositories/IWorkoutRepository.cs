@@ -9,6 +9,7 @@ namespace Exercise.Application.Abstractions.Repositories
         Task<Workout?> GetByIdForUpdateAsync(Guid id, CancellationToken cancellationToken = default);
         Task<Workout?> GetByIdWithExercisesForUpdateAsync(Guid id, CancellationToken cancellationToken = default);
         Task<Workout?> GetOwnedByIdAsync(Guid id, Guid userId, CancellationToken cancellationToken = default);
+        Task<Workout?> GetOwnedByIdWithExercisesAsync(Guid id, Guid userId, CancellationToken cancellationToken = default);
         Task<Workout?> GetOwnedByIdForUpdateAsync(Guid id, Guid userId, CancellationToken cancellationToken = default);
         Task<Workout?> GetOwnedByIdWithExercisesForUpdateAsync(Guid id, Guid userId, CancellationToken cancellationToken = default);
         Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default);

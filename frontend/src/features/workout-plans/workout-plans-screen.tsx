@@ -1,12 +1,14 @@
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { router, type Href } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
 
 import { apiClient } from '@/api/client';
 import { queryKeys } from '@/api/query-keys';
 import type { WorkoutPlan } from '@/api/types';
 import { AppScreen } from '@/components/ui/app-screen';
 import { GlowCard } from '@/components/ui/glow-card';
+import { PaginationControls } from '@/components/ui/pagination-controls';
 import { PrimaryButton } from '@/components/ui/primary-button';
 import { SectionHeading } from '@/components/ui/section-heading';
 import { StatusCard } from '@/components/ui/status-card';
@@ -14,12 +16,16 @@ import { formatDate } from '@/lib/format';
 import { useSession } from '@/state/session-context';
 import { tokens } from '@/theme/tokens';
 
+const PAGE_SIZE = 8;
+
 export function WorkoutPlansScreen() {
   const { session } = useSession();
+  const [pageNumber, setPageNumber] = useState(1);
   const plansQuery = useQuery({
-    queryKey: queryKeys.workoutPlans.list(session?.userId, 1, 20),
-    queryFn: () => apiClient.getWorkoutPlans(),
+    queryKey: queryKeys.workoutPlans.list(session?.userId, pageNumber, PAGE_SIZE),
+    queryFn: () => apiClient.getWorkoutPlans(pageNumber, PAGE_SIZE),
     enabled: Boolean(session?.userId),
+    placeholderData: keepPreviousData,
   });
 
   return (
@@ -27,7 +33,7 @@ export function WorkoutPlansScreen() {
       <SectionHeading
         eyebrow="Programs"
         title="Workout plans"
-        subtitle="Plans are kept off the main tab bar so phone navigation stays focused while larger screens still get a direct route."
+        subtitle="Plans live in a secondary stack to keep the main tab bar compact while still supporting full CRUD, activation, and workout association management."
       />
 
       <PrimaryButton
@@ -36,26 +42,35 @@ export function WorkoutPlansScreen() {
       />
 
       {plansQuery.isPending ? (
-        <StatusCard title="Loading plans" body="Fetching the latest plan list." busy />
+        <StatusCard title="Loading plans" body="Fetching the latest plan page." busy />
       ) : plansQuery.isError ? (
         <StatusCard
           title="Unable to load plans"
           body={plansQuery.error instanceof Error ? plansQuery.error.message : 'Try again in a moment.'}
         />
       ) : (
-        <FlatList
-          data={plansQuery.data?.items ?? []}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
-          renderItem={({ item }) => <WorkoutPlanCard plan={item} />}
-          ListEmptyComponent={
-            <StatusCard
-              title="No plans yet"
-              body="Create a plan to start organizing longer training blocks."
-            />
-          }
-          scrollEnabled={false}
-        />
+        <>
+          <FlatList
+            data={plansQuery.data?.items ?? []}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.list}
+            renderItem={({ item }) => <WorkoutPlanCard plan={item} />}
+            ListEmptyComponent={
+              <StatusCard
+                title="No plans yet"
+                body="Create a plan to start organizing longer training blocks."
+              />
+            }
+            scrollEnabled={false}
+          />
+          <PaginationControls
+            pageNumber={plansQuery.data?.pageNumber ?? pageNumber}
+            totalPages={plansQuery.data?.totalPages ?? 1}
+            totalCount={plansQuery.data?.totalCount ?? 0}
+            busy={plansQuery.isFetching}
+            onPageChange={setPageNumber}
+          />
+        </>
       )}
     </AppScreen>
   );
@@ -74,6 +89,7 @@ function WorkoutPlanCard({ plan }: { plan: WorkoutPlan }) {
         {formatDate(plan.startDate)} to {plan.endDate ? formatDate(plan.endDate) : 'Open ended'}
       </Text>
       <Text style={styles.notes}>{plan.notes ?? 'No notes recorded.'}</Text>
+      <Text style={styles.metaSecondary}>{plan.workouts.length} linked workouts</Text>
       <PrimaryButton
         label="View plan"
         onPress={() =>
@@ -120,6 +136,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
+  },
+  metaSecondary: {
+    color: tokens.colors.textSoft,
+    fontFamily: tokens.typography.body,
+    fontSize: 14,
   },
   notes: {
     color: tokens.colors.textMuted,

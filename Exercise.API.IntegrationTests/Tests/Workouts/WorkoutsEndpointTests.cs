@@ -70,6 +70,29 @@ public class WorkoutsEndpointTests : DualFactoryIntegrationTestBase
         body.Should().Contain("Evening Gym");
     }
 
+    [Fact]
+    public async Task GetWorkoutById_ReturnsExercisesWhenWorkoutHasAssociations()
+    {
+        var client = BypassFactory.CreateClient();
+        var exerciseId = await CreateExerciseAsync(client, "Front Squat");
+        var workoutId = await CreateWorkoutAsCurrentUserAsync(client);
+
+        var addResponse = await client.PostAsJsonAsync($"/api/workouts/{workoutId}/exercises", new
+        {
+            exerciseId
+        });
+        addResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var response = await client.GetAsync($"/api/workouts/{workoutId}");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("exercises").EnumerateArray()
+            .Select(item => item.GetProperty("id").GetGuid())
+            .Should()
+            .Contain(exerciseId);
+    }
+
     // ── Ownership guard (403) ────────────────────────────────────────────────
 
     private async Task<Guid> CreateWorkoutAsCurrentUserAsync(HttpClient client)
@@ -82,6 +105,22 @@ public class WorkoutsEndpointTests : DualFactoryIntegrationTestBase
         });
         resp.StatusCode.Should().Be(HttpStatusCode.Created);
         var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        return body.GetProperty("id").GetGuid();
+    }
+
+    private static async Task<Guid> CreateExerciseAsync(HttpClient client, string name)
+    {
+        var response = await client.PostAsJsonAsync("/api/exercises", new
+        {
+            name,
+            bodyPart = "legs",
+            targetMuscle = "quadriceps",
+            equipment = "barbell",
+            description = "Integration test exercise"
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
         return body.GetProperty("id").GetGuid();
     }
 

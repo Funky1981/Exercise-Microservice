@@ -10,13 +10,16 @@ import {
 
 import { apiClient } from '@/api/client';
 import { queryKeys } from '@/api/query-keys';
+import type { Exercise, WorkoutExercise } from '@/api/types';
 import { AppScreen } from '@/components/ui/app-screen';
 import { GlowCard } from '@/components/ui/glow-card';
 import { PrimaryButton } from '@/components/ui/primary-button';
 import { SectionHeading } from '@/components/ui/section-heading';
 import { StatusCard } from '@/components/ui/status-card';
 import { TextField } from '@/components/ui/text-field';
+import { ExerciseSearchPicker } from '@/features/exercises/exercise-search-picker';
 import { formatDateTime, formatDuration, minutesToDuration } from '@/lib/format';
+import { useToast } from '@/providers/toast-provider';
 import { useSession } from '@/state/session-context';
 import { tokens } from '@/theme/tokens';
 
@@ -27,6 +30,7 @@ type WorkoutDetailScreenProps = {
 export function WorkoutDetailScreen({ workoutId }: WorkoutDetailScreenProps) {
   const queryClient = useQueryClient();
   const { session } = useSession();
+  const { showToast } = useToast();
   const [completionMinutes, setCompletionMinutes] = useState('45');
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -54,6 +58,11 @@ export function WorkoutDetailScreen({ workoutId }: WorkoutDetailScreenProps) {
       await queryClient.invalidateQueries({
         queryKey: queryKeys.analytics.summary(session?.userId),
       });
+      showToast({
+        tone: 'success',
+        title: 'Workout completed',
+        message: 'Analytics and workout detail have been refreshed.',
+      });
     },
     onError: (mutationError) => {
       setActionError(
@@ -68,16 +77,53 @@ export function WorkoutDetailScreen({ workoutId }: WorkoutDetailScreenProps) {
     mutationFn: () => apiClient.deleteWorkout(workoutId!),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: queryKeys.workouts.list(session?.userId, 1, 20),
+        queryKey: queryKeys.workouts.list(session?.userId, 1, 10),
       });
       await queryClient.invalidateQueries({
         queryKey: queryKeys.analytics.summary(session?.userId),
+      });
+      showToast({
+        tone: 'success',
+        title: 'Workout deleted',
       });
       router.back();
     },
     onError: (mutationError) => {
       setActionError(
         mutationError instanceof Error ? mutationError.message : 'Unable to delete workout.'
+      );
+    },
+  });
+
+  const addExerciseMutation = useMutation({
+    mutationFn: (exercise: Exercise) =>
+      apiClient.addWorkoutExercise(workoutId!, { exerciseId: exercise.id }),
+    onSuccess: async () => {
+      await invalidateWorkoutQueries(queryClient, session?.userId, workoutId);
+      showToast({
+        tone: 'success',
+        title: 'Exercise added',
+      });
+    },
+    onError: (mutationError) => {
+      setActionError(
+        mutationError instanceof Error ? mutationError.message : 'Unable to add exercise.'
+      );
+    },
+  });
+
+  const removeExerciseMutation = useMutation({
+    mutationFn: (exerciseId: string) => apiClient.removeWorkoutExercise(workoutId!, exerciseId),
+    onSuccess: async () => {
+      await invalidateWorkoutQueries(queryClient, session?.userId, workoutId);
+      showToast({
+        tone: 'success',
+        title: 'Exercise removed',
+      });
+    },
+    onError: (mutationError) => {
+      setActionError(
+        mutationError instanceof Error ? mutationError.message : 'Unable to remove exercise.'
       );
     },
   });
@@ -116,7 +162,7 @@ export function WorkoutDetailScreen({ workoutId }: WorkoutDetailScreenProps) {
       <SectionHeading
         eyebrow={workout.isCompleted ? 'Completed session' : 'Planned session'}
         title={workout.name ?? 'Untitled workout'}
-        subtitle="Detail mutations invalidate both the list and the active detail query so returning to the list never shows stale state."
+        subtitle="Workout detail now exposes linked exercises, so this screen can manage the full session composition instead of only session metadata."
       />
 
       <GlowCard>
@@ -126,6 +172,30 @@ export function WorkoutDetailScreen({ workoutId }: WorkoutDetailScreenProps) {
         <Text style={styles.value}>{formatDuration(workout.duration)}</Text>
         <Text style={styles.label}>Notes</Text>
         <Text style={styles.body}>{workout.notes ?? 'No notes recorded for this workout.'}</Text>
+      </GlowCard>
+
+      <GlowCard>
+        <Text style={styles.panelTitle}>Linked exercises</Text>
+        {workout.exercises.length === 0 ? (
+          <Text style={styles.body}>No exercises linked yet.</Text>
+        ) : (
+          <View style={styles.linkedList}>
+            {workout.exercises.map((exercise) => (
+              <ExerciseRow
+                key={exercise.id}
+                exercise={exercise}
+                disabled={removeExerciseMutation.isPending || workout.isCompleted}
+                onRemove={() => removeExerciseMutation.mutate(exercise.id)}
+              />
+            ))}
+          </View>
+        )}
+        <ExerciseSearchPicker
+          label="Add exercise"
+          buttonLabel="Link exercise"
+          disabled={addExerciseMutation.isPending || workout.isCompleted}
+          onAdd={(exercise) => addExerciseMutation.mutate(exercise)}
+        />
       </GlowCard>
 
       <GlowCard>
@@ -172,14 +242,45 @@ export function WorkoutDetailScreen({ workoutId }: WorkoutDetailScreenProps) {
   );
 }
 
+function ExerciseRow({
+  exercise,
+  disabled,
+  onRemove,
+}: {
+  exercise: WorkoutExercise;
+  disabled: boolean;
+  onRemove: () => void;
+}) {
+  return (
+    <GlowCard style={styles.linkedCard}>
+      <Text style={styles.linkedTitle}>{exercise.name}</Text>
+      <Text style={styles.linkedMeta}>
+        {exercise.bodyPart} | {exercise.targetMuscle}
+      </Text>
+      <Text style={styles.body}>{exercise.equipment ?? 'Bodyweight / unspecified'}</Text>
+      <PrimaryButton
+        label="Remove"
+        onPress={onRemove}
+        tone="danger"
+        disabled={disabled}
+      />
+    </GlowCard>
+  );
+}
+
 async function invalidateWorkoutQueries(
   queryClient: QueryClient,
   userId: string | undefined,
   workoutId?: string
 ) {
-  await queryClient.invalidateQueries({
-    queryKey: queryKeys.workouts.list(userId, 1, 20),
-  });
+  for (const pageSize of [10, 100]) {
+    await queryClient.invalidateQueries({
+      queryKey: queryKeys.workouts.list(userId, 1, pageSize),
+    });
+    await queryClient.invalidateQueries({
+      queryKey: ['workouts', 'list', userId],
+    });
+  }
 
   if (workoutId) {
     await queryClient.invalidateQueries({
@@ -211,6 +312,24 @@ const styles = StyleSheet.create({
     color: tokens.colors.text,
     fontFamily: tokens.typography.heading,
     fontSize: 20,
+  },
+  linkedList: {
+    gap: tokens.spacing.sm,
+  },
+  linkedCard: {
+    padding: tokens.spacing.md,
+  },
+  linkedTitle: {
+    color: tokens.colors.text,
+    fontFamily: tokens.typography.bodyStrong,
+    fontSize: 16,
+  },
+  linkedMeta: {
+    color: tokens.colors.accent,
+    fontFamily: tokens.typography.label,
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
   actions: {
     flexDirection: 'row',

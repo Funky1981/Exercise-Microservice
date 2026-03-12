@@ -1,5 +1,7 @@
 import { env } from '@/lib/env';
 import type {
+  AddWorkoutExercisePayload,
+  AddWorkoutPlanWorkoutPayload,
   AddExerciseLogEntryPayload,
   CreateExerciseLogPayload,
   CreateWorkoutPayload,
@@ -203,6 +205,19 @@ export const apiClient = {
     });
   },
 
+  async addWorkoutExercise(id: string, payload: AddWorkoutExercisePayload) {
+    return request<void>(`/api/workouts/${id}/exercises`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async removeWorkoutExercise(id: string, exerciseId: string) {
+    return request<void>(`/api/workouts/${id}/exercises/${exerciseId}`, {
+      method: 'DELETE',
+    });
+  },
+
   async getWorkoutPlans(pageNumber = 1, pageSize = 20) {
     return request<PagedResult<WorkoutPlan>>(
       `/api/workout-plans?pageNumber=${pageNumber}&pageSize=${pageSize}`
@@ -235,6 +250,19 @@ export const apiClient = {
 
   async deleteWorkoutPlan(id: string) {
     return request<void>(`/api/workout-plans/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  async addWorkoutToPlan(id: string, payload: AddWorkoutPlanWorkoutPayload) {
+    return request<void>(`/api/workout-plans/${id}/workouts`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async removeWorkoutFromPlan(id: string, workoutId: string) {
+    return request<void>(`/api/workout-plans/${id}/workouts/${workoutId}`, {
       method: 'DELETE',
     });
   },

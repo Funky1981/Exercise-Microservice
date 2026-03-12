@@ -13,6 +13,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AsyncStorage } from '@/lib/storage';
 import { createQueryClient } from '@/lib/query-client';
 import { useReactQueryFocusSync } from '@/lib/query-focus';
+import { ToastProvider } from '@/providers/toast-provider';
 import { SessionProvider } from '@/state/session-context';
 import { navigationTheme } from '@/theme/navigation';
 import { tokens } from '@/theme/tokens';
@@ -58,7 +59,9 @@ export function AppProviders({ children }: React.PropsWithChildren) {
           client={queryClient}
           persistOptions={{ persister }}>
           <ThemeProvider value={navigationTheme}>
-            <SessionProvider>{children}</SessionProvider>
+            <ToastProvider>
+              <SessionProvider>{children}</SessionProvider>
+            </ToastProvider>
           </ThemeProvider>
         </PersistQueryClientProvider>
       </SafeAreaProvider>

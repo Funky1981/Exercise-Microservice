@@ -64,6 +64,7 @@ export type Workout = {
   duration?: string | null;
   notes?: string | null;
   isCompleted: boolean;
+  exercises: WorkoutExercise[];
 };
 
 export type WorkoutPlan = {
@@ -74,6 +75,24 @@ export type WorkoutPlan = {
   endDate?: string | null;
   notes?: string | null;
   isActive: boolean;
+  workouts: WorkoutPlanWorkout[];
+};
+
+export type WorkoutExercise = {
+  id: string;
+  name: string;
+  bodyPart: string;
+  targetMuscle: string;
+  equipment?: string | null;
+};
+
+export type WorkoutPlanWorkout = {
+  id: string;
+  name?: string | null;
+  date: string;
+  duration?: string | null;
+  isCompleted: boolean;
+  exerciseIds: string[];
 };
 
 export type ExerciseLogEntry = {
@@ -122,6 +141,14 @@ export type AddExerciseLogEntryPayload = {
   sets: number;
   reps: number;
   duration?: string | null;
+};
+
+export type AddWorkoutExercisePayload = {
+  exerciseId: string;
+};
+
+export type AddWorkoutPlanWorkoutPayload = {
+  workoutId: string;
 };
 
 export type WorkoutSummary = {

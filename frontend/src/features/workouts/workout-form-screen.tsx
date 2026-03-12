@@ -11,6 +11,7 @@ import { PrimaryButton } from '@/components/ui/primary-button';
 import { StatusCard } from '@/components/ui/status-card';
 import { TextField } from '@/components/ui/text-field';
 import { inputDateFromIso, isoDateFromInput, normalizeOptionalText } from '@/lib/format';
+import { useToast } from '@/providers/toast-provider';
 import { useSession } from '@/state/session-context';
 import { tokens } from '@/theme/tokens';
 
@@ -22,6 +23,7 @@ type WorkoutFormScreenProps = {
 export function WorkoutFormScreen({ mode, workoutId }: WorkoutFormScreenProps) {
   const queryClient = useQueryClient();
   const { session } = useSession();
+  const { showToast } = useToast();
   const [name, setName] = useState('');
   const [date, setDate] = useState('');
   const [notes, setNotes] = useState('');
@@ -66,7 +68,7 @@ export function WorkoutFormScreen({ mode, workoutId }: WorkoutFormScreenProps) {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: queryKeys.workouts.list(session?.userId, 1, 20),
+        queryKey: ['workouts', 'list', session?.userId],
       });
 
       if (workoutId) {
@@ -75,6 +77,10 @@ export function WorkoutFormScreen({ mode, workoutId }: WorkoutFormScreenProps) {
         });
       }
 
+      showToast({
+        tone: 'success',
+        title: mode === 'create' ? 'Workout created' : 'Workout updated',
+      });
       router.back();
     },
     onError: (mutationError) => {

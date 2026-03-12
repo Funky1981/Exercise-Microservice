@@ -9,12 +9,15 @@ import {
 
 import { apiClient } from '@/api/client';
 import { queryKeys } from '@/api/query-keys';
+import type { WorkoutPlanWorkout } from '@/api/types';
 import { AppScreen } from '@/components/ui/app-screen';
 import { GlowCard } from '@/components/ui/glow-card';
 import { PrimaryButton } from '@/components/ui/primary-button';
 import { SectionHeading } from '@/components/ui/section-heading';
 import { StatusCard } from '@/components/ui/status-card';
-import { formatDate } from '@/lib/format';
+import { WorkoutSearchPicker } from '@/features/workouts/workout-search-picker';
+import { formatDate, formatDuration } from '@/lib/format';
+import { useToast } from '@/providers/toast-provider';
 import { useSession } from '@/state/session-context';
 import { tokens } from '@/theme/tokens';
 
@@ -25,6 +28,7 @@ type WorkoutPlanDetailScreenProps = {
 export function WorkoutPlanDetailScreen({ planId }: WorkoutPlanDetailScreenProps) {
   const queryClient = useQueryClient();
   const { session } = useSession();
+  const { showToast } = useToast();
   const planQuery = useQuery({
     queryKey:
       planId && session?.userId
@@ -38,6 +42,10 @@ export function WorkoutPlanDetailScreen({ planId }: WorkoutPlanDetailScreenProps
     mutationFn: () => apiClient.activateWorkoutPlan(planId!),
     onSuccess: async () => {
       await invalidatePlanQueries(queryClient, session?.userId, planId);
+      showToast({
+        tone: 'success',
+        title: 'Plan activated',
+      });
     },
   });
 
@@ -45,9 +53,36 @@ export function WorkoutPlanDetailScreen({ planId }: WorkoutPlanDetailScreenProps
     mutationFn: () => apiClient.deleteWorkoutPlan(planId!),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: queryKeys.workoutPlans.list(session?.userId, 1, 20),
+        queryKey: ['workout-plans', 'list', session?.userId],
+      });
+      showToast({
+        tone: 'success',
+        title: 'Plan deleted',
       });
       router.back();
+    },
+  });
+
+  const addWorkoutMutation = useMutation({
+    mutationFn: (workout: WorkoutPlanWorkout | { id: string }) =>
+      apiClient.addWorkoutToPlan(planId!, { workoutId: workout.id }),
+    onSuccess: async () => {
+      await invalidatePlanQueries(queryClient, session?.userId, planId);
+      showToast({
+        tone: 'success',
+        title: 'Workout added to plan',
+      });
+    },
+  });
+
+  const removeWorkoutMutation = useMutation({
+    mutationFn: (workoutId: string) => apiClient.removeWorkoutFromPlan(planId!, workoutId),
+    onSuccess: async () => {
+      await invalidatePlanQueries(queryClient, session?.userId, planId);
+      showToast({
+        tone: 'success',
+        title: 'Workout removed from plan',
+      });
     },
   });
 
@@ -85,7 +120,7 @@ export function WorkoutPlanDetailScreen({ planId }: WorkoutPlanDetailScreenProps
       <SectionHeading
         eyebrow={plan.isActive ? 'Active plan' : 'Draft plan'}
         title={plan.name ?? 'Untitled plan'}
-        subtitle="Activation and deletion both invalidate the list and detail caches so larger devices stay consistent across split views and back navigation."
+        subtitle="Plan detail now exposes linked workouts, so the plan can be composed and adjusted directly from this screen."
       />
 
       <GlowCard>
@@ -95,6 +130,37 @@ export function WorkoutPlanDetailScreen({ planId }: WorkoutPlanDetailScreenProps
         </Text>
         <Text style={styles.label}>Notes</Text>
         <Text style={styles.body}>{plan.notes ?? 'No notes recorded for this plan.'}</Text>
+      </GlowCard>
+
+      <GlowCard>
+        <Text style={styles.panelTitle}>Linked workouts</Text>
+        {plan.workouts.length === 0 ? (
+          <Text style={styles.body}>No workouts linked yet.</Text>
+        ) : (
+          <View style={styles.linkedList}>
+            {plan.workouts.map((workout) => (
+              <WorkoutRow
+                key={workout.id}
+                workout={workout}
+                disabled={removeWorkoutMutation.isPending}
+                onOpen={() =>
+                  router.push({
+                    pathname: '/(app)/workouts/[id]',
+                    params: { id: workout.id },
+                  } as Href)
+                }
+                onRemove={() => removeWorkoutMutation.mutate(workout.id)}
+              />
+            ))}
+          </View>
+        )}
+        <WorkoutSearchPicker
+          label="Add workout"
+          buttonLabel="Link workout"
+          excludedWorkoutIds={plan.workouts.map((workout) => workout.id)}
+          disabled={addWorkoutMutation.isPending}
+          onAdd={(workout) => addWorkoutMutation.mutate(workout)}
+        />
       </GlowCard>
 
       <GlowCard>
@@ -140,8 +206,55 @@ export function WorkoutPlanDetailScreen({ planId }: WorkoutPlanDetailScreenProps
               : 'Unable to delete plan.'}
           </Text>
         ) : null}
+        {addWorkoutMutation.isError ? (
+          <Text style={styles.error}>
+            {addWorkoutMutation.error instanceof Error
+              ? addWorkoutMutation.error.message
+              : 'Unable to add workout to plan.'}
+          </Text>
+        ) : null}
+        {removeWorkoutMutation.isError ? (
+          <Text style={styles.error}>
+            {removeWorkoutMutation.error instanceof Error
+              ? removeWorkoutMutation.error.message
+              : 'Unable to remove workout from plan.'}
+          </Text>
+        ) : null}
       </GlowCard>
     </AppScreen>
+  );
+}
+
+function WorkoutRow({
+  workout,
+  disabled,
+  onOpen,
+  onRemove,
+}: {
+  workout: WorkoutPlanWorkout;
+  disabled: boolean;
+  onOpen: () => void;
+  onRemove: () => void;
+}) {
+  return (
+    <GlowCard style={styles.linkedCard}>
+      <Text style={styles.linkedTitle}>{workout.name ?? 'Untitled workout'}</Text>
+      <Text style={styles.linkedMeta}>
+        {formatDate(workout.date)} | {workout.isCompleted ? 'Completed' : 'Scheduled'} |{' '}
+        {formatDuration(workout.duration)}
+      </Text>
+      <Text style={styles.body}>{workout.exerciseIds.length} linked exercises</Text>
+      <View style={styles.actions}>
+        <PrimaryButton label="Open" onPress={onOpen} tone="muted" style={styles.actionButton} />
+        <PrimaryButton
+          label="Remove"
+          onPress={onRemove}
+          tone="danger"
+          disabled={disabled}
+          style={styles.actionButton}
+        />
+      </View>
+    </GlowCard>
   );
 }
 
@@ -150,8 +263,14 @@ async function invalidatePlanQueries(
   userId: string | undefined,
   planId?: string
 ) {
+  for (const pageSize of [8, 100]) {
+    await queryClient.invalidateQueries({
+      queryKey: queryKeys.workoutPlans.list(userId, 1, pageSize),
+    });
+  }
+
   await queryClient.invalidateQueries({
-    queryKey: queryKeys.workoutPlans.list(userId, 1, 20),
+    queryKey: ['workout-plans', 'list', userId],
   });
 
   if (planId) {
@@ -184,6 +303,24 @@ const styles = StyleSheet.create({
     color: tokens.colors.text,
     fontFamily: tokens.typography.heading,
     fontSize: 20,
+  },
+  linkedList: {
+    gap: tokens.spacing.sm,
+  },
+  linkedCard: {
+    padding: tokens.spacing.md,
+  },
+  linkedTitle: {
+    color: tokens.colors.text,
+    fontFamily: tokens.typography.bodyStrong,
+    fontSize: 16,
+  },
+  linkedMeta: {
+    color: tokens.colors.accentWarm,
+    fontFamily: tokens.typography.label,
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
   actions: {
     flexDirection: 'row',

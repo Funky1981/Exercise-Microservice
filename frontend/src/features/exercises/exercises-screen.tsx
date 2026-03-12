@@ -1,25 +1,30 @@
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useDeferredValue, useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text } from 'react-native';
 import { router, type Href } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
 
 import { apiClient } from '@/api/client';
 import { queryKeys } from '@/api/query-keys';
 import type { Exercise } from '@/api/types';
 import { AppScreen } from '@/components/ui/app-screen';
 import { GlowCard } from '@/components/ui/glow-card';
+import { PaginationControls } from '@/components/ui/pagination-controls';
 import { PrimaryButton } from '@/components/ui/primary-button';
 import { SectionHeading } from '@/components/ui/section-heading';
 import { StatusCard } from '@/components/ui/status-card';
 import { TextField } from '@/components/ui/text-field';
 import { tokens } from '@/theme/tokens';
 
+const PAGE_SIZE = 12;
+
 export function ExercisesScreen() {
   const [search, setSearch] = useState('');
+  const [pageNumber, setPageNumber] = useState(1);
   const deferredSearch = useDeferredValue(search);
   const exercisesQuery = useQuery({
-    queryKey: queryKeys.exercises.catalogue(1, 20),
-    queryFn: () => apiClient.getExercises(),
+    queryKey: queryKeys.exercises.catalogue(pageNumber, PAGE_SIZE),
+    queryFn: () => apiClient.getExercises(pageNumber, PAGE_SIZE),
+    placeholderData: keepPreviousData,
   });
 
   const items = useMemo(() => {
@@ -31,8 +36,7 @@ export function ExercisesScreen() {
     }
 
     return source.filter((exercise) => {
-      return [exercise.name, exercise.bodyPart, exercise.targetMuscle]
-        .filter(Boolean)
+      return [exercise.name, exercise.bodyPart, exercise.targetMuscle, exercise.equipment ?? '']
         .some((value) => value.toLowerCase().includes(query));
     });
   }, [deferredSearch, exercisesQuery.data?.items]);
@@ -42,7 +46,7 @@ export function ExercisesScreen() {
       <SectionHeading
         eyebrow="Catalogue"
         title="Exercises"
-        subtitle="Server state is cached with TanStack Query and filtered client-side with deferred search so tablet and desktop layouts stay responsive while you type."
+        subtitle="Server state is paged and cached with TanStack Query, while client-side deferred search keeps the current page responsive as you type."
       />
 
       <GlowCard>
@@ -51,13 +55,14 @@ export function ExercisesScreen() {
           value={search}
           onChangeText={setSearch}
           placeholder="Chest, squat, hamstrings..."
+          helperText="Search filters the current page. Use pagination to move through the full catalogue."
         />
       </GlowCard>
 
       {exercisesQuery.isPending ? (
         <StatusCard
           title="Loading exercises"
-          body="Fetching the first catalogue page from the backend."
+          body="Fetching the current catalogue page from the backend."
           busy
         />
       ) : exercisesQuery.isError ? (
@@ -66,19 +71,28 @@ export function ExercisesScreen() {
           body={exercisesQuery.error instanceof Error ? exercisesQuery.error.message : 'Try again in a moment.'}
         />
       ) : (
-        <FlatList
-          data={items}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
-          renderItem={({ item }) => <ExerciseCard exercise={item} />}
-          ListEmptyComponent={
-            <StatusCard
-              title="No exercises matched"
-              body="Try a broader search term or clear the filter."
-            />
-          }
-          scrollEnabled={false}
-        />
+        <>
+          <FlatList
+            data={items}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.list}
+            renderItem={({ item }) => <ExerciseCard exercise={item} />}
+            ListEmptyComponent={
+              <StatusCard
+                title="No exercises matched"
+                body="Try a broader search term or move to another page."
+              />
+            }
+            scrollEnabled={false}
+          />
+          <PaginationControls
+            pageNumber={exercisesQuery.data?.pageNumber ?? pageNumber}
+            totalPages={exercisesQuery.data?.totalPages ?? 1}
+            totalCount={exercisesQuery.data?.totalCount ?? 0}
+            busy={exercisesQuery.isFetching}
+            onPageChange={setPageNumber}
+          />
+        </>
       )}
     </AppScreen>
   );
