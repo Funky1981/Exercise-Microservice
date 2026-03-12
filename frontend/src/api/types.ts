@@ -66,6 +66,64 @@ export type Workout = {
   isCompleted: boolean;
 };
 
+export type WorkoutPlan = {
+  id: string;
+  userId: string;
+  name?: string | null;
+  startDate: string;
+  endDate?: string | null;
+  notes?: string | null;
+  isActive: boolean;
+};
+
+export type ExerciseLogEntry = {
+  exerciseId: string;
+  sets: number;
+  reps: number;
+  duration?: string | null;
+};
+
+export type ExerciseLog = {
+  id: string;
+  userId: string;
+  name?: string | null;
+  date: string;
+  duration?: string | null;
+  notes?: string | null;
+  isCompleted: boolean;
+  entries: ExerciseLogEntry[];
+};
+
+export type CreateWorkoutPayload = {
+  name?: string;
+  date: string;
+  notes?: string;
+};
+
+export type UpdateWorkoutPayload = CreateWorkoutPayload;
+
+export type CreateWorkoutPlanPayload = {
+  name?: string;
+  startDate: string;
+  endDate?: string | null;
+  notes?: string;
+};
+
+export type UpdateWorkoutPlanPayload = CreateWorkoutPlanPayload;
+
+export type CreateExerciseLogPayload = {
+  name?: string;
+  date: string;
+  notes?: string;
+};
+
+export type AddExerciseLogEntryPayload = {
+  exerciseId: string;
+  sets: number;
+  reps: number;
+  duration?: string | null;
+};
+
 export type WorkoutSummary = {
   userId: string;
   totalWorkouts: number;

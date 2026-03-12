@@ -1,12 +1,16 @@
 import { useDeferredValue, useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text } from 'react-native';
+import { router, type Href } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 
 import { apiClient } from '@/api/client';
+import { queryKeys } from '@/api/query-keys';
 import type { Exercise } from '@/api/types';
 import { AppScreen } from '@/components/ui/app-screen';
 import { GlowCard } from '@/components/ui/glow-card';
+import { PrimaryButton } from '@/components/ui/primary-button';
 import { SectionHeading } from '@/components/ui/section-heading';
+import { StatusCard } from '@/components/ui/status-card';
 import { TextField } from '@/components/ui/text-field';
 import { tokens } from '@/theme/tokens';
 
@@ -14,7 +18,7 @@ export function ExercisesScreen() {
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
   const exercisesQuery = useQuery({
-    queryKey: ['exercises', 'catalogue', 1, 20],
+    queryKey: queryKeys.exercises.catalogue(1, 20),
     queryFn: () => apiClient.getExercises(),
   });
 
@@ -50,13 +54,32 @@ export function ExercisesScreen() {
         />
       </GlowCard>
 
-      <FlatList
-        data={items}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
-        renderItem={({ item }) => <ExerciseCard exercise={item} />}
-        scrollEnabled={false}
-      />
+      {exercisesQuery.isPending ? (
+        <StatusCard
+          title="Loading exercises"
+          body="Fetching the first catalogue page from the backend."
+          busy
+        />
+      ) : exercisesQuery.isError ? (
+        <StatusCard
+          title="Unable to load exercises"
+          body={exercisesQuery.error instanceof Error ? exercisesQuery.error.message : 'Try again in a moment.'}
+        />
+      ) : (
+        <FlatList
+          data={items}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.list}
+          renderItem={({ item }) => <ExerciseCard exercise={item} />}
+          ListEmptyComponent={
+            <StatusCard
+              title="No exercises matched"
+              body="Try a broader search term or clear the filter."
+            />
+          }
+          scrollEnabled={false}
+        />
+      )}
     </AppScreen>
   );
 }
@@ -66,11 +89,21 @@ function ExerciseCard({ exercise }: { exercise: Exercise }) {
     <GlowCard>
       <Text style={styles.exerciseName}>{exercise.name}</Text>
       <Text style={styles.exerciseMeta}>
-        {exercise.bodyPart} · {exercise.targetMuscle}
+        {exercise.bodyPart} | {exercise.targetMuscle}
       </Text>
       <Text style={styles.exerciseBody}>
         {exercise.description ?? 'No description has been synced for this exercise yet.'}
       </Text>
+      <PrimaryButton
+        label="View detail"
+        onPress={() =>
+          router.push({
+            pathname: '/(app)/exercises/[id]',
+            params: { id: exercise.id },
+          } as Href)
+        }
+        tone="muted"
+      />
     </GlowCard>
   );
 }

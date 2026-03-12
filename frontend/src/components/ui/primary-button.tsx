@@ -1,4 +1,12 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  type StyleProp,
+  type TextStyle,
+  type ViewStyle,
+} from 'react-native';
 
 import { tokens } from '@/theme/tokens';
 
@@ -6,29 +14,45 @@ type PrimaryButtonProps = {
   label: string;
   onPress: () => void;
   busy?: boolean;
-  tone?: 'accent' | 'muted';
+  disabled?: boolean;
+  tone?: 'accent' | 'muted' | 'danger';
+  style?: StyleProp<ViewStyle>;
+  labelStyle?: StyleProp<TextStyle>;
 };
 
 export function PrimaryButton({
   label,
   onPress,
   busy = false,
+  disabled = false,
   tone = 'accent',
+  style,
+  labelStyle,
 }: PrimaryButtonProps) {
+  const isDisabled = busy || disabled;
+
   return (
     <Pressable
-      disabled={busy}
+      disabled={isDisabled}
       onPress={onPress}
       style={({ pressed }) => [
         styles.button,
-        tone === 'muted' ? styles.muted : styles.accent,
+        tone === 'muted' ? styles.muted : tone === 'danger' ? styles.danger : styles.accent,
         pressed && styles.pressed,
-        busy && styles.disabled,
+        isDisabled && styles.disabled,
+        style,
       ]}>
       {busy ? (
         <ActivityIndicator color={tokens.colors.canvas} />
       ) : (
-        <Text style={[styles.label, tone === 'muted' && styles.mutedLabel]}>{label}</Text>
+        <Text
+          style={[
+            styles.label,
+            (tone === 'muted' || tone === 'danger') && styles.mutedLabel,
+            labelStyle,
+          ]}>
+          {label}
+        </Text>
       )}
     </Pressable>
   );
@@ -47,6 +71,9 @@ const styles = StyleSheet.create({
   },
   muted: {
     backgroundColor: tokens.colors.surfaceStrong,
+  },
+  danger: {
+    backgroundColor: tokens.colors.danger,
   },
   pressed: {
     opacity: 0.88,

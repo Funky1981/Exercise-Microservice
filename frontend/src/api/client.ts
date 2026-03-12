@@ -1,6 +1,11 @@
 import { env } from '@/lib/env';
 import type {
+  AddExerciseLogEntryPayload,
+  CreateExerciseLogPayload,
+  CreateWorkoutPayload,
+  CreateWorkoutPlanPayload,
   Exercise,
+  ExerciseLog,
   LoginPayload,
   LoginResponse,
   PagedResult,
@@ -8,7 +13,10 @@ import type {
   RegisterPayload,
   Session,
   Workout,
+  WorkoutPlan,
   WorkoutSummary,
+  UpdateWorkoutPayload,
+  UpdateWorkoutPlanPayload,
 } from '@/api/types';
 
 type SessionAccessors = {
@@ -154,10 +162,118 @@ export const apiClient = {
     );
   },
 
+  async getExerciseById(id: string) {
+    return request<Exercise>(`/api/exercises/${id}`);
+  },
+
   async getWorkouts(pageNumber = 1, pageSize = 20) {
     return request<PagedResult<Workout>>(
       `/api/workouts?pageNumber=${pageNumber}&pageSize=${pageSize}`
     );
+  },
+
+  async getWorkoutById(id: string) {
+    return request<Workout>(`/api/workouts/${id}`);
+  },
+
+  async createWorkout(payload: CreateWorkoutPayload) {
+    return request<{ id: string }>('/api/workouts', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async updateWorkout(id: string, payload: UpdateWorkoutPayload) {
+    return request<void>(`/api/workouts/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async completeWorkout(id: string, duration: string) {
+    return request<void>(`/api/workouts/${id}/complete`, {
+      method: 'POST',
+      body: JSON.stringify({ duration }),
+    });
+  },
+
+  async deleteWorkout(id: string) {
+    return request<void>(`/api/workouts/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  async getWorkoutPlans(pageNumber = 1, pageSize = 20) {
+    return request<PagedResult<WorkoutPlan>>(
+      `/api/workout-plans?pageNumber=${pageNumber}&pageSize=${pageSize}`
+    );
+  },
+
+  async getWorkoutPlanById(id: string) {
+    return request<WorkoutPlan>(`/api/workout-plans/${id}`);
+  },
+
+  async createWorkoutPlan(payload: CreateWorkoutPlanPayload) {
+    return request<{ id: string }>('/api/workout-plans', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async updateWorkoutPlan(id: string, payload: UpdateWorkoutPlanPayload) {
+    return request<void>(`/api/workout-plans/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async activateWorkoutPlan(id: string) {
+    return request<void>(`/api/workout-plans/${id}/activate`, {
+      method: 'POST',
+    });
+  },
+
+  async deleteWorkoutPlan(id: string) {
+    return request<void>(`/api/workout-plans/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  async getExerciseLogs(pageNumber = 1, pageSize = 20) {
+    return request<PagedResult<ExerciseLog>>(
+      `/api/exercise-logs?pageNumber=${pageNumber}&pageSize=${pageSize}`
+    );
+  },
+
+  async getExerciseLogById(id: string) {
+    return request<ExerciseLog>(`/api/exercise-logs/${id}`);
+  },
+
+  async createExerciseLog(payload: CreateExerciseLogPayload) {
+    return request<{ id: string }>('/api/exercise-logs', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async addExerciseLogEntry(id: string, payload: AddExerciseLogEntryPayload) {
+    return request<void>(`/api/exercise-logs/${id}/entries`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async completeExerciseLog(id: string, totalDuration?: string | null) {
+    return request<void>(`/api/exercise-logs/${id}/complete`, {
+      method: 'POST',
+      body: JSON.stringify({ totalDuration }),
+    });
+  },
+
+  async deleteExerciseLog(id: string) {
+    return request<void>(`/api/exercise-logs/${id}`, {
+      method: 'DELETE',
+    });
   },
 
   async getWorkoutSummary() {

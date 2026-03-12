@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import { apiClient } from '@/api/client';
 import { queryKeys } from '@/api/query-keys';
-import type { Workout } from '@/api/types';
+import type { ExerciseLog } from '@/api/types';
 import { AppScreen } from '@/components/ui/app-screen';
 import { GlowCard } from '@/components/ui/glow-card';
 import { PrimaryButton } from '@/components/ui/primary-button';
@@ -14,44 +14,44 @@ import { formatDate, formatDuration } from '@/lib/format';
 import { useSession } from '@/state/session-context';
 import { tokens } from '@/theme/tokens';
 
-export function WorkoutsScreen() {
+export function ExerciseLogsScreen() {
   const { session } = useSession();
-  const workoutsQuery = useQuery({
-    queryKey: queryKeys.workouts.list(session?.userId, 1, 20),
-    queryFn: () => apiClient.getWorkouts(),
+  const logsQuery = useQuery({
+    queryKey: queryKeys.exerciseLogs.list(session?.userId, 1, 20),
+    queryFn: () => apiClient.getExerciseLogs(),
     enabled: Boolean(session?.userId),
   });
 
   return (
     <AppScreen>
       <SectionHeading
-        eyebrow="Sessions"
-        title="Workouts"
-        subtitle="This screen is wired to real detail and modal form routes, with list invalidation driven by TanStack Query mutation success handlers."
+        eyebrow="Tracking"
+        title="Exercise logs"
+        subtitle="Logs are where set-by-set entries live, so the detail screen focuses on adding entries and closing out a session cleanly."
       />
 
       <PrimaryButton
-        label="Create workout"
-        onPress={() => router.push('/(app)/workouts/new' as Href)}
+        label="Create log"
+        onPress={() => router.push('/(app)/logs/new' as Href)}
       />
 
-      {workoutsQuery.isPending ? (
-        <StatusCard title="Loading workouts" body="Fetching the latest workout page." busy />
-      ) : workoutsQuery.isError ? (
+      {logsQuery.isPending ? (
+        <StatusCard title="Loading logs" body="Fetching the latest log list." busy />
+      ) : logsQuery.isError ? (
         <StatusCard
-          title="Unable to load workouts"
-          body={workoutsQuery.error instanceof Error ? workoutsQuery.error.message : 'Try again in a moment.'}
+          title="Unable to load logs"
+          body={logsQuery.error instanceof Error ? logsQuery.error.message : 'Try again in a moment.'}
         />
       ) : (
         <FlatList
-          data={workoutsQuery.data?.items ?? []}
+          data={logsQuery.data?.items ?? []}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
-          renderItem={({ item }) => <WorkoutCard workout={item} />}
+          renderItem={({ item }) => <ExerciseLogCard log={item} />}
           ListEmptyComponent={
             <StatusCard
-              title="No workouts scheduled"
-              body="Create your first workout and it will show up here."
+              title="No logs yet"
+              body="Create an exercise log to start tracking sets, reps, and time."
             />
           }
           scrollEnabled={false}
@@ -61,21 +61,21 @@ export function WorkoutsScreen() {
   );
 }
 
-function WorkoutCard({ workout }: { workout: Workout }) {
+function ExerciseLogCard({ log }: { log: ExerciseLog }) {
   return (
     <GlowCard>
-      <Text style={styles.name}>{workout.name ?? 'Untitled workout'}</Text>
+      <Text style={styles.name}>{log.name ?? 'Untitled log'}</Text>
       <Text style={styles.meta}>
-        {formatDate(workout.date)} | {workout.isCompleted ? 'Completed' : 'Scheduled'} |{' '}
-        {formatDuration(workout.duration)}
+        {formatDate(log.date)} | {log.isCompleted ? 'Completed' : 'In progress'} |{' '}
+        {formatDuration(log.duration)}
       </Text>
-      <Text style={styles.notes}>{workout.notes ?? 'No notes recorded.'}</Text>
+      <Text style={styles.notes}>{log.notes ?? 'No notes recorded.'}</Text>
       <PrimaryButton
-        label="View workout"
+        label="View log"
         onPress={() =>
           router.push({
-            pathname: '/(app)/workouts/[id]',
-            params: { id: workout.id },
+            pathname: '/(app)/logs/[id]',
+            params: { id: log.id },
           } as Href)
         }
         tone="muted"

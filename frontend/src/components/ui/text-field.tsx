@@ -13,7 +13,7 @@ export function TextField({ label, helperText, ...props }: TextFieldProps) {
       <Text style={styles.label}>{label}</Text>
       <TextInput
         placeholderTextColor={tokens.colors.textSoft}
-        style={styles.input}
+        style={[styles.input, props.multiline && styles.multiline, props.style]}
         {...props}
       />
       {helperText ? <Text style={styles.helper}>{helperText}</Text> : null}
@@ -43,6 +43,10 @@ const styles = StyleSheet.create({
     paddingVertical: tokens.spacing.sm,
     fontFamily: tokens.typography.body,
     fontSize: 16,
+  },
+  multiline: {
+    minHeight: 120,
+    textAlignVertical: 'top',
   },
   helper: {
     color: tokens.colors.textSoft,

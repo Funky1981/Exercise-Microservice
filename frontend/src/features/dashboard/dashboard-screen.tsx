@@ -1,9 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { StyleSheet, Text, View } from 'react-native';
+import { router, type Href } from 'expo-router';
 
 import { apiClient } from '@/api/client';
+import { queryKeys } from '@/api/query-keys';
 import { AppScreen } from '@/components/ui/app-screen';
 import { GlowCard } from '@/components/ui/glow-card';
+import { PrimaryButton } from '@/components/ui/primary-button';
 import { SectionHeading } from '@/components/ui/section-heading';
 import { useBreakpoint } from '@/lib/responsive';
 import { useSession } from '@/state/session-context';
@@ -20,7 +23,7 @@ export function DashboardScreen() {
   const { session } = useSession();
   const { isExpanded } = useBreakpoint();
   const summaryQuery = useQuery({
-    queryKey: ['analytics', 'workout-summary', session?.userId],
+    queryKey: queryKeys.analytics.summary(session?.userId),
     queryFn: () => apiClient.getWorkoutSummary(),
     enabled: Boolean(session),
   });
@@ -47,10 +50,29 @@ export function DashboardScreen() {
       <GlowCard>
         <Text style={styles.panelTitle}>Current foundation</Text>
         <Text style={styles.bodyText}>
-          Auth, session persistence, query persistence, responsive breakpoints, and
-          backend-connected summary queries are in place. Feature modules can now build on
-          stable providers rather than one-off screen state.
+          Auth, session persistence, query persistence, responsive breakpoints, and live
+          feature routes are now in place. Use the links below to move into plans, logs, or
+          a new workout without leaving the dark-theme shell.
         </Text>
+        <View style={styles.actions}>
+          <PrimaryButton
+            label="New workout"
+            onPress={() => router.push('/(app)/workouts/new' as Href)}
+            style={styles.actionButton}
+          />
+          <PrimaryButton
+            label="Workout plans"
+            onPress={() => router.push('/(app)/plans' as Href)}
+            tone="muted"
+            style={styles.actionButton}
+          />
+          <PrimaryButton
+            label="Exercise logs"
+            onPress={() => router.push('/(app)/logs' as Href)}
+            tone="muted"
+            style={styles.actionButton}
+          />
+        </View>
       </GlowCard>
     </AppScreen>
   );
@@ -90,5 +112,14 @@ const styles = StyleSheet.create({
     fontFamily: tokens.typography.body,
     fontSize: 15,
     lineHeight: 24,
+  },
+  actions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: tokens.spacing.sm,
+  },
+  actionButton: {
+    flexGrow: 1,
+    minWidth: 160,
   },
 });
