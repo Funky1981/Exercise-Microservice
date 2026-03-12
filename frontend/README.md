@@ -38,6 +38,27 @@ npm run lint
 npx expo export --platform web
 ```
 
+## VS Code Debug
+
+Use the workspace debug configs in `.vscode/launch.json`:
+
+- `Full Stack: API + Expo Web` starts the backend and opens the Expo web app
+- `Full Stack: API + Expo Dev Server` starts the backend and the Expo dev server for device/emulator use
+- `Exercise API` starts only the backend
+- `Exercise API (coreclr)` is the browser-opening backend launch for the classic C# debugger
+- `Exercise API (dotnet)` is available if you have the newer `.NET` debug extension/C# Dev Kit support
+- `Expo Web` or `Expo Dev Server` start only the frontend
+
+The compound launch targets use the classic `coreclr` C# debugger for compatibility. The optional `dotnet` launch target is only for VS Code setups that support the newer `.NET` debugger type.
+
+The frontend debug configs inject:
+
+```bash
+EXPO_PUBLIC_API_BASE_URL=http://localhost:5034
+```
+
+The VS Code Expo debug targets also force port `8082` because `8081` is commonly occupied by Docker Desktop/WSL on this machine.
+
 ## Environment
 
 Set the backend base URL with:

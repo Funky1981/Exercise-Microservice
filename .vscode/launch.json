@@ -2,34 +2,85 @@
     "version": "0.2.0",
     "configurations": [
         {
-            // Use IntelliSense to find out which attributes exist for C# debugging
-            // Use hover for the description of the existing attributes
-            // For further information visit https://github.com/dotnet/vscode-csharp/blob/main/debugger-launchjson.md.
-            "name": ".NET Core Launch (web)",
+            "name": "Exercise API (coreclr)",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            // If you have changed target frameworks, make sure to update the program path.
             "program": "${workspaceFolder}/Exercise.API/bin/Debug/net9.0/Exercise.API.dll",
             "args": [],
             "cwd": "${workspaceFolder}/Exercise.API",
             "stopAtEntry": false,
-            // Enable launching a web browser when ASP.NET Core starts. For more information: https://aka.ms/VSCode-CS-LaunchJson-WebBrowser
-            "serverReadyAction": {
-                "action": "openExternally",
-                "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
-            },
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development"
             },
-            "sourceFileMap": {
-                "/Views": "${workspaceFolder}/Views"
+            "serverReadyAction": {
+                "action": "openExternally",
+                "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+            }
+        },
+        {
+            "name": "Exercise API",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/Exercise.API/bin/Debug/net9.0/Exercise.API.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/Exercise.API",
+            "stopAtEntry": false,
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            }
+        },
+        {
+            "name": "Exercise API (dotnet)",
+            "type": "dotnet",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "projectPath": "${workspaceFolder}/Exercise.API/Exercise.API.csproj",
+            "launchSettingsProfile": "http"
+        },
+        {
+            "name": "Expo Web",
+            "type": "node-terminal",
+            "request": "launch",
+            "command": "npx expo start --web --port 8082",
+            "cwd": "${workspaceFolder}/frontend",
+            "env": {
+                "EXPO_PUBLIC_API_BASE_URL": "http://localhost:5034"
+            }
+        },
+        {
+            "name": "Expo Dev Server",
+            "type": "node-terminal",
+            "request": "launch",
+            "command": "npx expo start --port 8082",
+            "cwd": "${workspaceFolder}/frontend",
+            "env": {
+                "EXPO_PUBLIC_API_BASE_URL": "http://localhost:5034"
             }
         },
         {
             "name": ".NET Core Attach",
             "type": "coreclr",
             "request": "attach"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Full Stack: API + Expo Web",
+            "configurations": [
+                "Exercise API",
+                "Expo Web"
+            ],
+            "stopAll": true
+        },
+        {
+            "name": "Full Stack: API + Expo Dev Server",
+            "configurations": [
+                "Exercise API",
+                "Expo Dev Server"
+            ],
+            "stopAll": true
         }
     ]
 }
