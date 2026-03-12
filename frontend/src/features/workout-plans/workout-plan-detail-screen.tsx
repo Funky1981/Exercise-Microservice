@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { router, type Href } from 'expo-router';
 import {
   QueryClient,
@@ -17,6 +17,7 @@ import { SectionHeading } from '@/components/ui/section-heading';
 import { StatusCard } from '@/components/ui/status-card';
 import { WorkoutSearchPicker } from '@/features/workouts/workout-search-picker';
 import { formatDate, formatDuration } from '@/lib/format';
+import { pickResponsiveValue, useBreakpoint } from '@/lib/responsive';
 import { useToast } from '@/providers/toast-provider';
 import { useSession } from '@/state/session-context';
 import { tokens } from '@/theme/tokens';
@@ -29,6 +30,12 @@ export function WorkoutPlanDetailScreen({ planId }: WorkoutPlanDetailScreenProps
   const queryClient = useQueryClient();
   const { session } = useSession();
   const { showToast } = useToast();
+  const { breakpoint, isCompact } = useBreakpoint();
+  const linkedColumns = pickResponsiveValue(breakpoint, {
+    compact: 1,
+    medium: 2,
+    expanded: 2,
+  });
   const planQuery = useQuery({
     queryKey:
       planId && session?.userId
@@ -123,36 +130,105 @@ export function WorkoutPlanDetailScreen({ planId }: WorkoutPlanDetailScreenProps
         subtitle="Plan detail now exposes linked workouts, so the plan can be composed and adjusted directly from this screen."
       />
 
-      <GlowCard>
-        <Text style={styles.label}>Date window</Text>
-        <Text style={styles.value}>
-          {formatDate(plan.startDate)} to {plan.endDate ? formatDate(plan.endDate) : 'Open ended'}
-        </Text>
-        <Text style={styles.label}>Notes</Text>
-        <Text style={styles.body}>{plan.notes ?? 'No notes recorded for this plan.'}</Text>
-      </GlowCard>
+      <View style={[styles.detailColumns, !isCompact && styles.detailColumnsWide]}>
+        <GlowCard style={styles.primaryColumn}>
+          <Text style={styles.label}>Date window</Text>
+          <Text style={styles.value}>
+            {formatDate(plan.startDate)} to {plan.endDate ? formatDate(plan.endDate) : 'Open ended'}
+          </Text>
+          <Text style={styles.label}>Notes</Text>
+          <Text style={styles.body}>{plan.notes ?? 'No notes recorded for this plan.'}</Text>
+        </GlowCard>
+
+        <GlowCard style={styles.secondaryColumn}>
+          <Text style={styles.panelTitle}>Actions</Text>
+          <View style={styles.actions}>
+            <PrimaryButton
+              label="Edit plan"
+              onPress={() =>
+                router.push({
+                  pathname: '/(app)/plans/[id]/edit',
+                  params: { id: plan.id },
+                } as Href)
+              }
+              tone="muted"
+              style={styles.actionButton}
+            />
+            <PrimaryButton
+              label={plan.isActive ? 'Active now' : 'Activate plan'}
+              onPress={() => activateMutation.mutate()}
+              busy={activateMutation.isPending}
+              disabled={plan.isActive}
+              style={styles.actionButton}
+            />
+            <PrimaryButton
+              label="Delete plan"
+              onPress={() => deleteMutation.mutate()}
+              tone="danger"
+              busy={deleteMutation.isPending}
+              style={styles.actionButton}
+            />
+          </View>
+          {activateMutation.isError ? (
+            <Text style={styles.error}>
+              {activateMutation.error instanceof Error
+                ? activateMutation.error.message
+                : 'Unable to activate plan.'}
+            </Text>
+          ) : null}
+          {deleteMutation.isError ? (
+            <Text style={styles.error}>
+              {deleteMutation.error instanceof Error
+                ? deleteMutation.error.message
+                : 'Unable to delete plan.'}
+            </Text>
+          ) : null}
+          {addWorkoutMutation.isError ? (
+            <Text style={styles.error}>
+              {addWorkoutMutation.error instanceof Error
+                ? addWorkoutMutation.error.message
+                : 'Unable to add workout to plan.'}
+            </Text>
+          ) : null}
+          {removeWorkoutMutation.isError ? (
+            <Text style={styles.error}>
+              {removeWorkoutMutation.error instanceof Error
+                ? removeWorkoutMutation.error.message
+                : 'Unable to remove workout from plan.'}
+            </Text>
+          ) : null}
+        </GlowCard>
+      </View>
 
       <GlowCard>
         <Text style={styles.panelTitle}>Linked workouts</Text>
         {plan.workouts.length === 0 ? (
           <Text style={styles.body}>No workouts linked yet.</Text>
         ) : (
-          <View style={styles.linkedList}>
-            {plan.workouts.map((workout) => (
-              <WorkoutRow
-                key={workout.id}
-                workout={workout}
-                disabled={removeWorkoutMutation.isPending}
-                onOpen={() =>
-                  router.push({
-                    pathname: '/(app)/workouts/[id]',
-                    params: { id: workout.id },
-                  } as Href)
-                }
-                onRemove={() => removeWorkoutMutation.mutate(workout.id)}
-              />
-            ))}
-          </View>
+          <FlatList
+            key={`plan-workouts-${linkedColumns}`}
+            data={plan.workouts}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.linkedList}
+            columnWrapperStyle={linkedColumns > 1 ? styles.columnWrapper : undefined}
+            numColumns={linkedColumns}
+            renderItem={({ item }) => (
+              <View style={linkedColumns > 1 ? styles.gridColumn : undefined}>
+                <WorkoutRow
+                  workout={item}
+                  disabled={removeWorkoutMutation.isPending}
+                  onOpen={() =>
+                    router.push({
+                      pathname: '/(app)/workouts/[id]',
+                      params: { id: item.id },
+                    } as Href)
+                  }
+                  onRemove={() => removeWorkoutMutation.mutate(item.id)}
+                />
+              </View>
+            )}
+            scrollEnabled={false}
+          />
         )}
         <WorkoutSearchPicker
           label="Add workout"
@@ -161,65 +237,6 @@ export function WorkoutPlanDetailScreen({ planId }: WorkoutPlanDetailScreenProps
           disabled={addWorkoutMutation.isPending}
           onAdd={(workout) => addWorkoutMutation.mutate(workout)}
         />
-      </GlowCard>
-
-      <GlowCard>
-        <Text style={styles.panelTitle}>Actions</Text>
-        <View style={styles.actions}>
-          <PrimaryButton
-            label="Edit plan"
-            onPress={() =>
-              router.push({
-                pathname: '/(app)/plans/[id]/edit',
-                params: { id: plan.id },
-              } as Href)
-            }
-            tone="muted"
-            style={styles.actionButton}
-          />
-          <PrimaryButton
-            label={plan.isActive ? 'Active now' : 'Activate plan'}
-            onPress={() => activateMutation.mutate()}
-            busy={activateMutation.isPending}
-            disabled={plan.isActive}
-            style={styles.actionButton}
-          />
-          <PrimaryButton
-            label="Delete plan"
-            onPress={() => deleteMutation.mutate()}
-            tone="danger"
-            busy={deleteMutation.isPending}
-            style={styles.actionButton}
-          />
-        </View>
-        {activateMutation.isError ? (
-          <Text style={styles.error}>
-            {activateMutation.error instanceof Error
-              ? activateMutation.error.message
-              : 'Unable to activate plan.'}
-          </Text>
-        ) : null}
-        {deleteMutation.isError ? (
-          <Text style={styles.error}>
-            {deleteMutation.error instanceof Error
-              ? deleteMutation.error.message
-              : 'Unable to delete plan.'}
-          </Text>
-        ) : null}
-        {addWorkoutMutation.isError ? (
-          <Text style={styles.error}>
-            {addWorkoutMutation.error instanceof Error
-              ? addWorkoutMutation.error.message
-              : 'Unable to add workout to plan.'}
-          </Text>
-        ) : null}
-        {removeWorkoutMutation.isError ? (
-          <Text style={styles.error}>
-            {removeWorkoutMutation.error instanceof Error
-              ? removeWorkoutMutation.error.message
-              : 'Unable to remove workout from plan.'}
-          </Text>
-        ) : null}
       </GlowCard>
     </AppScreen>
   );
@@ -281,6 +298,19 @@ async function invalidatePlanQueries(
 }
 
 const styles = StyleSheet.create({
+  detailColumns: {
+    gap: tokens.spacing.lg,
+  },
+  detailColumnsWide: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  primaryColumn: {
+    flex: 1.2,
+  },
+  secondaryColumn: {
+    flex: 1,
+  },
   label: {
     color: tokens.colors.textSoft,
     fontFamily: tokens.typography.label,
@@ -306,6 +336,12 @@ const styles = StyleSheet.create({
   },
   linkedList: {
     gap: tokens.spacing.sm,
+  },
+  columnWrapper: {
+    gap: tokens.spacing.sm,
+  },
+  gridColumn: {
+    flex: 1,
   },
   linkedCard: {
     padding: tokens.spacing.md,

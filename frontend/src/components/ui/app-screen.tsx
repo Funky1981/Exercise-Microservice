@@ -1,5 +1,5 @@
 import type { PropsWithChildren } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useBreakpoint } from '@/lib/responsive';
@@ -7,12 +7,23 @@ import { tokens } from '@/theme/tokens';
 
 type AppScreenProps = PropsWithChildren<{
   scrollable?: boolean;
+  contentStyle?: StyleProp<ViewStyle>;
+  maxWidth?: number;
 }>;
 
-export function AppScreen({ children, scrollable = true }: AppScreenProps) {
+export function AppScreen({
+  children,
+  scrollable = true,
+  contentStyle,
+  maxWidth = tokens.layout.contentMaxWidth,
+}: AppScreenProps) {
   const { breakpoint } = useBreakpoint();
   const horizontalPadding =
-    breakpoint === 'compact' ? tokens.spacing.md : tokens.spacing.xl;
+    breakpoint === 'compact'
+      ? tokens.spacing.md
+      : breakpoint === 'medium'
+        ? tokens.spacing.lg
+        : tokens.spacing.xl;
 
   const content = (
     <View
@@ -20,10 +31,11 @@ export function AppScreen({ children, scrollable = true }: AppScreenProps) {
         styles.inner,
         {
           paddingHorizontal: horizontalPadding,
-          paddingVertical: tokens.spacing.xl,
+          paddingTop: tokens.spacing.xl,
+          paddingBottom: tokens.spacing.xxl,
         },
       ]}>
-      <View style={styles.content}>{children}</View>
+      <View style={[styles.content, { maxWidth }, contentStyle]}>{children}</View>
     </View>
   );
 
@@ -31,7 +43,7 @@ export function AppScreen({ children, scrollable = true }: AppScreenProps) {
     <View style={styles.canvas}>
       <View style={[styles.glow, styles.glowLeft]} />
       <View style={[styles.glow, styles.glowRight]} />
-      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'right', 'bottom', 'left']}>
         {scrollable ? (
           <ScrollView contentContainerStyle={styles.scrollContent}>{content}</ScrollView>
         ) : (
@@ -59,7 +71,6 @@ const styles = StyleSheet.create({
   },
   content: {
     width: '100%',
-    maxWidth: tokens.layout.contentMaxWidth,
     gap: tokens.spacing.lg,
   },
   glow: {

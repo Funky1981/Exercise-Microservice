@@ -5,8 +5,9 @@ import { AppScreen } from '@/components/ui/app-screen';
 import { GlowCard } from '@/components/ui/glow-card';
 import { PrimaryButton } from '@/components/ui/primary-button';
 import { SectionHeading } from '@/components/ui/section-heading';
-import { formatDateTime } from '@/lib/format';
 import { env } from '@/lib/env';
+import { formatDateTime } from '@/lib/format';
+import { useBreakpoint } from '@/lib/responsive';
 import { useToast } from '@/providers/toast-provider';
 import { useSession } from '@/state/session-context';
 import { tokens } from '@/theme/tokens';
@@ -14,6 +15,7 @@ import { tokens } from '@/theme/tokens';
 export function ProfileScreen() {
   const { session, signOut } = useSession();
   const { showToast } = useToast();
+  const { isCompact } = useBreakpoint();
 
   async function handleSignOut() {
     await signOut();
@@ -33,25 +35,32 @@ export function ProfileScreen() {
       />
 
       <GlowCard>
-        <View style={styles.row}>
-          <Text style={styles.label}>Name</Text>
-          <Text style={styles.value}>{session?.name ?? 'Unknown'}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>Email</Text>
-          <Text style={styles.value}>{session?.email ?? 'Unknown'}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>Access token expiry</Text>
-          <Text style={styles.value}>{formatDateTime(session?.expiresAt)}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>Refresh token expiry</Text>
-          <Text style={styles.value}>{formatDateTime(session?.refreshTokenExpiry)}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>API base URL</Text>
-          <Text style={styles.value}>{env.apiBaseUrl}</Text>
+        <View style={[styles.infoGrid, !isCompact && styles.infoGridWide]}>
+          <View style={styles.infoColumn}>
+            <View style={styles.row}>
+              <Text style={styles.label}>Name</Text>
+              <Text style={styles.value}>{session?.name ?? 'Unknown'}</Text>
+            </View>
+            <View style={styles.row}>
+              <Text style={styles.label}>Email</Text>
+              <Text style={styles.value}>{session?.email ?? 'Unknown'}</Text>
+            </View>
+            <View style={styles.row}>
+              <Text style={styles.label}>Access token expiry</Text>
+              <Text style={styles.value}>{formatDateTime(session?.expiresAt)}</Text>
+            </View>
+          </View>
+
+          <View style={styles.infoColumn}>
+            <View style={styles.row}>
+              <Text style={styles.label}>Refresh token expiry</Text>
+              <Text style={styles.value}>{formatDateTime(session?.refreshTokenExpiry)}</Text>
+            </View>
+            <View style={styles.row}>
+              <Text style={styles.label}>API base URL</Text>
+              <Text style={styles.value}>{env.apiBaseUrl}</Text>
+            </View>
+          </View>
         </View>
       </GlowCard>
 
@@ -79,6 +88,16 @@ export function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
+  infoGrid: {
+    gap: tokens.spacing.md,
+  },
+  infoGridWide: {
+    flexDirection: 'row',
+  },
+  infoColumn: {
+    flex: 1,
+    gap: tokens.spacing.md,
+  },
   row: {
     gap: tokens.spacing.xs,
   },

@@ -1,6 +1,6 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { useDeferredValue, useMemo, useState } from 'react';
-import { FlatList, StyleSheet, Text } from 'react-native';
+import { useDeferredValue, useMemo, useState, type PropsWithChildren } from 'react';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { router, type Href } from 'expo-router';
 
 import { apiClient } from '@/api/client';
@@ -13,13 +13,20 @@ import { PrimaryButton } from '@/components/ui/primary-button';
 import { SectionHeading } from '@/components/ui/section-heading';
 import { StatusCard } from '@/components/ui/status-card';
 import { TextField } from '@/components/ui/text-field';
+import { pickResponsiveValue, useBreakpoint } from '@/lib/responsive';
 import { tokens } from '@/theme/tokens';
 
 const PAGE_SIZE = 12;
 
 export function ExercisesScreen() {
+  const { breakpoint } = useBreakpoint();
   const [search, setSearch] = useState('');
   const [pageNumber, setPageNumber] = useState(1);
+  const numColumns = pickResponsiveValue(breakpoint, {
+    compact: 1,
+    medium: 2,
+    expanded: 3,
+  });
   const deferredSearch = useDeferredValue(search);
   const exercisesQuery = useQuery({
     queryKey: queryKeys.exercises.catalogue(pageNumber, PAGE_SIZE),
@@ -73,10 +80,17 @@ export function ExercisesScreen() {
       ) : (
         <>
           <FlatList
+            key={`exercises-${numColumns}`}
             data={items}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.list}
-            renderItem={({ item }) => <ExerciseCard exercise={item} />}
+            columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : undefined}
+            numColumns={numColumns}
+            renderItem={({ item }) => (
+              <ExerciseGridItem columns={numColumns}>
+                <ExerciseCard exercise={item} />
+              </ExerciseGridItem>
+            )}
             ListEmptyComponent={
               <StatusCard
                 title="No exercises matched"
@@ -122,9 +136,24 @@ function ExerciseCard({ exercise }: { exercise: Exercise }) {
   );
 }
 
+function ExerciseGridItem({
+  children,
+  columns,
+}: PropsWithChildren<{
+  columns: number;
+}>) {
+  return <View style={columns > 1 ? styles.column : undefined}>{children}</View>;
+}
+
 const styles = StyleSheet.create({
   list: {
     gap: tokens.spacing.md,
+  },
+  columnWrapper: {
+    gap: tokens.spacing.md,
+  },
+  column: {
+    flex: 1,
   },
   exerciseName: {
     color: tokens.colors.text,

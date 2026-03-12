@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { router, type Href } from 'expo-router';
 import {
   QueryClient,
@@ -19,6 +19,7 @@ import { StatusCard } from '@/components/ui/status-card';
 import { TextField } from '@/components/ui/text-field';
 import { ExerciseSearchPicker } from '@/features/exercises/exercise-search-picker';
 import { formatDateTime, formatDuration, minutesToDuration } from '@/lib/format';
+import { pickResponsiveValue, useBreakpoint } from '@/lib/responsive';
 import { useToast } from '@/providers/toast-provider';
 import { useSession } from '@/state/session-context';
 import { tokens } from '@/theme/tokens';
@@ -31,8 +32,14 @@ export function WorkoutDetailScreen({ workoutId }: WorkoutDetailScreenProps) {
   const queryClient = useQueryClient();
   const { session } = useSession();
   const { showToast } = useToast();
+  const { breakpoint, isCompact } = useBreakpoint();
   const [completionMinutes, setCompletionMinutes] = useState('45');
   const [actionError, setActionError] = useState<string | null>(null);
+  const linkedColumns = pickResponsiveValue(breakpoint, {
+    compact: 1,
+    medium: 2,
+    expanded: 2,
+  });
 
   const workoutQuery = useQuery({
     queryKey:
@@ -165,30 +172,81 @@ export function WorkoutDetailScreen({ workoutId }: WorkoutDetailScreenProps) {
         subtitle="Workout detail now exposes linked exercises, so this screen can manage the full session composition instead of only session metadata."
       />
 
-      <GlowCard>
-        <Text style={styles.label}>Scheduled time</Text>
-        <Text style={styles.value}>{formatDateTime(workout.date)}</Text>
-        <Text style={styles.label}>Duration</Text>
-        <Text style={styles.value}>{formatDuration(workout.duration)}</Text>
-        <Text style={styles.label}>Notes</Text>
-        <Text style={styles.body}>{workout.notes ?? 'No notes recorded for this workout.'}</Text>
-      </GlowCard>
+      <View style={[styles.detailColumns, !isCompact && styles.detailColumnsWide]}>
+        <GlowCard style={styles.primaryColumn}>
+          <Text style={styles.label}>Scheduled time</Text>
+          <Text style={styles.value}>{formatDateTime(workout.date)}</Text>
+          <Text style={styles.label}>Duration</Text>
+          <Text style={styles.value}>{formatDuration(workout.duration)}</Text>
+          <Text style={styles.label}>Notes</Text>
+          <Text style={styles.body}>{workout.notes ?? 'No notes recorded for this workout.'}</Text>
+        </GlowCard>
+
+        <GlowCard style={styles.secondaryColumn}>
+          <Text style={styles.panelTitle}>Actions</Text>
+          <View style={styles.actions}>
+            <PrimaryButton
+              label="Edit workout"
+              onPress={() =>
+                router.push({
+                  pathname: '/(app)/workouts/[id]/edit',
+                  params: { id: workout.id },
+                } as Href)
+              }
+              tone="muted"
+              style={styles.actionButton}
+            />
+            <PrimaryButton
+              label="Delete workout"
+              onPress={() => deleteMutation.mutate()}
+              tone="danger"
+              busy={deleteMutation.isPending}
+              style={styles.actionButton}
+            />
+          </View>
+
+          <TextField
+            label="Complete in minutes"
+            value={completionMinutes}
+            onChangeText={setCompletionMinutes}
+            keyboardType="number-pad"
+            helperText="The API expects a TimeSpan, so the frontend converts minutes to HH:MM:SS."
+          />
+
+          <PrimaryButton
+            label={workout.isCompleted ? 'Completed' : 'Mark complete'}
+            onPress={() => completeMutation.mutate()}
+            busy={completeMutation.isPending}
+            disabled={workout.isCompleted}
+          />
+
+          {actionError ? <Text style={styles.error}>{actionError}</Text> : null}
+        </GlowCard>
+      </View>
 
       <GlowCard>
         <Text style={styles.panelTitle}>Linked exercises</Text>
         {workout.exercises.length === 0 ? (
           <Text style={styles.body}>No exercises linked yet.</Text>
         ) : (
-          <View style={styles.linkedList}>
-            {workout.exercises.map((exercise) => (
-              <ExerciseRow
-                key={exercise.id}
-                exercise={exercise}
-                disabled={removeExerciseMutation.isPending || workout.isCompleted}
-                onRemove={() => removeExerciseMutation.mutate(exercise.id)}
-              />
-            ))}
-          </View>
+          <FlatList
+            key={`workout-exercises-${linkedColumns}`}
+            data={workout.exercises}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.linkedList}
+            columnWrapperStyle={linkedColumns > 1 ? styles.columnWrapper : undefined}
+            numColumns={linkedColumns}
+            renderItem={({ item }) => (
+              <View style={linkedColumns > 1 ? styles.gridColumn : undefined}>
+                <ExerciseRow
+                  exercise={item}
+                  disabled={removeExerciseMutation.isPending || workout.isCompleted}
+                  onRemove={() => removeExerciseMutation.mutate(item.id)}
+                />
+              </View>
+            )}
+            scrollEnabled={false}
+          />
         )}
         <ExerciseSearchPicker
           label="Add exercise"
@@ -196,47 +254,6 @@ export function WorkoutDetailScreen({ workoutId }: WorkoutDetailScreenProps) {
           disabled={addExerciseMutation.isPending || workout.isCompleted}
           onAdd={(exercise) => addExerciseMutation.mutate(exercise)}
         />
-      </GlowCard>
-
-      <GlowCard>
-        <Text style={styles.panelTitle}>Actions</Text>
-        <View style={styles.actions}>
-          <PrimaryButton
-            label="Edit workout"
-            onPress={() =>
-              router.push({
-                pathname: '/(app)/workouts/[id]/edit',
-                params: { id: workout.id },
-              } as Href)
-            }
-            tone="muted"
-            style={styles.actionButton}
-          />
-          <PrimaryButton
-            label="Delete workout"
-            onPress={() => deleteMutation.mutate()}
-            tone="danger"
-            busy={deleteMutation.isPending}
-            style={styles.actionButton}
-          />
-        </View>
-
-        <TextField
-          label="Complete in minutes"
-          value={completionMinutes}
-          onChangeText={setCompletionMinutes}
-          keyboardType="number-pad"
-          helperText="The API expects a TimeSpan, so the frontend converts minutes to HH:MM:SS."
-        />
-
-        <PrimaryButton
-          label={workout.isCompleted ? 'Completed' : 'Mark complete'}
-          onPress={() => completeMutation.mutate()}
-          busy={completeMutation.isPending}
-          disabled={workout.isCompleted}
-        />
-
-        {actionError ? <Text style={styles.error}>{actionError}</Text> : null}
       </GlowCard>
     </AppScreen>
   );
@@ -290,6 +307,19 @@ async function invalidateWorkoutQueries(
 }
 
 const styles = StyleSheet.create({
+  detailColumns: {
+    gap: tokens.spacing.lg,
+  },
+  detailColumnsWide: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  primaryColumn: {
+    flex: 1.25,
+  },
+  secondaryColumn: {
+    flex: 1,
+  },
   label: {
     color: tokens.colors.textSoft,
     fontFamily: tokens.typography.label,
@@ -315,6 +345,12 @@ const styles = StyleSheet.create({
   },
   linkedList: {
     gap: tokens.spacing.sm,
+  },
+  columnWrapper: {
+    gap: tokens.spacing.sm,
+  },
+  gridColumn: {
+    flex: 1,
   },
   linkedCard: {
     padding: tokens.spacing.md,

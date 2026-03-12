@@ -7,6 +7,7 @@ import { AppScreen } from '@/components/ui/app-screen';
 import { GlowCard } from '@/components/ui/glow-card';
 import { SectionHeading } from '@/components/ui/section-heading';
 import { StatusCard } from '@/components/ui/status-card';
+import { useBreakpoint } from '@/lib/responsive';
 import { tokens } from '@/theme/tokens';
 
 type ExerciseDetailScreenProps = {
@@ -14,6 +15,7 @@ type ExerciseDetailScreenProps = {
 };
 
 export function ExerciseDetailScreen({ exerciseId }: ExerciseDetailScreenProps) {
+  const { isCompact } = useBreakpoint();
   const exerciseQuery = useQuery({
     queryKey: exerciseId ? queryKeys.exercises.detail(exerciseId) : ['exercises', 'detail', 'missing'],
     queryFn: () => apiClient.getExerciseById(exerciseId!),
@@ -64,7 +66,7 @@ export function ExerciseDetailScreen({ exerciseId }: ExerciseDetailScreenProps) 
         subtitle="Exercise detail comes from the shared catalogue endpoint so list and detail views stay in sync."
       />
 
-      <View style={styles.metaGrid}>
+      <View style={[styles.metaGrid, !isCompact && styles.metaGridWide]}>
         <GlowCard style={styles.metaCard}>
           <Text style={styles.metaLabel}>Target muscle</Text>
           <Text style={styles.metaValue}>{exercise.targetMuscle}</Text>
@@ -93,8 +95,12 @@ const styles = StyleSheet.create({
   metaGrid: {
     gap: tokens.spacing.md,
   },
+  metaGridWide: {
+    flexDirection: 'row',
+  },
   metaCard: {
     gap: tokens.spacing.sm,
+    flex: 1,
   },
   metaLabel: {
     color: tokens.colors.textSoft,

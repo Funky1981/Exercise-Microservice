@@ -19,6 +19,7 @@ import { StatusCard } from '@/components/ui/status-card';
 import { TextField } from '@/components/ui/text-field';
 import { ExerciseSearchPicker } from '@/features/exercises/exercise-search-picker';
 import { formatDateTime, formatDuration, minutesToDuration } from '@/lib/format';
+import { pickResponsiveValue, useBreakpoint } from '@/lib/responsive';
 import { useToast } from '@/providers/toast-provider';
 import { useSession } from '@/state/session-context';
 import { tokens } from '@/theme/tokens';
@@ -31,10 +32,16 @@ export function ExerciseLogDetailScreen({ logId }: ExerciseLogDetailScreenProps)
   const queryClient = useQueryClient();
   const { session } = useSession();
   const { showToast } = useToast();
+  const { breakpoint, isCompact } = useBreakpoint();
   const [sets, setSets] = useState('3');
   const [reps, setReps] = useState('10');
   const [minutes, setMinutes] = useState('');
   const [completionMinutes, setCompletionMinutes] = useState('45');
+  const entryColumns = pickResponsiveValue(breakpoint, {
+    compact: 1,
+    medium: 2,
+    expanded: 2,
+  });
 
   const logQuery = useQuery({
     queryKey:
@@ -164,42 +171,44 @@ export function ExerciseLogDetailScreen({ logId }: ExerciseLogDetailScreenProps)
         subtitle="This detail screen keeps entry creation, completion, and deletion in one place, with toast feedback for each mutation."
       />
 
-      <GlowCard>
-        <Text style={styles.label}>Scheduled time</Text>
-        <Text style={styles.value}>{formatDateTime(log.date)}</Text>
-        <Text style={styles.label}>Duration</Text>
-        <Text style={styles.value}>{formatDuration(log.duration)}</Text>
-        <Text style={styles.label}>Notes</Text>
-        <Text style={styles.body}>{log.notes ?? 'No notes recorded for this log.'}</Text>
-      </GlowCard>
+      <View style={[styles.detailColumns, !isCompact && styles.detailColumnsWide]}>
+        <GlowCard style={styles.primaryColumn}>
+          <Text style={styles.label}>Scheduled time</Text>
+          <Text style={styles.value}>{formatDateTime(log.date)}</Text>
+          <Text style={styles.label}>Duration</Text>
+          <Text style={styles.value}>{formatDuration(log.duration)}</Text>
+          <Text style={styles.label}>Notes</Text>
+          <Text style={styles.body}>{log.notes ?? 'No notes recorded for this log.'}</Text>
+        </GlowCard>
 
-      <GlowCard>
-        <Text style={styles.panelTitle}>Add entry</Text>
-        <View style={styles.inlineFields}>
-          <TextField label="Sets" value={sets} onChangeText={setSets} keyboardType="number-pad" />
-          <TextField label="Reps" value={reps} onChangeText={setReps} keyboardType="number-pad" />
-          <TextField
-            label="Minutes"
-            value={minutes}
-            onChangeText={setMinutes}
-            keyboardType="number-pad"
-            helperText="Optional"
+        <GlowCard style={styles.secondaryColumn}>
+          <Text style={styles.panelTitle}>Add entry</Text>
+          <View style={[styles.inlineFields, !isCompact && styles.inlineFieldsWide]}>
+            <TextField label="Sets" value={sets} onChangeText={setSets} keyboardType="number-pad" />
+            <TextField label="Reps" value={reps} onChangeText={setReps} keyboardType="number-pad" />
+            <TextField
+              label="Minutes"
+              value={minutes}
+              onChangeText={setMinutes}
+              keyboardType="number-pad"
+              helperText="Optional"
+            />
+          </View>
+          <ExerciseSearchPicker
+            label="Find exercise"
+            buttonLabel="Add entry"
+            disabled={addEntryMutation.isPending || log.isCompleted}
+            onAdd={(exercise) => addEntryMutation.mutate(exercise.id)}
           />
-        </View>
-        <ExerciseSearchPicker
-          label="Find exercise"
-          buttonLabel="Add entry"
-          disabled={addEntryMutation.isPending || log.isCompleted}
-          onAdd={(exercise) => addEntryMutation.mutate(exercise.id)}
-        />
-        {addEntryMutation.isError ? (
-          <Text style={styles.error}>
-            {addEntryMutation.error instanceof Error
-              ? addEntryMutation.error.message
-              : 'Unable to add entry.'}
-          </Text>
-        ) : null}
-      </GlowCard>
+          {addEntryMutation.isError ? (
+            <Text style={styles.error}>
+              {addEntryMutation.error instanceof Error
+                ? addEntryMutation.error.message
+                : 'Unable to add entry.'}
+            </Text>
+          ) : null}
+        </GlowCard>
+      </View>
 
       <GlowCard>
         <Text style={styles.panelTitle}>Entries</Text>
@@ -207,15 +216,20 @@ export function ExerciseLogDetailScreen({ logId }: ExerciseLogDetailScreenProps)
           <Text style={styles.body}>No entries added yet.</Text>
         ) : (
           <FlatList
+            key={`log-entries-${entryColumns}`}
             data={log.entries}
             keyExtractor={(item, index) => `${item.exerciseId}-${index}`}
+            columnWrapperStyle={entryColumns > 1 ? styles.columnWrapper : undefined}
+            numColumns={entryColumns}
             renderItem={({ item }) => (
-              <ExerciseLogEntryCard
-                entry={item}
-                exerciseName={
-                  exercisesQuery.data?.items.find((exercise) => exercise.id === item.exerciseId)?.name
-                }
-              />
+              <View style={entryColumns > 1 ? styles.gridColumn : undefined}>
+                <ExerciseLogEntryCard
+                  entry={item}
+                  exerciseName={
+                    exercisesQuery.data?.items.find((exercise) => exercise.id === item.exerciseId)?.name
+                  }
+                />
+              </View>
             )}
             scrollEnabled={false}
             contentContainerStyle={styles.entryList}
@@ -307,6 +321,19 @@ async function invalidateLogQueries(
 }
 
 const styles = StyleSheet.create({
+  detailColumns: {
+    gap: tokens.spacing.lg,
+  },
+  detailColumnsWide: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  primaryColumn: {
+    flex: 1.2,
+  },
+  secondaryColumn: {
+    flex: 1,
+  },
   label: {
     color: tokens.colors.textSoft,
     fontFamily: tokens.typography.label,
@@ -333,8 +360,18 @@ const styles = StyleSheet.create({
   inlineFields: {
     gap: tokens.spacing.md,
   },
+  inlineFieldsWide: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
   entryList: {
     gap: tokens.spacing.sm,
+  },
+  columnWrapper: {
+    gap: tokens.spacing.sm,
+  },
+  gridColumn: {
+    flex: 1,
   },
   entryCard: {
     padding: tokens.spacing.md,

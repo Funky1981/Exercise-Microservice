@@ -1,6 +1,6 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
-import { FlatList, StyleSheet, Text } from 'react-native';
+import { useState, type PropsWithChildren } from 'react';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { router, type Href } from 'expo-router';
 
 import { apiClient } from '@/api/client';
@@ -13,6 +13,7 @@ import { PrimaryButton } from '@/components/ui/primary-button';
 import { SectionHeading } from '@/components/ui/section-heading';
 import { StatusCard } from '@/components/ui/status-card';
 import { formatDate, formatDuration } from '@/lib/format';
+import { pickResponsiveValue, useBreakpoint } from '@/lib/responsive';
 import { useSession } from '@/state/session-context';
 import { tokens } from '@/theme/tokens';
 
@@ -20,7 +21,13 @@ const PAGE_SIZE = 10;
 
 export function WorkoutsScreen() {
   const { session } = useSession();
+  const { breakpoint } = useBreakpoint();
   const [pageNumber, setPageNumber] = useState(1);
+  const numColumns = pickResponsiveValue(breakpoint, {
+    compact: 1,
+    medium: 2,
+    expanded: 2,
+  });
   const workoutsQuery = useQuery({
     queryKey: queryKeys.workouts.list(session?.userId, pageNumber, PAGE_SIZE),
     queryFn: () => apiClient.getWorkouts(pageNumber, PAGE_SIZE),
@@ -51,10 +58,17 @@ export function WorkoutsScreen() {
       ) : (
         <>
           <FlatList
+            key={`workouts-${numColumns}`}
             data={workoutsQuery.data?.items ?? []}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.list}
-            renderItem={({ item }) => <WorkoutCard workout={item} />}
+            columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : undefined}
+            numColumns={numColumns}
+            renderItem={({ item }) => (
+              <WorkoutGridItem columns={numColumns}>
+                <WorkoutCard workout={item} />
+              </WorkoutGridItem>
+            )}
             ListEmptyComponent={
               <StatusCard
                 title="No workouts scheduled"
@@ -100,9 +114,24 @@ function WorkoutCard({ workout }: { workout: Workout }) {
   );
 }
 
+function WorkoutGridItem({
+  children,
+  columns,
+}: PropsWithChildren<{
+  columns: number;
+}>) {
+  return <View style={columns > 1 ? styles.column : undefined}>{children}</View>;
+}
+
 const styles = StyleSheet.create({
   list: {
     gap: tokens.spacing.md,
+  },
+  columnWrapper: {
+    gap: tokens.spacing.md,
+  },
+  column: {
+    flex: 1,
   },
   name: {
     color: tokens.colors.text,
