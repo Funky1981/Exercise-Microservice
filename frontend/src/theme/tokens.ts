@@ -1,0 +1,50 @@
+export const tokens = {
+  colors: {
+    canvas: '#07111F',
+    canvasMuted: '#0D1A2E',
+    surface: '#10233C',
+    surfaceRaised: '#132B49',
+    surfaceStrong: '#17365C',
+    border: '#24466F',
+    borderSoft: '#1B3658',
+    text: '#F4F8FC',
+    textMuted: '#9FB3CA',
+    textSoft: '#7C92AD',
+    accent: '#6DE2C7',
+    accentStrong: '#2BC7B0',
+    accentWarm: '#F4B860',
+    danger: '#FF7A7A',
+    success: '#69E2A3',
+    overlay: 'rgba(4, 10, 18, 0.72)',
+    glowA: 'rgba(109, 226, 199, 0.18)',
+    glowB: 'rgba(69, 137, 255, 0.18)',
+  },
+  spacing: {
+    xs: 6,
+    sm: 10,
+    md: 16,
+    lg: 24,
+    xl: 32,
+    xxl: 48,
+  },
+  radius: {
+    sm: 10,
+    md: 18,
+    lg: 24,
+    pill: 999,
+  },
+  typography: {
+    display: 'SpaceGrotesk_700Bold',
+    heading: 'SpaceGrotesk_500Medium',
+    body: 'Manrope_400Regular',
+    bodyStrong: 'Manrope_600SemiBold',
+    label: 'Manrope_700Bold',
+  },
+  layout: {
+    compactMaxWidth: 599,
+    mediumMaxWidth: 1023,
+    contentMaxWidth: 1200,
+  },
+} as const;
+
+export type Breakpoint = 'compact' | 'medium' | 'expanded';
