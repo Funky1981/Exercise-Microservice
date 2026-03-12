@@ -93,6 +93,10 @@ jobs:
         working-directory: frontend
         run: npm run lint
 
+      - name: Run frontend tests
+        working-directory: frontend
+        run: npm run test:ci
+
       - name: Export frontend web bundle
         working-directory: frontend
         run: npx expo export --platform web

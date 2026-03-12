@@ -12,6 +12,19 @@ Define the quality gate for the frontend before feature velocity increases.
 - Integration tests: mocked query/auth flows
 - Web smoke tests: login, dashboard, exercise browse
 
+## Current Baseline
+
+- Local commands:
+  - `npm run typecheck`
+  - `npm run lint`
+  - `npm run test:ci`
+  - `npx expo export --platform web`
+- Current test focus:
+  - shared UI behavior for pagination
+  - session boot, sign-in, and sign-out state transitions
+  - API client retry-on-refresh behavior
+  - exercise catalogue screen smoke coverage
+
 ## Release Checks
 
 1. Validate that `EXPO_PUBLIC_API_BASE_URL` is set correctly per environment.
@@ -21,10 +34,12 @@ Define the quality gate for the frontend before feature velocity increases.
 
 ## Suggested Next Automation
 
-- Add CI jobs for:
+- CI already runs:
   - `npm ci`
   - `npm run typecheck`
   - `npm run lint`
+  - `npm run test:ci`
+  - `npx expo export --platform web`
 - Add an Expo/EAS release document once bundle IDs, app icons, and store metadata are finalized.
 
 ## Acceptance Criteria

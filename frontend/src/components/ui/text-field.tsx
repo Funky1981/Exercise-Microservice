@@ -12,6 +12,7 @@ export function TextField({ label, helperText, ...props }: TextFieldProps) {
     <View style={styles.wrapper}>
       <Text style={styles.label}>{label}</Text>
       <TextInput
+        accessibilityLabel={props.accessibilityLabel ?? label}
         placeholderTextColor={tokens.colors.textSoft}
         style={[styles.input, props.multiline && styles.multiline, props.style]}
         {...props}
