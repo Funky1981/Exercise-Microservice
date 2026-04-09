@@ -2,48 +2,30 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Exercise API (coreclr)",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build",
-            "program": "${workspaceFolder}/Exercise.API/bin/Debug/net9.0/Exercise.API.dll",
-            "args": [],
-            "cwd": "${workspaceFolder}/Exercise.API",
-            "stopAtEntry": false,
-            "env": {
-                "ASPNETCORE_ENVIRONMENT": "Development"
-            },
-            "serverReadyAction": {
-                "action": "openExternally",
-                "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
-            }
-        },
-        {
             "name": "Exercise API",
-            "type": "coreclr",
+            "type": "node-terminal",
             "request": "launch",
-            "preLaunchTask": "build",
-            "program": "${workspaceFolder}/Exercise.API/bin/Debug/net9.0/Exercise.API.dll",
-            "args": [],
-            "cwd": "${workspaceFolder}/Exercise.API",
-            "stopAtEntry": false,
+            "command": "dotnet run --project Exercise.API --launch-profile http",
+            "cwd": "${workspaceFolder}",
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development"
             }
         },
         {
-            "name": "Exercise API (dotnet)",
-            "type": "dotnet",
+            "name": "Exercise API (watch)",
+            "type": "node-terminal",
             "request": "launch",
-            "preLaunchTask": "build",
-            "projectPath": "${workspaceFolder}/Exercise.API/Exercise.API.csproj",
-            "launchSettingsProfile": "http"
+            "command": "dotnet watch run --project Exercise.API --launch-profile http",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            }
         },
         {
             "name": "Expo Web",
             "type": "node-terminal",
             "request": "launch",
-            "command": "npx expo start --web --port 8082",
+            "command": "npm run web",
             "cwd": "${workspaceFolder}/frontend",
             "env": {
                 "EXPO_PUBLIC_API_BASE_URL": "http://localhost:5034"
@@ -53,16 +35,11 @@
             "name": "Expo Dev Server",
             "type": "node-terminal",
             "request": "launch",
-            "command": "npx expo start --port 8082",
+            "command": "npm run start",
             "cwd": "${workspaceFolder}/frontend",
             "env": {
                 "EXPO_PUBLIC_API_BASE_URL": "http://localhost:5034"
             }
-        },
-        {
-            "name": ".NET Core Attach",
-            "type": "coreclr",
-            "request": "attach"
         }
     ],
     "compounds": [
@@ -77,7 +54,7 @@
         {
             "name": "Full Stack: API + Expo Dev Server",
             "configurations": [
-                "Exercise API",
+                "Exercise API (watch)",
                 "Expo Dev Server"
             ],
             "stopAll": true
