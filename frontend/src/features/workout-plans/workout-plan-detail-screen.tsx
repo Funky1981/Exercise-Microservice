@@ -66,7 +66,7 @@ export function WorkoutPlanDetailScreen({ planId }: WorkoutPlanDetailScreenProps
         tone: 'success',
         title: 'Plan deleted',
       });
-      router.back();
+      router.replace('/(app)/plans');
     },
   });
 
@@ -127,7 +127,7 @@ export function WorkoutPlanDetailScreen({ planId }: WorkoutPlanDetailScreenProps
       <SectionHeading
         eyebrow={plan.isActive ? 'Active plan' : 'Draft plan'}
         title={plan.name ?? 'Untitled plan'}
-        subtitle="Plan detail now exposes linked workouts, so the plan can be composed and adjusted directly from this screen."
+        subtitle="Plans are schedules of workout sessions. Review the sessions in this block and adjust them here."
       />
 
       <View style={[styles.detailColumns, !isCompact && styles.detailColumnsWide]}>
@@ -201,7 +201,7 @@ export function WorkoutPlanDetailScreen({ planId }: WorkoutPlanDetailScreenProps
       </View>
 
       <GlowCard>
-        <Text style={styles.panelTitle}>Linked workouts</Text>
+        <Text style={styles.panelTitle}>Planned workouts</Text>
         {plan.workouts.length === 0 ? (
           <Text style={styles.body}>No workouts linked yet.</Text>
         ) : (

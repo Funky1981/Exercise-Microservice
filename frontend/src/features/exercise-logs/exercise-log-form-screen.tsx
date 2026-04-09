@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { apiClient } from '@/api/client';
 import { AppScreen } from '@/components/ui/app-screen';
+import { DateTimeField } from '@/components/ui/date-time-field';
 import { GlowCard } from '@/components/ui/glow-card';
 import { PrimaryButton } from '@/components/ui/primary-button';
 import { TextField } from '@/components/ui/text-field';
@@ -34,7 +35,7 @@ export function ExerciseLogFormScreen() {
         notes: normalizeOptionalText(notes),
       });
     },
-    onSuccess: async () => {
+    onSuccess: async (result) => {
       await queryClient.invalidateQueries({
         queryKey: ['exercise-logs', 'list', session?.userId],
       });
@@ -42,7 +43,10 @@ export function ExerciseLogFormScreen() {
         tone: 'success',
         title: 'Exercise log created',
       });
-      router.back();
+      router.replace({
+        pathname: '/(app)/logs/[id]',
+        params: { id: result.id },
+      } as Href);
     },
     onError: (mutationError) => {
       setError(mutationError instanceof Error ? mutationError.message : 'Unable to create log.');
@@ -63,12 +67,12 @@ export function ExerciseLogFormScreen() {
           onChangeText={setName}
           placeholder="Saturday accessory work"
         />
-        <TextField
+        <DateTimeField
           label="Date"
+          mode="date"
           value={date}
-          onChangeText={setDate}
-          placeholder="YYYY-MM-DD"
-          autoCapitalize="none"
+          onChange={setDate}
+          helperText="Pick the day this log belongs to."
         />
         <TextField
           label="Notes"
@@ -89,7 +93,7 @@ export function ExerciseLogFormScreen() {
           />
           <PrimaryButton
             label="Cancel"
-            onPress={() => router.back()}
+            onPress={() => router.replace('/(app)/logs')}
             tone="muted"
             style={styles.actionButton}
           />

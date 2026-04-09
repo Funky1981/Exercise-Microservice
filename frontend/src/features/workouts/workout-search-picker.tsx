@@ -41,7 +41,9 @@ export function WorkoutSearchPicker({
   const items = useMemo(() => {
     const query = deferredSearch.trim().toLowerCase();
     const excluded = new Set(excludedWorkoutIds);
-    const source = (workoutsQuery.data?.items ?? []).filter((item) => !excluded.has(item.id));
+    const source = (workoutsQuery.data?.items ?? []).filter(
+      (item) => !excluded.has(item.id) && item.exercises.length > 0
+    );
 
     if (!query) {
       return source.slice(0, 8);
@@ -49,7 +51,11 @@ export function WorkoutSearchPicker({
 
     return source
       .filter((workout) =>
-        [workout.name ?? '', workout.notes ?? ''].some((value) =>
+        [
+          workout.name ?? '',
+          workout.notes ?? '',
+          ...workout.exercises.map((exercise) => exercise.name),
+        ].some((value) =>
           value.toLowerCase().includes(query)
         )
       )
@@ -62,9 +68,17 @@ export function WorkoutSearchPicker({
         label={label}
         value={search}
         onChangeText={setSearch}
-        placeholder="Search by workout name or notes"
+        placeholder="Search saved workouts or exercise names"
       />
       <View style={styles.results}>
+        {items.length === 0 ? (
+          <GlowCard style={styles.emptyCard}>
+            <Text style={styles.resultTitle}>No usable workouts found</Text>
+            <Text style={styles.resultBody}>
+              Plans can only use saved workouts that already contain exercises.
+            </Text>
+          </GlowCard>
+        ) : null}
         {items.map((workout) => (
           <Pressable
             key={workout.id}
@@ -77,7 +91,10 @@ export function WorkoutSearchPicker({
             <Text style={styles.resultMeta}>
               {formatDate(workout.date)} | {workout.isCompleted ? 'Completed' : 'Scheduled'}
             </Text>
-            <Text style={styles.resultBody}>{workout.notes ?? 'No notes recorded.'}</Text>
+            <Text style={styles.resultBody}>
+              {workout.exercises.length} exercises
+              {workout.notes ? ` | ${workout.notes}` : ''}
+            </Text>
           </Pressable>
         ))}
       </View>
@@ -107,6 +124,9 @@ const styles = StyleSheet.create({
   },
   results: {
     gap: tokens.spacing.sm,
+  },
+  emptyCard: {
+    padding: tokens.spacing.md,
   },
   resultCard: {
     borderRadius: tokens.radius.md,

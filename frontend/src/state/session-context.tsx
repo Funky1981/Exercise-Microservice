@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 import { apiClient, bindSessionAccessors } from '@/api/client';
+import { blurActiveElementOnWeb } from '@/lib/web-focus';
 import type { LoginPayload, RegisterPayload, Session } from '@/api/types';
 import { appStorage } from '@/lib/storage';
 
@@ -48,6 +49,7 @@ export function SessionProvider({ children }: React.PropsWithChildren) {
   }, []);
 
   const signOut = React.useCallback(async () => {
+    blurActiveElementOnWeb();
     setSession(null);
     setStatus('anonymous');
     await appStorage.removeItem(SESSION_KEY);
@@ -57,6 +59,7 @@ export function SessionProvider({ children }: React.PropsWithChildren) {
 
   const signIn = React.useCallback(async (payload: LoginPayload) => {
     const nextSession = await apiClient.login(payload);
+    blurActiveElementOnWeb();
     setSession(nextSession);
     setStatus('authenticated');
     await appStorage.setItem(SESSION_KEY, JSON.stringify(nextSession));

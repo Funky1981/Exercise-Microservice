@@ -40,7 +40,7 @@ export function WorkoutPlansScreen() {
       <SectionHeading
         eyebrow="Programs"
         title="Workout plans"
-        subtitle="Plans live in a secondary stack to keep the main tab bar compact while still supporting full CRUD, activation, and workout association management."
+        subtitle="A plan is a schedule of workout sessions across a date window. Build the sessions from real exercises, then manage the block here."
       />
 
       <PrimaryButton
@@ -103,7 +103,7 @@ function WorkoutPlanCard({ plan }: { plan: WorkoutPlan }) {
         {formatDate(plan.startDate)} to {plan.endDate ? formatDate(plan.endDate) : 'Open ended'}
       </Text>
       <Text style={styles.notes}>{plan.notes ?? 'No notes recorded.'}</Text>
-      <Text style={styles.metaSecondary}>{plan.workouts.length} linked workouts</Text>
+      <Text style={styles.metaSecondary}>{plan.workouts.length} planned workouts</Text>
       <PrimaryButton
         label="View plan"
         onPress={() =>

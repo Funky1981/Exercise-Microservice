@@ -8,7 +8,7 @@ import {
   useState,
   type PropsWithChildren,
 } from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { Animated, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { tokens } from '@/theme/tokens';
@@ -19,6 +19,8 @@ type ToastInput = {
   title: string;
   message?: string;
   tone?: ToastTone;
+  actionLabel?: string;
+  onAction?: () => void;
 };
 
 type ToastState = ToastInput & {
@@ -30,6 +32,7 @@ type ToastContextValue = {
 };
 
 const ToastContext = createContext<ToastContextValue | null>(null);
+const canUseNativeDriver = Platform.OS !== 'web';
 
 export function ToastProvider({ children }: PropsWithChildren) {
   const insets = useSafeAreaInsets();
@@ -48,6 +51,8 @@ export function ToastProvider({ children }: PropsWithChildren) {
       tone: nextToast.tone ?? 'info',
       title: nextToast.title,
       message: nextToast.message,
+      actionLabel: nextToast.actionLabel,
+      onAction: nextToast.onAction,
     });
   }, []);
 
@@ -60,12 +65,12 @@ export function ToastProvider({ children }: PropsWithChildren) {
       Animated.timing(opacity, {
         toValue: 1,
         duration: 180,
-        useNativeDriver: true,
+        useNativeDriver: canUseNativeDriver,
       }),
       Animated.timing(translateY, {
         toValue: 0,
         duration: 180,
-        useNativeDriver: true,
+        useNativeDriver: canUseNativeDriver,
       }),
     ]).start();
 
@@ -74,12 +79,12 @@ export function ToastProvider({ children }: PropsWithChildren) {
         Animated.timing(opacity, {
           toValue: 0,
           duration: 180,
-          useNativeDriver: true,
+          useNativeDriver: canUseNativeDriver,
         }),
         Animated.timing(translateY, {
           toValue: -24,
           duration: 180,
-          useNativeDriver: true,
+          useNativeDriver: canUseNativeDriver,
         }),
       ]).start(({ finished }) => {
         if (finished) {
@@ -114,9 +119,9 @@ export function ToastProvider({ children }: PropsWithChildren) {
       {children}
       {toast ? (
         <Animated.View
-          pointerEvents="none"
           style={[
             styles.container,
+            Platform.OS === 'web' && !(toast.actionLabel && toast.onAction) ? styles.containerWeb : null,
             {
               top: insets.top + tokens.spacing.md,
               opacity,
@@ -126,6 +131,17 @@ export function ToastProvider({ children }: PropsWithChildren) {
           <View style={[styles.toast, toneStyle]}>
             <Text style={styles.title}>{toast.title}</Text>
             {toast.message ? <Text style={styles.message}>{toast.message}</Text> : null}
+            {toast.actionLabel && toast.onAction ? (
+              <Pressable
+                accessibilityLabel={toast.actionLabel}
+                onPress={() => {
+                  toast.onAction?.();
+                  setToast(null);
+                }}
+                style={styles.actionButton}>
+                <Text style={styles.actionLabel}>{toast.actionLabel}</Text>
+              </Pressable>
+            ) : null}
           </View>
         </Animated.View>
       ) : null}
@@ -150,16 +166,25 @@ const styles = StyleSheet.create({
     right: tokens.spacing.md,
     zIndex: 20,
   },
+  containerWeb: {
+    pointerEvents: 'none',
+  },
   toast: {
     borderRadius: tokens.radius.md,
     borderWidth: 1,
     paddingHorizontal: tokens.spacing.md,
     paddingVertical: tokens.spacing.md,
-    shadowColor: '#000000',
-    shadowOpacity: 0.18,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 8,
+    ...(Platform.OS === 'web'
+      ? {
+          boxShadow: '0px 10px 16px rgba(0, 0, 0, 0.18)',
+        }
+      : {
+          shadowColor: '#000000',
+          shadowOpacity: 0.18,
+          shadowRadius: 16,
+          shadowOffset: { width: 0, height: 10 },
+          elevation: 8,
+        }),
   },
   info: {
     backgroundColor: tokens.colors.surfaceStrong,
@@ -183,5 +208,18 @@ const styles = StyleSheet.create({
     fontFamily: tokens.typography.body,
     fontSize: 14,
     lineHeight: 20,
+  },
+  actionButton: {
+    alignSelf: 'flex-start',
+    marginTop: tokens.spacing.sm,
+    paddingVertical: tokens.spacing.xs,
+    paddingHorizontal: tokens.spacing.sm,
+    borderRadius: tokens.radius.pill,
+    backgroundColor: tokens.colors.surfaceStrong,
+  },
+  actionLabel: {
+    color: tokens.colors.accent,
+    fontFamily: tokens.typography.label,
+    fontSize: 13,
   },
 });

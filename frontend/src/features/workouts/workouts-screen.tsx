@@ -12,7 +12,7 @@ import { PaginationControls } from '@/components/ui/pagination-controls';
 import { PrimaryButton } from '@/components/ui/primary-button';
 import { SectionHeading } from '@/components/ui/section-heading';
 import { StatusCard } from '@/components/ui/status-card';
-import { formatDate, formatDuration } from '@/lib/format';
+import { formatDuration, formatWorkoutSchedule } from '@/lib/format';
 import { pickResponsiveValue, useBreakpoint } from '@/lib/responsive';
 import { useSession } from '@/state/session-context';
 import { tokens } from '@/theme/tokens';
@@ -95,21 +95,34 @@ function WorkoutCard({ workout }: { workout: Workout }) {
     <GlowCard>
       <Text style={styles.name}>{workout.name ?? 'Untitled workout'}</Text>
       <Text style={styles.meta}>
-        {formatDate(workout.date)} | {workout.isCompleted ? 'Completed' : 'Scheduled'} |{' '}
-        {formatDuration(workout.duration)}
+        {formatWorkoutSchedule(workout.date, workout.hasExplicitTime)} |{' '}
+        {workout.isCompleted ? 'Completed' : 'Scheduled'} | {formatDuration(workout.duration)}
       </Text>
       <Text style={styles.notes}>{workout.notes ?? 'No notes recorded.'}</Text>
       <Text style={styles.metaSecondary}>{workout.exercises.length} linked exercises</Text>
-      <PrimaryButton
-        label="View workout"
-        onPress={() =>
-          router.push({
-            pathname: '/(app)/workouts/[id]',
-            params: { id: workout.id },
-          } as Href)
-        }
-        tone="muted"
-      />
+      <View style={styles.cardActions}>
+        <PrimaryButton
+          label="View workout"
+          onPress={() =>
+            router.push({
+              pathname: '/(app)/workouts/[id]',
+              params: { id: workout.id },
+            } as Href)
+          }
+          tone="muted"
+          style={styles.cardActionButton}
+        />
+        <PrimaryButton
+          label="Duplicate"
+          onPress={() =>
+            router.push({
+              pathname: '/(app)/workouts/new',
+              params: { duplicateWorkoutId: workout.id },
+            } as Href)
+          }
+          style={styles.cardActionButton}
+        />
+      </View>
     </GlowCard>
   );
 }
@@ -155,5 +168,14 @@ const styles = StyleSheet.create({
     fontFamily: tokens.typography.body,
     fontSize: 15,
     lineHeight: 22,
+  },
+  cardActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: tokens.spacing.sm,
+  },
+  cardActionButton: {
+    flexGrow: 1,
+    minWidth: 140,
   },
 });

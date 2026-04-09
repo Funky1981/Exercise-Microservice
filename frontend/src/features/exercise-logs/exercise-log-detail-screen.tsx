@@ -130,7 +130,7 @@ export function ExerciseLogDetailScreen({ logId }: ExerciseLogDetailScreenProps)
         tone: 'success',
         title: 'Log deleted',
       });
-      router.back();
+      router.replace('/(app)/logs');
     },
   });
 
@@ -195,9 +195,9 @@ export function ExerciseLogDetailScreen({ logId }: ExerciseLogDetailScreenProps)
             />
           </View>
           <ExerciseSearchPicker
-            label="Find exercise"
-            buttonLabel="Add entry"
+            actionLabel="Add entry"
             disabled={addEntryMutation.isPending || log.isCompleted}
+            excludedExerciseIds={log.entries.map((entry) => entry.exerciseId)}
             onAdd={(exercise) => addEntryMutation.mutate(exercise.id)}
           />
           {addEntryMutation.isError ? (

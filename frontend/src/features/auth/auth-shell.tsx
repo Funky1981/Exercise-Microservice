@@ -6,6 +6,7 @@ import { AppScreen } from '@/components/ui/app-screen';
 import { GlowCard } from '@/components/ui/glow-card';
 import { SectionHeading } from '@/components/ui/section-heading';
 import { useBreakpoint } from '@/lib/responsive';
+import { blurActiveElementOnWeb } from '@/lib/web-focus';
 import { tokens } from '@/theme/tokens';
 
 type AuthShellProps = PropsWithChildren<{
@@ -42,7 +43,7 @@ export function AuthShell({
         <GlowCard style={styles.panel}>
           {children}
           <Link href={alternateHref} asChild>
-            <Pressable>
+            <Pressable onPress={blurActiveElementOnWeb}>
               <Text style={styles.linkLabel}>{alternateLabel}</Text>
             </Pressable>
           </Link>

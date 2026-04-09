@@ -18,7 +18,7 @@ import { SectionHeading } from '@/components/ui/section-heading';
 import { StatusCard } from '@/components/ui/status-card';
 import { TextField } from '@/components/ui/text-field';
 import { ExerciseSearchPicker } from '@/features/exercises/exercise-search-picker';
-import { formatDateTime, formatDuration, minutesToDuration } from '@/lib/format';
+import { formatDuration, formatWorkoutSchedule, minutesToDuration } from '@/lib/format';
 import { pickResponsiveValue, useBreakpoint } from '@/lib/responsive';
 import { useToast } from '@/providers/toast-provider';
 import { useSession } from '@/state/session-context';
@@ -93,7 +93,7 @@ export function WorkoutDetailScreen({ workoutId }: WorkoutDetailScreenProps) {
         tone: 'success',
         title: 'Workout deleted',
       });
-      router.back();
+      router.replace('/(app)/(tabs)/workouts');
     },
     onError: (mutationError) => {
       setActionError(
@@ -175,7 +175,7 @@ export function WorkoutDetailScreen({ workoutId }: WorkoutDetailScreenProps) {
       <View style={[styles.detailColumns, !isCompact && styles.detailColumnsWide]}>
         <GlowCard style={styles.primaryColumn}>
           <Text style={styles.label}>Scheduled time</Text>
-          <Text style={styles.value}>{formatDateTime(workout.date)}</Text>
+          <Text style={styles.value}>{formatWorkoutSchedule(workout.date, workout.hasExplicitTime)}</Text>
           <Text style={styles.label}>Duration</Text>
           <Text style={styles.value}>{formatDuration(workout.duration)}</Text>
           <Text style={styles.label}>Notes</Text>
@@ -194,6 +194,16 @@ export function WorkoutDetailScreen({ workoutId }: WorkoutDetailScreenProps) {
                 } as Href)
               }
               tone="muted"
+              style={styles.actionButton}
+            />
+            <PrimaryButton
+              label="Duplicate workout"
+              onPress={() =>
+                router.push({
+                  pathname: '/(app)/workouts/new',
+                  params: { duplicateWorkoutId: workout.id },
+                } as Href)
+              }
               style={styles.actionButton}
             />
             <PrimaryButton
@@ -249,9 +259,9 @@ export function WorkoutDetailScreen({ workoutId }: WorkoutDetailScreenProps) {
           />
         )}
         <ExerciseSearchPicker
-          label="Add exercise"
-          buttonLabel="Link exercise"
+          actionLabel="Link exercise"
           disabled={addExerciseMutation.isPending || workout.isCompleted}
+          excludedExerciseIds={workout.exercises.map((exercise) => exercise.id)}
           onAdd={(exercise) => addExerciseMutation.mutate(exercise)}
         />
       </GlowCard>
