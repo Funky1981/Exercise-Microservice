@@ -88,6 +88,7 @@ namespace Exercise.Infrastructure.Repositories
         {
             var query = _context.Workouts
                 .AsNoTracking()
+                .Include(w => w.Exercises)
                 .Where(w => w.UserId == userId)
                 .OrderByDescending(w => w.Date);
 

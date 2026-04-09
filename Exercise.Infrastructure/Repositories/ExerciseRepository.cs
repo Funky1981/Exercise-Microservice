@@ -28,9 +28,51 @@ namespace Exercise.Infrastructure.Repositories
 
         /// <inheritdoc />
         public async Task<(IReadOnlyList<ExerciseEntity> Items, int TotalCount)> GetPagedAsync(
-            int skip, int pageSize, CancellationToken cancellationToken = default)
+            int skip,
+            int pageSize,
+            string? search = null,
+            string? bodyPart = null,
+            string? equipment = null,
+            IReadOnlyCollection<string>? regionBodyParts = null,
+            bool otherRegionOnly = false,
+            CancellationToken cancellationToken = default)
         {
             var query = _context.Exercises.AsNoTracking();
+
+            if (regionBodyParts is { Count: > 0 })
+            {
+                query = query.Where(exercise => regionBodyParts.Contains(exercise.BodyPart));
+            }
+            else if (otherRegionOnly)
+            {
+                var excludedBodyParts = Exercise.Application.Features.Exercises.Support.ExerciseRegionCatalog.Regions
+                    .Where(region => region != "other")
+                    .SelectMany(Exercise.Application.Features.Exercises.Support.ExerciseRegionCatalog.GetBodyPartsForRegion)
+                    .Distinct()
+                    .ToList();
+                query = query.Where(exercise => !excludedBodyParts.Contains(exercise.BodyPart));
+            }
+
+            if (!string.IsNullOrWhiteSpace(bodyPart))
+            {
+                query = query.Where(exercise => exercise.BodyPart == bodyPart);
+            }
+
+            if (!string.IsNullOrWhiteSpace(equipment))
+            {
+                query = query.Where(exercise => exercise.Equipment == equipment);
+            }
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim();
+                query = query.Where(exercise =>
+                    exercise.Name.Contains(term)
+                    || exercise.BodyPart.Contains(term)
+                    || exercise.TargetMuscle.Contains(term)
+                    || (exercise.Equipment != null && exercise.Equipment.Contains(term)));
+            }
+
             var totalCount = await query.CountAsync(cancellationToken);
             var items = await query
                 .OrderBy(e => e.Name)
@@ -38,6 +80,26 @@ namespace Exercise.Infrastructure.Repositories
                 .Take(pageSize)
                 .ToListAsync(cancellationToken);
             return (items, totalCount);
+        }
+
+        public async Task<IReadOnlyList<ExerciseEntity>> GetByIdsAsync(
+            IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken = default)
+        {
+            if (ids.Count == 0)
+            {
+                return [];
+            }
+
+            var items = await _context.Exercises
+                .Where(exercise => ids.Contains(exercise.Id))
+                .ToListAsync(cancellationToken);
+
+            return ids
+                .Distinct()
+                .Select(id => items.FirstOrDefault(exercise => exercise.Id == id))
+                .Where(exercise => exercise is not null)
+                .Cast<ExerciseEntity>()
+                .ToList();
         }
 
         /// <inheritdoc />

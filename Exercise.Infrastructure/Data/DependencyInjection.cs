@@ -43,6 +43,8 @@ namespace Exercise.Infrastructure.Data
                 client.DefaultRequestHeaders.Add("x-rapidapi-key", configuration["RapidApi:Key"]);
             }).AddStandardResilienceHandler();
 
+            services.AddHostedService<LegacyExerciseSeedCleanupService>();
+
             return services;
         }
     }
