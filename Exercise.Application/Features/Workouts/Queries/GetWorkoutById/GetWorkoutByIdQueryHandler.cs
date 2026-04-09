@@ -19,7 +19,7 @@ namespace Exercise.Application.Features.Workouts.Queries.GetWorkoutById
 
         public async Task<WorkoutDto?> Handle(GetWorkoutByIdQuery request, CancellationToken cancellationToken)
         {
-            var workout = await _workoutRepository.GetOwnedByIdAsync(request.Id, request.CurrentUserId, cancellationToken);
+            var workout = await _workoutRepository.GetOwnedByIdWithExercisesAsync(request.Id, request.CurrentUserId, cancellationToken);
             if (workout is null)
             {
                 if (await _workoutRepository.ExistsAsync(request.Id, cancellationToken))

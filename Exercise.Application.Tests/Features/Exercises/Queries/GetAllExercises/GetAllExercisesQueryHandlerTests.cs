@@ -54,7 +54,15 @@ public class GetAllExercisesQueryHandlerTests
         };
 
         _mockRepository
-            .Setup(repo => repo.GetPagedAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .Setup(repo => repo.GetPagedAsync(
+                It.IsAny<int>(),
+                It.IsAny<int>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<IReadOnlyCollection<string>?>(),
+                It.IsAny<bool>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(((IReadOnlyList<ExerciseEntity>)exercises, exercises.Count));
 
         var query = new GetAllExercisesQuery(pageNumber: 1, pageSize: 20);
@@ -80,7 +88,15 @@ public class GetAllExercisesQueryHandlerTests
         var emptyList = new List<ExerciseEntity>();
 
         _mockRepository
-            .Setup(repo => repo.GetPagedAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .Setup(repo => repo.GetPagedAsync(
+                It.IsAny<int>(),
+                It.IsAny<int>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<IReadOnlyCollection<string>?>(),
+                It.IsAny<bool>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(((IReadOnlyList<ExerciseEntity>)emptyList, 0));
 
         var query = new GetAllExercisesQuery();
@@ -94,7 +110,15 @@ public class GetAllExercisesQueryHandlerTests
         result.TotalCount.Should().Be(0);
 
         _mockRepository.Verify(
-            repo => repo.GetPagedAsync(0, 20, It.IsAny<CancellationToken>()),
+            repo => repo.GetPagedAsync(
+                0,
+                20,
+                null,
+                null,
+                null,
+                null,
+                false,
+                It.IsAny<CancellationToken>()),
             Times.Once
         );
     }

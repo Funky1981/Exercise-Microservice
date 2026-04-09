@@ -32,7 +32,7 @@ namespace Exercise.Application.Features.WorkoutPlans.Commands.AddWorkoutToWorkou
                 throw new NotFoundException(nameof(Exercise.Domain.Entities.WorkoutPlan), request.WorkoutPlanId);
             }
 
-            var workout = await _workoutRepository.GetByIdAsync(request.WorkoutId, cancellationToken);
+            var workout = await _workoutRepository.GetByIdForUpdateAsync(request.WorkoutId, cancellationToken);
             if (workout is null)
                 throw new NotFoundException(nameof(workout), request.WorkoutId);
 

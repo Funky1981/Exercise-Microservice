@@ -11,7 +11,8 @@ public class CreateWorkoutCommandValidatorTests
         var result = _validator.TestValidate(new CreateWorkoutCommand
         {
             UserId = Guid.NewGuid(),
-            Date   = DateTime.UtcNow
+            Date   = DateTime.UtcNow,
+            ExerciseIds = [Guid.NewGuid()]
         });
 
         result.ShouldNotHaveAnyValidationErrors();
@@ -23,7 +24,8 @@ public class CreateWorkoutCommandValidatorTests
         var result = _validator.TestValidate(new CreateWorkoutCommand
         {
             UserId = Guid.Empty,
-            Date   = DateTime.UtcNow
+            Date   = DateTime.UtcNow,
+            ExerciseIds = [Guid.NewGuid()]
         });
 
         result.ShouldHaveValidationErrorFor(x => x.UserId)
@@ -36,7 +38,8 @@ public class CreateWorkoutCommandValidatorTests
         var result = _validator.TestValidate(new CreateWorkoutCommand
         {
             UserId = Guid.NewGuid(),
-            Date   = default
+            Date   = default,
+            ExerciseIds = [Guid.NewGuid()]
         });
 
         result.ShouldHaveValidationErrorFor(x => x.Date)
@@ -50,7 +53,8 @@ public class CreateWorkoutCommandValidatorTests
         {
             UserId = Guid.NewGuid(),
             Date   = DateTime.UtcNow,
-            Name   = new string('X', 201)
+            Name   = new string('X', 201),
+            ExerciseIds = [Guid.NewGuid()]
         });
 
         result.ShouldHaveValidationErrorFor(x => x.Name);
@@ -63,7 +67,8 @@ public class CreateWorkoutCommandValidatorTests
         {
             UserId = Guid.NewGuid(),
             Date   = DateTime.UtcNow,
-            Name   = null
+            Name   = null,
+            ExerciseIds = [Guid.NewGuid()]
         });
 
         result.ShouldNotHaveValidationErrorFor(x => x.Name);
@@ -76,7 +81,8 @@ public class CreateWorkoutCommandValidatorTests
         {
             UserId = Guid.NewGuid(),
             Date   = DateTime.UtcNow,
-            Notes  = new string('N', 1001)
+            Notes  = new string('N', 1001),
+            ExerciseIds = [Guid.NewGuid()]
         });
 
         result.ShouldHaveValidationErrorFor(x => x.Notes);

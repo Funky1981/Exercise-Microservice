@@ -5,6 +5,7 @@ using Exercise.Application.Features.Exercises.Commands.CreateExercise;
 using Exercise.Application.Features.Exercises.Commands.DeleteExercise;
 using Exercise.Application.Features.Exercises.Commands.UpdateExercise;
 using Exercise.Application.Features.Exercises.Queries.GetAllExercises;
+using Exercise.Application.Features.Exercises.Queries.GetExerciseFilters;
 using Exercise.Application.Features.Exercises.Queries.GetExercisesByBodyPart;
 using Exercise.Application.Features.Exercises.Queries.GetExercisesById;
 using MediatR;
@@ -32,15 +33,37 @@ namespace Exercise.API
             // GET /api/exercises?pageNumber=1&pageSize=20
             group.MapGet("/",
                 async (IMediator mediator, CancellationToken ct,
-                       [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20) =>
+                       [FromQuery] int pageNumber = 1,
+                       [FromQuery] int pageSize = 20,
+                       [FromQuery] string? region = null,
+                       [FromQuery] string? bodyPart = null,
+                       [FromQuery] string? equipment = null,
+                       [FromQuery] string? search = null) =>
                 {
-                    var result = await mediator.Send(new GetAllExercisesQuery(pageNumber, pageSize), ct);
+                    var result = await mediator.Send(new GetAllExercisesQuery(pageNumber, pageSize)
+                    {
+                        Region = region,
+                        BodyPart = bodyPart,
+                        Equipment = equipment,
+                        Search = search,
+                    }, ct);
                     return Results.Ok(result);
                 })
             .WithName("GetAllExercises")
             .WithSummary("Get all exercises (paged)")
-            .WithDescription("Returns a paged catalogue of exercises. Use pageNumber and pageSize query params (default: page 1, size 20).")
+            .WithDescription("Returns a paged catalogue of exercises. Optional filters: region, bodyPart, equipment, and search.")
             .Produces<PagedResult<ExerciseDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
+            .CacheOutput("ExerciseCatalogue");
+
+            group.MapGet("/filters", async (IMediator mediator, CancellationToken ct) =>
+            {
+                var result = await mediator.Send(new GetExerciseFiltersQuery(), ct);
+                return Results.Ok(result);
+            })
+            .WithName("GetExerciseFilters")
+            .WithSummary("Get exercise filter metadata")
+            .Produces<ExerciseFiltersDto>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
             .CacheOutput("ExerciseCatalogue");
 

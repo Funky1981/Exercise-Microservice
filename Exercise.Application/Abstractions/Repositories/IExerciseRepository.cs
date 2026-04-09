@@ -26,7 +26,20 @@ namespace Exercise.Application.Abstractions.Repositories
         /// Retrieves a paged slice of the exercise catalogue.
         /// </summary>
         Task<(IReadOnlyList<ExerciseEntity> Items, int TotalCount)> GetPagedAsync(
-            int skip, int pageSize, CancellationToken cancellationToken = default);
+            int skip,
+            int pageSize,
+            string? search = null,
+            string? bodyPart = null,
+            string? equipment = null,
+            IReadOnlyCollection<string>? regionBodyParts = null,
+            bool otherRegionOnly = false,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Retrieves a set of exercises by identifier, preserving the requested order where possible.
+        /// </summary>
+        Task<IReadOnlyList<ExerciseEntity>> GetByIdsAsync(
+            IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Retrieves a specific exercise by its unique identifier  

@@ -273,6 +273,18 @@ namespace Exercise.Infrastructure.Migrations
                     b.Property<TimeSpan?>("Duration")
                         .HasColumnType("time");
 
+                    b.Property<string>("ExerciseOrder")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)")
+                        .HasDefaultValue("");
+
+                    b.Property<bool>("HasExplicitTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
                     b.Property<bool>("IsCompleted")
                         .HasColumnType("bit");
 

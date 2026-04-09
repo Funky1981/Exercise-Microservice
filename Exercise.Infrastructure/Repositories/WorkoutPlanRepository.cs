@@ -49,6 +49,15 @@ namespace Exercise.Infrastructure.Repositories
                 .FirstOrDefaultAsync(wp => wp.Id == id && wp.UserId == userId, cancellationToken);
         }
 
+        public async Task<WorkoutPlan?> GetOwnedByIdWithWorkoutsAsync(Guid id, Guid userId, CancellationToken cancellationToken = default)
+        {
+            return await _context.WorkoutPlans
+                .AsNoTracking()
+                .Include(wp => wp.Workouts)
+                .ThenInclude(workout => workout.Exercises)
+                .FirstOrDefaultAsync(wp => wp.Id == id && wp.UserId == userId, cancellationToken);
+        }
+
         public async Task<WorkoutPlan?> GetOwnedByIdForUpdateAsync(Guid id, Guid userId, CancellationToken cancellationToken = default)
         {
             return await _context.WorkoutPlans

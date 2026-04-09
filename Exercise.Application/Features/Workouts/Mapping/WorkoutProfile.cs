@@ -8,6 +8,7 @@ namespace Exercise.Application.Features.Workouts.Mapping
     {
         public WorkoutProfile()
         {
+            CreateMap<Exercise.Domain.Entities.Exercise, WorkoutExerciseDto>();
             CreateMap<Workout, WorkoutDto>();
         }
     }

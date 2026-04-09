@@ -13,15 +13,20 @@ using MockFactory = Exercise.Application.Tests.TestHelpers.MockFactory;
 
 public class CreateWorkoutCommandHandlerTests
 {
+    private readonly Mock<IExerciseRepository> _exerciseRepoMock;
     private readonly Mock<IWorkoutRepository> _workoutRepoMock;
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly CreateWorkoutCommandHandler _handler;
 
     public CreateWorkoutCommandHandlerTests()
     {
+        _exerciseRepoMock = MockFactory.CreateExerciseRepositoryMock();
         _workoutRepoMock = MockFactory.CreateWorkoutRepositoryMock();
         _unitOfWorkMock = MockFactory.CreateUnitOfWorkMock();
-        _handler = new CreateWorkoutCommandHandler(_workoutRepoMock.Object, _unitOfWorkMock.Object);
+        _handler = new CreateWorkoutCommandHandler(
+            _exerciseRepoMock.Object,
+            _workoutRepoMock.Object,
+            _unitOfWorkMock.Object);
     }
 
     [Fact]
@@ -32,8 +37,13 @@ public class CreateWorkoutCommandHandlerTests
         {
             UserId = Guid.NewGuid(),
             Name   = "Morning Session",
-            Date   = DateTime.UtcNow
+            Date   = DateTime.UtcNow,
+            ExerciseIds = [Guid.NewGuid()]
         };
+
+        _exerciseRepoMock
+            .Setup(repository => repository.GetByIdsAsync(command.ExerciseIds, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(command.ExerciseIds.Select(id => TestDataBuilder.BuildExercise(id: id)).ToList());
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
@@ -50,8 +60,13 @@ public class CreateWorkoutCommandHandlerTests
         {
             UserId = Guid.NewGuid(),
             Name   = "Evening Run",
-            Date   = DateTime.UtcNow
+            Date   = DateTime.UtcNow,
+            ExerciseIds = [Guid.NewGuid()]
         };
+
+        _exerciseRepoMock
+            .Setup(repository => repository.GetByIdsAsync(command.ExerciseIds, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(command.ExerciseIds.Select(id => TestDataBuilder.BuildExercise(id: id)).ToList());
 
         // Act
         await _handler.Handle(command, CancellationToken.None);
@@ -151,7 +166,7 @@ public class AddExerciseToWorkoutCommandHandlerTests
             .ReturnsAsync(workout);
 
         _exerciseRepoMock
-            .Setup(r => r.GetByIdAsync(exercise.Id, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdForUpdateAsync(exercise.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(exercise);
 
         var command = new AddExerciseToWorkoutCommand(workout.Id, exercise.Id)
@@ -201,7 +216,7 @@ public class AddExerciseToWorkoutCommandHandlerTests
             .ReturnsAsync(workout);
 
         _exerciseRepoMock
-            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdForUpdateAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((ExerciseEntity?)null);
 
         var command = new AddExerciseToWorkoutCommand(workout.Id, Guid.NewGuid())

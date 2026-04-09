@@ -29,7 +29,7 @@ public class OptimisticConcurrencyTests : IClassFixture<AuthBypassWebApplication
             var unitOfWork = seedScope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
             await workoutRepository.AddAsync(
-                new Workout(workoutId, userId, "Concurrency Seed Workout", DateTime.UtcNow),
+                new Workout(workoutId, userId, "Concurrency Seed Workout", DateTime.UtcNow, false),
                 CancellationToken.None);
             await unitOfWork.SaveChangesAsync(CancellationToken.None);
         }
@@ -48,10 +48,10 @@ public class OptimisticConcurrencyTests : IClassFixture<AuthBypassWebApplication
         workout1.Should().NotBeNull();
         workout2.Should().NotBeNull();
 
-        workout1!.Update("Scope 1 Update", DateTime.UtcNow.AddDays(1), "first save");
+        workout1!.Update("Scope 1 Update", DateTime.UtcNow.AddDays(1), "first save", false);
         await unitOfWork1.SaveChangesAsync(CancellationToken.None);
 
-        workout2!.Update("Scope 2 Update", DateTime.UtcNow.AddDays(2), "stale save");
+        workout2!.Update("Scope 2 Update", DateTime.UtcNow.AddDays(2), "stale save", false);
 
         var act = () => unitOfWork2.SaveChangesAsync(CancellationToken.None);
 

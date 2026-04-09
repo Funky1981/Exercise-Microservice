@@ -40,12 +40,15 @@ public class WorkoutsEndpointTests : DualFactoryIntegrationTestBase
     public async Task CreateWorkout_WithValidToken_Returns201()
     {
         var client = BypassFactory.CreateClient();
+        var exerciseId = await CreateExerciseAsync(client, "Morning Run Drill");
 
         var response = await client.PostAsJsonAsync("/api/workouts", new
         {
             name  = "Morning Run",
             date  = DateTime.UtcNow,
-            notes = "Integration test workout"
+            hasExplicitTime = false,
+            notes = "Integration test workout",
+            exerciseIds = new[] { exerciseId }
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -55,12 +58,15 @@ public class WorkoutsEndpointTests : DualFactoryIntegrationTestBase
     public async Task CreateWorkout_ThenGetWorkouts_ReturnsThatWorkout()
     {
         var client = BypassFactory.CreateClient();
+        var exerciseId = await CreateExerciseAsync(client, "Evening Gym Drill");
 
         await client.PostAsJsonAsync("/api/workouts", new
         {
             name  = "Evening Gym",
             date  = DateTime.UtcNow,
-            notes = "Pull day"
+            hasExplicitTime = false,
+            notes = "Pull day",
+            exerciseIds = new[] { exerciseId }
         });
 
         var listResp = await client.GetAsync("/api/workouts?pageNumber=1&pageSize=20");
@@ -70,18 +76,60 @@ public class WorkoutsEndpointTests : DualFactoryIntegrationTestBase
         body.Should().Contain("Evening Gym");
     }
 
+    [Fact]
+    public async Task GetWorkoutById_ReturnsExercisesWhenWorkoutHasAssociations()
+    {
+        var client = BypassFactory.CreateClient();
+        var exerciseId = await CreateExerciseAsync(client, "Front Squat");
+        var workoutId = await CreateWorkoutAsCurrentUserAsync(client);
+
+        var addResponse = await client.PostAsJsonAsync($"/api/workouts/{workoutId}/exercises", new
+        {
+            exerciseId
+        });
+        addResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var response = await client.GetAsync($"/api/workouts/{workoutId}");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("exercises").EnumerateArray()
+            .Select(item => item.GetProperty("id").GetGuid())
+            .Should()
+            .Contain(exerciseId);
+    }
+
     // ── Ownership guard (403) ────────────────────────────────────────────────
 
     private async Task<Guid> CreateWorkoutAsCurrentUserAsync(HttpClient client)
     {
+        var exerciseId = await CreateExerciseAsync(client, "Ownership Exercise");
         var resp = await client.PostAsJsonAsync("/api/workouts", new
         {
             name  = "Ownership Test Workout",
             date  = DateTime.UtcNow,
-            notes = "ownership guard"
+            hasExplicitTime = false,
+            notes = "ownership guard",
+            exerciseIds = new[] { exerciseId }
         });
         resp.StatusCode.Should().Be(HttpStatusCode.Created);
         var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        return body.GetProperty("id").GetGuid();
+    }
+
+    private static async Task<Guid> CreateExerciseAsync(HttpClient client, string name)
+    {
+        var response = await client.PostAsJsonAsync("/api/exercises", new
+        {
+            name,
+            bodyPart = "legs",
+            targetMuscle = "quadriceps",
+            equipment = "barbell",
+            description = "Integration test exercise"
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
         return body.GetProperty("id").GetGuid();
     }
 
@@ -118,7 +166,9 @@ public class WorkoutsEndpointTests : DualFactoryIntegrationTestBase
             {
                 name  = "Hacked Workout",
                 date  = DateTime.UtcNow,
-                notes = "should be blocked"
+                hasExplicitTime = false,
+                notes = "should be blocked",
+                exerciseIds = new[] { Guid.NewGuid() }
             });
 
             response.StatusCode.Should().Be(HttpStatusCode.Forbidden);

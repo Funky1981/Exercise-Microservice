@@ -24,8 +24,16 @@ namespace Exercise.Infrastructure.Data.Configurations
             builder.Property(w => w.Date)
                 .IsRequired();
 
+            builder.Property(w => w.HasExplicitTime)
+                .IsRequired()
+                .HasDefaultValue(false);
+
             builder.Property(w => w.Notes)
                 .HasMaxLength(1000);
+
+            builder.Property<string>("ExerciseOrder")
+                .HasMaxLength(4000)
+                .HasDefaultValue(string.Empty);
 
             builder.Property(w => w.IsCompleted)
                 .IsRequired();
