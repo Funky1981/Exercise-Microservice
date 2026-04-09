@@ -10,6 +10,9 @@ namespace Exercise.Application.Features.Workouts.Commands.CreateWorkout
             RuleFor(x => x.Date).NotEmpty().WithMessage("Date is required.");
             RuleFor(x => x.Name).MaximumLength(200).When(x => x.Name is not null);
             RuleFor(x => x.Notes).MaximumLength(1000).When(x => x.Notes is not null);
+            RuleFor(x => x.ExerciseIds)
+                .NotEmpty()
+                .WithMessage("Select at least one exercise.");
         }
     }
 }

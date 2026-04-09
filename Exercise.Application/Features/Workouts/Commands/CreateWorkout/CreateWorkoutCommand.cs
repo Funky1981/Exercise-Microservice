@@ -7,6 +7,8 @@ namespace Exercise.Application.Features.Workouts.Commands.CreateWorkout
         public Guid UserId { get; set; }
         public string? Name { get; set; }
         public DateTime Date { get; set; }
+        public bool HasExplicitTime { get; set; }
         public string? Notes { get; set; }
+        public IReadOnlyList<Guid> ExerciseIds { get; set; } = [];
     }
 }
