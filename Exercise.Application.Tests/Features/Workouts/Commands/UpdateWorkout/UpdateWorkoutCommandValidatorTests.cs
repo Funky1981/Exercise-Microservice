@@ -12,7 +12,8 @@ public class UpdateWorkoutCommandValidatorTests
         {
             WorkoutId = Guid.NewGuid(),
             CurrentUserId = Guid.NewGuid(),
-            Date      = DateTime.UtcNow
+            Date      = DateTime.UtcNow,
+            ExerciseIds = [Guid.NewGuid()]
         });
 
         result.ShouldNotHaveAnyValidationErrors();
@@ -25,7 +26,8 @@ public class UpdateWorkoutCommandValidatorTests
         {
             WorkoutId = Guid.Empty,
             CurrentUserId = Guid.NewGuid(),
-            Date      = DateTime.UtcNow
+            Date      = DateTime.UtcNow,
+            ExerciseIds = [Guid.NewGuid()]
         });
 
         result.ShouldHaveValidationErrorFor(x => x.WorkoutId)
@@ -39,7 +41,8 @@ public class UpdateWorkoutCommandValidatorTests
         {
             WorkoutId = Guid.NewGuid(),
             CurrentUserId = Guid.NewGuid(),
-            Date      = default
+            Date      = default,
+            ExerciseIds = [Guid.NewGuid()]
         });
 
         result.ShouldHaveValidationErrorFor(x => x.Date)

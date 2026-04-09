@@ -75,7 +75,8 @@ namespace Exercise.Application.Tests.TestHelpers
                 id     ?? Guid.NewGuid(),
                 userId ?? Guid.NewGuid(),
                 name,
-                date   ?? DateTime.UtcNow);
+                date   ?? DateTime.UtcNow,
+                hasExplicitTime: false);
         }
 
         public static List<Workout> BuildWorkoutList(Guid userId, int count = 3)

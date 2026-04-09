@@ -110,11 +110,26 @@ public class WorkoutPlanEndpointTests : DualFactoryIntegrationTestBase
 
     private static async Task<Guid> CreateWorkoutAsync(HttpClient client, string name)
     {
+        var exerciseResponse = await client.PostAsJsonAsync("/api/exercises", new
+        {
+            name = $"{name} Exercise",
+            bodyPart = "chest",
+            targetMuscle = "pectorals",
+            equipment = "machine",
+            description = "Integration test exercise for workout plans"
+        });
+
+        exerciseResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+        var exerciseBody = await exerciseResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var exerciseId = exerciseBody.GetProperty("id").GetGuid();
+
         var response = await client.PostAsJsonAsync("/api/workouts", new
         {
             name,
             date = DateTime.UtcNow,
-            notes = "Created for workout plan integration test"
+            hasExplicitTime = false,
+            notes = "Created for workout plan integration test",
+            exerciseIds = new[] { exerciseId }
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);

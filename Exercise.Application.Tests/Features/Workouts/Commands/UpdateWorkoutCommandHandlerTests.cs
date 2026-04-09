@@ -8,15 +8,20 @@ using MockFactory = Exercise.Application.Tests.TestHelpers.MockFactory;
 
 public class UpdateWorkoutCommandHandlerTests
 {
+    private readonly Mock<IExerciseRepository> _exerciseRepoMock;
     private readonly Mock<IWorkoutRepository> _workoutRepoMock;
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly UpdateWorkoutCommandHandler _handler;
 
     public UpdateWorkoutCommandHandlerTests()
     {
+        _exerciseRepoMock = MockFactory.CreateExerciseRepositoryMock();
         _workoutRepoMock = MockFactory.CreateWorkoutRepositoryMock();
         _unitOfWorkMock = MockFactory.CreateUnitOfWorkMock();
-        _handler = new UpdateWorkoutCommandHandler(_workoutRepoMock.Object, _unitOfWorkMock.Object);
+        _handler = new UpdateWorkoutCommandHandler(
+            _exerciseRepoMock.Object,
+            _workoutRepoMock.Object,
+            _unitOfWorkMock.Object);
     }
 
     [Fact]
@@ -25,8 +30,13 @@ public class UpdateWorkoutCommandHandlerTests
         // Arrange
         var workout = TestDataBuilder.BuildWorkout();
         _workoutRepoMock
-            .Setup(r => r.GetOwnedByIdForUpdateAsync(workout.Id, workout.UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetOwnedByIdWithExercisesForUpdateAsync(workout.Id, workout.UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(workout);
+
+        var exerciseId = Guid.NewGuid();
+        _exerciseRepoMock
+            .Setup(repository => repository.GetByIdsAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([TestDataBuilder.BuildExercise(id: exerciseId)]);
 
         var command = new UpdateWorkoutCommand
         {
@@ -34,7 +44,8 @@ public class UpdateWorkoutCommandHandlerTests
             CurrentUserId = workout.UserId,
             Name = "Updated Name",
             Date = DateTime.UtcNow.AddDays(1),
-            Notes = "Updated notes"
+            Notes = "Updated notes",
+            ExerciseIds = [exerciseId]
         };
 
         // Act
@@ -50,7 +61,7 @@ public class UpdateWorkoutCommandHandlerTests
     {
         // Arrange
         _workoutRepoMock
-            .Setup(r => r.GetOwnedByIdForUpdateAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetOwnedByIdWithExercisesForUpdateAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Workout?)null);
         _workoutRepoMock
             .Setup(r => r.ExistsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
