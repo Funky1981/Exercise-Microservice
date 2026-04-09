@@ -45,6 +45,7 @@ export function PaginationControls({
               onPageChange(Math.min(pageNumber + 1, safeTotalPages))
             )
           }
+          tone="muted"
           disabled={busy || pageNumber >= safeTotalPages}
           style={styles.action}
         />

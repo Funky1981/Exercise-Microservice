@@ -1,10 +1,10 @@
 import type { PropsWithChildren } from 'react';
-import { StyleSheet, View, type ViewStyle } from 'react-native';
+import { Platform, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { tokens } from '@/theme/tokens';
 
 type GlowCardProps = PropsWithChildren<{
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }>;
 
 export function GlowCard({ children, style }: GlowCardProps) {
@@ -19,10 +19,16 @@ const styles = StyleSheet.create({
     borderColor: tokens.colors.borderSoft,
     padding: tokens.spacing.lg,
     gap: tokens.spacing.md,
-    shadowColor: '#000000',
-    shadowOpacity: 0.18,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 8,
+    ...(Platform.OS === 'web'
+      ? {
+          boxShadow: '0px 12px 18px rgba(0, 0, 0, 0.18)',
+        }
+      : {
+          shadowColor: '#000000',
+          shadowOpacity: 0.18,
+          shadowRadius: 18,
+          shadowOffset: { width: 0, height: 12 },
+          elevation: 8,
+        }),
   },
 });
