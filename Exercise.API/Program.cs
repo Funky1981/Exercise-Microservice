@@ -8,6 +8,7 @@ using Exercise.Infrastructure.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -16,6 +17,9 @@ using System.Text;
 using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
+var corsOrigins =
+    builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+    ?? ["http://localhost:4217"];
 
 // 🟧 Serilog — reads from appsettings.json; AddSerilog does not freeze the static
 // Log.Logger so WebApplicationFactory test factories can run cleanly.
@@ -63,6 +67,17 @@ builder.Services.AddAuthorization(options =>
     // (exercise catalogue mutations, sync, etc.).
     options.AddPolicy("Admin", policy =>
         policy.RequireRole("Admin"));
+});
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Frontend", policy =>
+    {
+        policy
+            .WithOrigins(corsOrigins)
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
 });
 
 // ?? API Versioning ???????????????????????????????????????????????????????????
@@ -164,6 +179,16 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<ExerciseDbContext>();
+    if (dbContext.Database.IsSqlServer())
+    {
+        await dbContext.Database.MigrateAsync();
+    }
+}
+
 // ⚠️ Migrations are NOT auto-applied on startup to avoid race conditions
 // with multiple replicas. Run migrations externally:
 //   dotnet ef database update --project Exercise.Infrastructure --startup-project Exercise.API
@@ -181,7 +206,11 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+app.UseCors("Frontend");
 
 // Security response headers — applied to every response
 app.Use(async (context, next) =>
