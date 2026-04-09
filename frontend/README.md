@@ -27,7 +27,7 @@ This branch includes:
 
 ```bash
 npm install
-npm run start
+npm run web
 ```
 
 Useful commands:
@@ -45,11 +45,10 @@ Use the workspace debug configs in `.vscode/launch.json`:
 - `Full Stack: API + Expo Web` starts the backend and opens the Expo web app
 - `Full Stack: API + Expo Dev Server` starts the backend and the Expo dev server for device/emulator use
 - `Exercise API` starts only the backend
-- `Exercise API (coreclr)` is the browser-opening backend launch for the classic C# debugger
-- `Exercise API (dotnet)` is available if you have the newer `.NET` debug extension/C# Dev Kit support
+- `Exercise API (watch)` starts the backend with `dotnet watch run`
 - `Expo Web` or `Expo Dev Server` start only the frontend
 
-The compound launch targets use the classic `coreclr` C# debugger for compatibility. The optional `dotnet` launch target is only for VS Code setups that support the newer `.NET` debugger type.
+The workspace debug targets use terminal launches for the API, so they do not depend on the VS Code `coreclr` or `dotnet` debugger extensions.
 
 The frontend debug configs inject:
 
@@ -57,7 +56,7 @@ The frontend debug configs inject:
 EXPO_PUBLIC_API_BASE_URL=http://localhost:5034
 ```
 
-The VS Code Expo debug targets also force port `8082` because `8081` is commonly occupied by Docker Desktop/WSL on this machine.
+The frontend scripts and VS Code Expo debug targets force port `4217`. They also clear stale Expo processes on that port before starting, which avoids the repeated `Port 4217 is being used by another process` prompt.
 
 ## Environment
 
@@ -66,6 +65,14 @@ Set the backend base URL with:
 ```bash
 EXPO_PUBLIC_API_BASE_URL=http://localhost:5034
 ```
+
+The frontend runs on:
+
+```bash
+http://localhost:4217
+```
+
+Use `npm run web` or the VS Code `Expo Web` / `Full Stack: API + Expo Web` launch targets. Avoid starting the web app with a raw `npx expo start --web --port 4217`, because that bypasses the stale-process cleanup step.
 
 If the variable is omitted, the app falls back to:
 

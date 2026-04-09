@@ -28,6 +28,18 @@ export function formatDateTime(dateValue?: string | null) {
   });
 }
 
+export function formatWorkoutSchedule(dateValue?: string | null, hasExplicitTime = true) {
+  if (!dateValue) {
+    return 'No date';
+  }
+
+  if (!hasExplicitTime) {
+    return `${formatDate(dateValue)} | Any time`;
+  }
+
+  return formatDateTime(dateValue);
+}
+
 export function formatDuration(duration?: string | null) {
   if (!duration) {
     return 'Not recorded';
@@ -55,12 +67,28 @@ export function isoDateFromInput(value: string) {
   return new Date(`${value}T09:00:00`).toISOString();
 }
 
+export function isoDateTimeFromInput(date: string, time?: string | null) {
+  if (!time) {
+    return new Date(`${date}T09:00:00`).toISOString();
+  }
+
+  return new Date(`${date}T${time}:00`).toISOString();
+}
+
 export function inputDateFromIso(value?: string | null) {
   if (!value) {
     return '';
   }
 
   return new Date(value).toISOString().slice(0, 10);
+}
+
+export function inputTimeFromIso(value?: string | null) {
+  if (!value) {
+    return '';
+  }
+
+  return new Date(value).toISOString().slice(11, 16);
 }
 
 export function normalizeOptionalText(value: string) {

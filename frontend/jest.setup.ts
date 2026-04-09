@@ -4,6 +4,8 @@ jest.mock('expo-router', () => ({
     replace: jest.fn(),
     back: jest.fn(),
   },
+  usePathname: jest.fn(() => '/'),
+  useSegments: jest.fn(() => ['(app)', '(tabs)', 'index']),
 }));
 
 jest.mock('expo-secure-store', () => ({

@@ -3,9 +3,13 @@ export const queryKeys = {
     summary: (userId?: string | null) => ['analytics', 'workout-summary', userId] as const,
   },
   exercises: {
-    catalogue: (pageNumber: number, pageSize: number) =>
-      ['exercises', 'catalogue', pageNumber, pageSize] as const,
+    catalogue: (
+      pageNumber: number,
+      pageSize: number,
+      filters?: Record<string, string | null | undefined>
+    ) => ['exercises', 'catalogue', pageNumber, pageSize, filters ?? {}] as const,
     detail: (id: string) => ['exercises', 'detail', id] as const,
+    filters: () => ['exercises', 'filters'] as const,
   },
   workouts: {
     list: (userId: string | undefined, pageNumber: number, pageSize: number) =>

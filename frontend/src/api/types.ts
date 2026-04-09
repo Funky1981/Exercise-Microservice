@@ -45,6 +45,8 @@ export type PagedResult<T> = {
   hasNextPage: boolean;
 };
 
+export type ExerciseRegion = 'upper-body' | 'lower-body' | 'core' | 'cardio' | 'other';
+
 export type Exercise = {
   id: string;
   name: string;
@@ -56,11 +58,25 @@ export type Exercise = {
   difficulty?: string | null;
 };
 
+export type ExerciseFilters = {
+  region?: ExerciseRegion | null;
+  bodyPart?: string | null;
+  equipment?: string | null;
+  search?: string | null;
+};
+
+export type ExerciseFilterOptions = {
+  regions: ExerciseRegion[];
+  bodyPartsByRegion: Record<string, string[]>;
+  equipment: string[];
+};
+
 export type Workout = {
   id: string;
   userId: string;
   name?: string | null;
   date: string;
+  hasExplicitTime: boolean;
   duration?: string | null;
   notes?: string | null;
   isCompleted: boolean;
@@ -116,7 +132,9 @@ export type ExerciseLog = {
 export type CreateWorkoutPayload = {
   name?: string;
   date: string;
+  hasExplicitTime: boolean;
   notes?: string;
+  exerciseIds: string[];
 };
 
 export type UpdateWorkoutPayload = CreateWorkoutPayload;

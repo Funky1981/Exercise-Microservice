@@ -7,6 +7,8 @@ import type {
   CreateWorkoutPayload,
   CreateWorkoutPlanPayload,
   Exercise,
+  ExerciseFilterOptions,
+  ExerciseFilters,
   ExerciseLog,
   LoginPayload,
   LoginResponse,
@@ -158,10 +160,39 @@ export const apiClient = {
     );
   },
 
-  async getExercises(pageNumber = 1, pageSize = 20) {
+  async getExercises(
+    pageNumber = 1,
+    pageSize = 20,
+    filters: ExerciseFilters = {}
+  ) {
+    const query = new URLSearchParams({
+      pageNumber: pageNumber.toString(),
+      pageSize: pageSize.toString(),
+    });
+
+    if (filters.region) {
+      query.set('region', filters.region);
+    }
+
+    if (filters.bodyPart) {
+      query.set('bodyPart', filters.bodyPart);
+    }
+
+    if (filters.equipment) {
+      query.set('equipment', filters.equipment);
+    }
+
+    if (filters.search) {
+      query.set('search', filters.search);
+    }
+
     return request<PagedResult<Exercise>>(
-      `/api/exercises?pageNumber=${pageNumber}&pageSize=${pageSize}`
+      `/api/exercises?${query.toString()}`
     );
+  },
+
+  async getExerciseFilters() {
+    return request<ExerciseFilterOptions>('/api/exercises/filters');
   },
 
   async getExerciseById(id: string) {
