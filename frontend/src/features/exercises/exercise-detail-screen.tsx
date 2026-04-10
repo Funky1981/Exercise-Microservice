@@ -25,10 +25,69 @@ export function ExerciseDetailScreen({ exerciseId }: ExerciseDetailScreenProps) 
   const { showToast } = useToast();
   const queryClient = useQueryClient();
   const [selectedWorkoutId, setSelectedWorkoutId] = useState<string | null>(null);
+
   const exerciseQuery = useQuery({
     queryKey: exerciseId ? queryKeys.exercises.detail(exerciseId) : ['exercises', 'detail', 'missing'],
     queryFn: () => apiClient.getExerciseById(exerciseId!),
     enabled: Boolean(exerciseId),
+  });
+
+  const workoutsQuery = useQuery({
+    queryKey: queryKeys.workouts.list(session?.userId, 1, 100),
+    queryFn: () => apiClient.getWorkouts(1, 100),
+    enabled: Boolean(session) && Boolean(exerciseId),
+  });
+
+  const addToWorkoutMutation = useMutation({
+    mutationFn: (workoutId: string) =>
+      apiClient.addWorkoutExercise(workoutId, { exerciseId: exerciseId! }),
+    onSuccess: async () => {
+      if (selectedWorkoutId) {
+        await queryClient.invalidateQueries({
+          queryKey: queryKeys.workouts.detail(session?.userId, selectedWorkoutId),
+        });
+      }
+      showToast({ tone: 'success', title: 'Exercise added to workout' });
+      setSelectedWorkoutId(null);
+    },
+    onError: (err) => {
+      showToast({
+        tone: 'error',
+        title: 'Failed to add',
+        message: err instanceof Error ? err.message : 'Try again.',
+      });
+    },
+  });
+
+  const quickLogMutation = useMutation({
+    mutationFn: async () => {
+      const exercise = exerciseQuery.data;
+      if (!exercise) throw new Error('Exercise not loaded');
+      const log = await apiClient.createExerciseLog({
+        name: `Quick log: ${exercise.name}`,
+        date: new Date().toISOString(),
+      });
+      await apiClient.addExerciseLogEntry(log.id, {
+        exerciseId: exercise.id,
+        sets: 1,
+        reps: 0,
+      });
+      return log.id;
+    },
+    onSuccess: (logId) => {
+      showToast({ tone: 'success', title: 'Log created' });
+      router.push({
+        pathname: '/(app)/logs/[id]',
+        params: { id: logId },
+      } as Href);
+    },
+    onError: (err) => {
+      showToast({
+        tone: 'error',
+        title: 'Failed to create log',
+        message: err instanceof Error ? err.message : 'Try again.',
+      });
+    },
   });
 
   if (!exerciseId) {
@@ -66,62 +125,6 @@ export function ExerciseDetailScreen({ exerciseId }: ExerciseDetailScreenProps) 
   }
 
   const exercise = exerciseQuery.data;
-
-  const workoutsQuery = useQuery({
-    queryKey: queryKeys.workouts.list(session?.userId, 1, 100),
-    queryFn: () => apiClient.getWorkouts(1, 100),
-    enabled: Boolean(session),
-  });
-
-  const addToWorkoutMutation = useMutation({
-    mutationFn: (workoutId: string) =>
-      apiClient.addWorkoutExercise(workoutId, { exerciseId: exercise.id }),
-    onSuccess: async () => {
-      if (selectedWorkoutId) {
-        await queryClient.invalidateQueries({
-          queryKey: queryKeys.workouts.detail(session?.userId, selectedWorkoutId),
-        });
-      }
-      showToast({ tone: 'success', title: 'Exercise added to workout' });
-      setSelectedWorkoutId(null);
-    },
-    onError: (err) => {
-      showToast({
-        tone: 'error',
-        title: 'Failed to add',
-        message: err instanceof Error ? err.message : 'Try again.',
-      });
-    },
-  });
-
-  const quickLogMutation = useMutation({
-    mutationFn: async () => {
-      const log = await apiClient.createExerciseLog({
-        name: `Quick log: ${exercise.name}`,
-        date: new Date().toISOString(),
-      });
-      await apiClient.addExerciseLogEntry(log.id, {
-        exerciseId: exercise.id,
-        sets: 1,
-        reps: 0,
-      });
-      return log.id;
-    },
-    onSuccess: (logId) => {
-      showToast({ tone: 'success', title: 'Log created' });
-      router.push({
-        pathname: '/(app)/logs/[id]',
-        params: { id: logId },
-      } as Href);
-    },
-    onError: (err) => {
-      showToast({
-        tone: 'error',
-        title: 'Failed to create log',
-        message: err instanceof Error ? err.message : 'Try again.',
-      });
-    },
-  });
 
   // Available workouts that don't already contain this exercise
   const availableWorkouts = (workoutsQuery.data?.items ?? []).filter(
