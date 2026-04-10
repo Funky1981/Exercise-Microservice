@@ -93,6 +93,19 @@ namespace Exercise.Domain.Entities
             IsCompleted = true;
         }
 
+        public void UpdateExercisePrescription(Guid exerciseId, int sets, int reps, int restSeconds)
+        {
+            Guard.AgainstEmptyGuid(exerciseId, nameof(exerciseId));
+
+            if (IsCompleted)
+                throw new InvalidOperationException("Cannot update exercises on a completed workout.");
+
+            var we = _workoutExercises.FirstOrDefault(x => x.ExerciseId == exerciseId)
+                ?? throw new InvalidOperationException($"Exercise {exerciseId} is not in this workout.");
+
+            we.UpdatePrescription(sets, reps, restSeconds);
+        }
+
         public void UpdateNotes(string? notes)
         {
             Notes = notes;

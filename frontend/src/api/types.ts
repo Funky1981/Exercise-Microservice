@@ -173,6 +173,12 @@ export type AddWorkoutExercisePayload = {
   exerciseId: string;
 };
 
+export type UpdatePrescriptionPayload = {
+  sets: number;
+  reps: number;
+  restSeconds: number;
+};
+
 export type AddWorkoutPlanWorkoutPayload = {
   workoutId: string;
 };

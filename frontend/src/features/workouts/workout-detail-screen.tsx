@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router, type Href } from 'expo-router';
 import {
   QueryClient,
@@ -261,7 +261,9 @@ export function WorkoutDetailScreen({ workoutId }: WorkoutDetailScreenProps) {
             renderItem={({ item }) => (
               <View style={linkedColumns > 1 ? styles.gridColumn : undefined}>
                 <ExerciseRow
+                  workoutId={workoutId!}
                   exercise={item}
+                  isCompleted={workout.isCompleted}
                   disabled={removeExerciseMutation.isPending || workout.isCompleted}
                   onRemove={() => removeExerciseMutation.mutate(item.id)}
                 />
@@ -282,14 +284,65 @@ export function WorkoutDetailScreen({ workoutId }: WorkoutDetailScreenProps) {
 }
 
 function ExerciseRow({
+  workoutId,
   exercise,
+  isCompleted,
   disabled,
   onRemove,
 }: {
+  workoutId: string;
   exercise: WorkoutExercise;
+  isCompleted: boolean;
   disabled: boolean;
   onRemove: () => void;
 }) {
+  const { session } = useSession();
+  const { showToast } = useToast();
+  const queryClient = useQueryClient();
+  const [sets, setSets] = useState(exercise.sets);
+  const [reps, setReps] = useState(exercise.reps);
+  const [restSeconds, setRestSeconds] = useState(exercise.restSeconds);
+
+  const updateMutation = useMutation({
+    mutationFn: (payload: { sets: number; reps: number; restSeconds: number }) =>
+      apiClient.updateExercisePrescription(workoutId, exercise.exerciseId, payload),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.workouts.detail(session?.userId, workoutId),
+      });
+      showToast({ tone: 'success', title: 'Updated' });
+    },
+    onError: (err) => {
+      // Revert local state on failure
+      setSets(exercise.sets);
+      setReps(exercise.reps);
+      setRestSeconds(exercise.restSeconds);
+      showToast({
+        tone: 'error',
+        title: 'Update failed',
+        message: err instanceof Error ? err.message : 'Try again.',
+      });
+    },
+  });
+
+  function applySets(next: number) {
+    const clamped = Math.max(1, Math.min(100, next));
+    setSets(clamped);
+    updateMutation.mutate({ sets: clamped, reps, restSeconds });
+  }
+
+  function applyReps(next: number) {
+    const clamped = Math.max(0, Math.min(999, next));
+    setReps(clamped);
+    updateMutation.mutate({ sets, reps: clamped, restSeconds });
+  }
+
+  function applyRest(next: number) {
+    const clamped = Math.max(0, Math.min(600, next));
+    setRestSeconds(clamped);
+    updateMutation.mutate({ sets, reps, restSeconds: clamped });
+  }
+
   return (
     <GlowCard style={styles.linkedCard}>
       <Text style={styles.linkedTitle}>{exercise.name}</Text>
@@ -297,6 +350,21 @@ function ExerciseRow({
         {exercise.bodyPart} | {exercise.targetMuscle}
       </Text>
       <Text style={styles.body}>{exercise.equipment ?? 'Bodyweight / unspecified'}</Text>
+
+      {!isCompleted ? (
+        <View style={styles.prescriptionRow}>
+          <StepperControl label="Sets" value={sets} step={1} onApply={applySets} disabled={disabled} />
+          <StepperControl label="Reps" value={reps} step={1} onApply={applyReps} disabled={disabled} />
+          <StepperControl label="Rest (s)" value={restSeconds} step={15} onApply={applyRest} disabled={disabled} />
+        </View>
+      ) : (
+        <View style={styles.prescriptionRow}>
+          <PrescriptionStat label="Sets" value={exercise.sets} />
+          <PrescriptionStat label="Reps" value={exercise.reps} />
+          <PrescriptionStat label="Rest" value={`${exercise.restSeconds}s`} />
+        </View>
+      )}
+
       <PrimaryButton
         label="Remove"
         onPress={onRemove}
@@ -304,6 +372,52 @@ function ExerciseRow({
         disabled={disabled}
       />
     </GlowCard>
+  );
+}
+
+function StepperControl({
+  label,
+  value,
+  step,
+  onApply,
+  disabled,
+}: {
+  label: string;
+  value: number;
+  step: number;
+  onApply: (next: number) => void;
+  disabled: boolean;
+}) {
+  return (
+    <View style={styles.stepper}>
+      <Text style={styles.stepperLabel}>{label}</Text>
+      <View style={styles.stepperControls}>
+        <Pressable
+          style={[styles.stepperButton, disabled && styles.stepperButtonDisabled]}
+          onPress={() => onApply(value - step)}
+          disabled={disabled}
+          accessibilityLabel={`Decrease ${label}`}>
+          <Text style={styles.stepperButtonText}>−</Text>
+        </Pressable>
+        <Text style={styles.stepperValue}>{value}</Text>
+        <Pressable
+          style={[styles.stepperButton, disabled && styles.stepperButtonDisabled]}
+          onPress={() => onApply(value + step)}
+          disabled={disabled}
+          accessibilityLabel={`Increase ${label}`}>
+          <Text style={styles.stepperButtonText}>+</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+function PrescriptionStat({ label, value }: { label: string; value: number | string }) {
+  return (
+    <View style={styles.stepper}>
+      <Text style={styles.stepperLabel}>{label}</Text>
+      <Text style={styles.stepperValue}>{value}</Text>
+    </View>
   );
 }
 
@@ -388,6 +502,52 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
+  },
+  prescriptionRow: {
+    flexDirection: 'row',
+    gap: tokens.spacing.md,
+    marginTop: tokens.spacing.sm,
+    marginBottom: tokens.spacing.sm,
+  },
+  stepper: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 4,
+  },
+  stepperLabel: {
+    color: tokens.colors.textSoft,
+    fontFamily: tokens.typography.label,
+    fontSize: 11,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  stepperControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  stepperButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: tokens.colors.surfaceStrong,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepperButtonDisabled: {
+    opacity: 0.4,
+  },
+  stepperButtonText: {
+    color: tokens.colors.text,
+    fontFamily: tokens.typography.heading,
+    fontSize: 18,
+  },
+  stepperValue: {
+    color: tokens.colors.text,
+    fontFamily: tokens.typography.heading,
+    fontSize: 20,
+    minWidth: 36,
+    textAlign: 'center',
   },
   actions: {
     flexDirection: 'row',

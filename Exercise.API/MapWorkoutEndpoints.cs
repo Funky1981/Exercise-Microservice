@@ -6,6 +6,7 @@ using Exercise.Application.Features.Workouts.Commands.CompleteWorkout;
 using Exercise.Application.Features.Workouts.Commands.CreateWorkout;
 using Exercise.Application.Features.Workouts.Commands.DeleteWorkout;
 using Exercise.Application.Features.Workouts.Commands.RemoveExerciseFromWorkout;
+using Exercise.Application.Features.Workouts.Commands.UpdateExercisePrescription;
 using Exercise.Application.Features.Workouts.Commands.UpdateWorkout;
 using Exercise.Application.Features.Workouts.Queries.GetWorkoutById;
 using Exercise.Application.Features.Workouts.Queries.GetWorkoutsByUserId;
@@ -176,6 +177,33 @@ namespace Exercise.API
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
+
+            // PUT /api/workouts/{id}/exercises/{exerciseId}/prescription
+            group.MapPut("/{id:guid}/exercises/{exerciseId:guid}/prescription",
+                async (Guid id, Guid exerciseId, ClaimsPrincipal user,
+                       [FromBody] UpdatePrescriptionRequest body,
+                       IMediator mediator, CancellationToken ct) =>
+                {
+                    if (!user.TryGetUserId(out var userId)) return Results.Unauthorized();
+                    await mediator.Send(new UpdateExercisePrescriptionCommand
+                    {
+                        WorkoutId = id,
+                        ExerciseId = exerciseId,
+                        CurrentUserId = userId,
+                        Sets = body.Sets,
+                        Reps = body.Reps,
+                        RestSeconds = body.RestSeconds,
+                    }, ct);
+                    return Results.NoContent();
+                })
+            .WithName("UpdateExercisePrescription")
+            .WithSummary("Update the sets, reps, and rest time for an exercise in a workout")
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
         }
     }
 
@@ -183,4 +211,6 @@ namespace Exercise.API
     public record CompleteWorkoutRequest(TimeSpan Duration);
 
     public record AddExerciseRequest(Guid ExerciseId);
+
+    public record UpdatePrescriptionRequest(int Sets, int Reps, int RestSeconds);
 }

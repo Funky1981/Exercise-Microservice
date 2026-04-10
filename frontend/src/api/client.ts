@@ -2,6 +2,7 @@ import { env } from '@/lib/env';
 import type {
   AddWorkoutExercisePayload,
   AddWorkoutPlanWorkoutPayload,
+  UpdatePrescriptionPayload,
   AddExerciseLogEntryPayload,
   CreateExerciseLogPayload,
   CreateWorkoutPayload,
@@ -250,6 +251,13 @@ export const apiClient = {
   async removeWorkoutExercise(id: string, exerciseId: string) {
     return request<void>(`/api/workouts/${id}/exercises/${exerciseId}`, {
       method: 'DELETE',
+    });
+  },
+
+  async updateExercisePrescription(workoutId: string, exerciseId: string, payload: UpdatePrescriptionPayload) {
+    return request<void>(`/api/workouts/${workoutId}/exercises/${exerciseId}/prescription`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
     });
   },
 
