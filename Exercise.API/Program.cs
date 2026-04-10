@@ -249,6 +249,7 @@ app.MapUserEndpointsRoute();
 app.MapWorkoutEndpointsRoute();
 app.MapWorkoutPlanEndpointsRoute();
 app.MapExerciseLogEndpointsRoute();
+app.MapSessionEndpointsRoute();
 app.MapRapidApiEndpoints();
 app.MapAnalyticsEndpointsRoute();
 

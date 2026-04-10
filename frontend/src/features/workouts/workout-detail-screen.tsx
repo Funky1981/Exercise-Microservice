@@ -185,6 +185,18 @@ export function WorkoutDetailScreen({ workoutId }: WorkoutDetailScreenProps) {
         <GlowCard style={styles.secondaryColumn}>
           <Text style={styles.panelTitle}>Actions</Text>
           <View style={styles.actions}>
+            {!workout.isCompleted && workout.exercises.length > 0 ? (
+              <PrimaryButton
+                label="Start workout"
+                onPress={() =>
+                  router.push({
+                    pathname: '/(app)/session',
+                    params: { workoutId: workout.id },
+                  } as Href)
+                }
+                style={styles.actionButton}
+              />
+            ) : null}
             <PrimaryButton
               label="Edit workout"
               onPress={() =>

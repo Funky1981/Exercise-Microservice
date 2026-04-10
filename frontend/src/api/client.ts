@@ -7,6 +7,7 @@ import type {
   CreateWorkoutPayload,
   CreateWorkoutPlanPayload,
   Exercise,
+  ExerciseAnalytics,
   ExerciseFilterOptions,
   ExerciseFilters,
   ExerciseLog,
@@ -16,11 +17,14 @@ import type {
   ProblemDetails,
   RegisterPayload,
   Session,
+  WeeklyAnalytics,
   Workout,
   WorkoutPlan,
   WorkoutSummary,
   UpdateWorkoutPayload,
   UpdateWorkoutPlanPayload,
+  UpdateProfilePayload,
+  UserProfile,
 } from '@/api/types';
 
 type SessionAccessors = {
@@ -337,5 +341,50 @@ export const apiClient = {
 
   async getWorkoutSummary() {
     return request<WorkoutSummary>('/api/analytics/workout-summary');
+  },
+
+  async getWeeklyAnalytics(weeks = 12) {
+    return request<WeeklyAnalytics>(`/api/analytics/weekly?weeks=${weeks}`);
+  },
+
+  async getExerciseAnalytics(exerciseId: string) {
+    return request<ExerciseAnalytics>(`/api/analytics/exercise/${exerciseId}`);
+  },
+
+  async getUserProfile(userId: string) {
+    return request<UserProfile>(`/api/users/${userId}`);
+  },
+
+  async updateUserProfile(userId: string, payload: UpdateProfilePayload) {
+    return request<void>(`/api/users/${userId}/profile`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  // ── Session endpoints ──
+
+  async startSession(workoutId: string) {
+    return request<{ logId: string }>('/api/sessions/start', {
+      method: 'POST',
+      body: JSON.stringify({ workoutId }),
+    });
+  },
+
+  async logSet(
+    logId: string,
+    payload: { exerciseId: string; reps: number; durationSeconds: number; restSeconds: number }
+  ) {
+    return request<void>(`/api/sessions/${logId}/log-set`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async endSession(logId: string, totalDurationSeconds: number) {
+    return request<void>(`/api/sessions/${logId}/end`, {
+      method: 'POST',
+      body: JSON.stringify({ totalDurationSeconds }),
+    });
   },
 };

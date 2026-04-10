@@ -101,6 +101,34 @@ export function normalizeOptionalNullableText(value: string) {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+/**
+ * Format elapsed seconds as MM:SS or HH:MM:SS for timer display.
+ */
+export function formatTimerDisplay(totalSeconds: number) {
+  const abs = Math.max(0, Math.floor(totalSeconds));
+  const hours = Math.floor(abs / 3600);
+  const minutes = Math.floor((abs % 3600) / 60);
+  const seconds = abs % 60;
+
+  if (hours > 0) {
+    return `${formatDurationPart(hours)}:${formatDurationPart(minutes)}:${formatDurationPart(seconds)}`;
+  }
+
+  return `${formatDurationPart(minutes)}:${formatDurationPart(seconds)}`;
+}
+
+/**
+ * Format a rest countdown: shows remaining seconds from a rest duration.
+ * Returns negative-aware display when overtime.
+ */
+export function formatRestCountdown(elapsedSeconds: number, restDurationSeconds: number) {
+  const remaining = restDurationSeconds - elapsedSeconds;
+  if (remaining >= 0) {
+    return formatTimerDisplay(remaining);
+  }
+  return `+${formatTimerDisplay(Math.abs(remaining))}`;
+}
+
 export function minutesToDuration(minutes: number) {
   const safeMinutes = Math.max(0, Math.floor(minutes));
   const hours = Math.floor(safeMinutes / 60);

@@ -92,6 +92,17 @@ namespace Exercise.Infrastructure.Repositories
                 : (counts.TotalCount, counts.CompletedCount, TimeSpan.FromTicks(totalDurationTicks));
         }
 
+        public async Task<IReadOnlyList<ExerciseLog>> GetCompletedByUserIdAsync(
+            Guid userId, int maxCount = 200, CancellationToken cancellationToken = default)
+        {
+            return await _context.ExerciseLogs
+                .AsNoTracking()
+                .Where(el => el.UserId == userId && el.IsCompleted)
+                .OrderByDescending(el => el.Date)
+                .Take(maxCount)
+                .ToListAsync(cancellationToken);
+        }
+
         public async Task AddAsync(ExerciseLog exerciseLog, CancellationToken cancellationToken = default)
         {
             await _context.ExerciseLogs.AddAsync(exerciseLog, cancellationToken);

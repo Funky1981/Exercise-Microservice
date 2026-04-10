@@ -171,6 +171,9 @@ namespace Exercise.Infrastructure.Migrations
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("WorkoutId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.HasKey("Id");
 
                     b.HasIndex("UserId", "Date");
@@ -273,13 +276,6 @@ namespace Exercise.Infrastructure.Migrations
                     b.Property<TimeSpan?>("Duration")
                         .HasColumnType("time");
 
-                    b.Property<string>("ExerciseOrder")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)")
-                        .HasDefaultValue("");
-
                     b.Property<bool>("HasExplicitTime")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
@@ -312,6 +308,42 @@ namespace Exercise.Infrastructure.Migrations
                     b.HasIndex("UserId", "Date");
 
                     b.ToTable("Workouts", (string)null);
+                });
+
+            modelBuilder.Entity("Exercise.Domain.Entities.WorkoutExercise", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ExerciseId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Reps")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RestSeconds")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Sets")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("WorkoutId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExerciseId");
+
+                    b.HasIndex("WorkoutId", "ExerciseId")
+                        .IsUnique();
+
+                    b.HasIndex("WorkoutId", "Order");
+
+                    b.ToTable("WorkoutExercises", (string)null);
                 });
 
             modelBuilder.Entity("Exercise.Domain.Entities.WorkoutPlan", b =>
@@ -362,21 +394,6 @@ namespace Exercise.Infrastructure.Migrations
                     b.ToTable("WorkoutPlans", (string)null);
                 });
 
-            modelBuilder.Entity("ExerciseWorkout", b =>
-                {
-                    b.Property<Guid>("ExercisesId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("WorkoutId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("ExercisesId", "WorkoutId");
-
-                    b.HasIndex("WorkoutId");
-
-                    b.ToTable("WorkoutExercises", (string)null);
-                });
-
             modelBuilder.Entity("WorkoutWorkoutPlan", b =>
                 {
                     b.Property<Guid>("WorkoutPlanId")
@@ -405,6 +422,9 @@ namespace Exercise.Infrastructure.Migrations
 
                             SqlServerPropertyBuilderExtensions.UseIdentityColumn(b1.Property<int>("Id"));
 
+                            b1.Property<DateTime?>("CompletedAt")
+                                .HasColumnType("datetime2");
+
                             b1.Property<TimeSpan?>("Duration")
                                 .HasColumnType("time");
 
@@ -413,6 +433,9 @@ namespace Exercise.Infrastructure.Migrations
 
                             b1.Property<int>("Reps")
                                 .HasColumnType("int");
+
+                            b1.Property<TimeSpan?>("RestTime")
+                                .HasColumnType("time");
 
                             b1.Property<int>("Sets")
                                 .HasColumnType("int");
@@ -471,19 +494,21 @@ namespace Exercise.Infrastructure.Migrations
                     b.Navigation("Weight");
                 });
 
-            modelBuilder.Entity("ExerciseWorkout", b =>
+            modelBuilder.Entity("Exercise.Domain.Entities.WorkoutExercise", b =>
                 {
-                    b.HasOne("Exercise.Domain.Entities.Exercise", null)
+                    b.HasOne("Exercise.Domain.Entities.Exercise", "Exercise")
                         .WithMany()
-                        .HasForeignKey("ExercisesId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasForeignKey("ExerciseId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Exercise.Domain.Entities.Workout", null)
-                        .WithMany()
+                        .WithMany("WorkoutExercises")
                         .HasForeignKey("WorkoutId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Exercise");
                 });
 
             modelBuilder.Entity("WorkoutWorkoutPlan", b =>
@@ -499,6 +524,11 @@ namespace Exercise.Infrastructure.Migrations
                         .HasForeignKey("WorkoutsId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Exercise.Domain.Entities.Workout", b =>
+                {
+                    b.Navigation("WorkoutExercises");
                 });
 #pragma warning restore 612, 618
         }

@@ -1,6 +1,11 @@
 export const queryKeys = {
   analytics: {
     summary: (userId?: string | null) => ['analytics', 'workout-summary', userId] as const,
+    weekly: (userId?: string | null, weeks?: number) => ['analytics', 'weekly', userId, weeks] as const,
+    exercise: (userId?: string | null, exerciseId?: string) => ['analytics', 'exercise', userId, exerciseId] as const,
+  },
+  users: {
+    profile: (userId?: string | null) => ['users', 'profile', userId] as const,
   },
   exercises: {
     catalogue: (

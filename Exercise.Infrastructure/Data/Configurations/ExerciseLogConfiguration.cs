@@ -18,6 +18,8 @@ namespace Exercise.Infrastructure.Data.Configurations
             builder.Property(el => el.UserId)
                 .IsRequired();
 
+            builder.Property(el => el.WorkoutId);
+
             builder.Property(el => el.Name)
                 .HasMaxLength(200);
 
@@ -45,6 +47,8 @@ namespace Exercise.Infrastructure.Data.Configurations
                 entry.Property(e => e.Sets).IsRequired();
                 entry.Property(e => e.Reps).IsRequired();
                 entry.Property(e => e.Duration);
+                entry.Property(e => e.RestTime);
+                entry.Property(e => e.CompletedAt);
             });
 
             // Soft delete

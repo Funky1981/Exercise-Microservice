@@ -11,9 +11,9 @@ namespace Exercise.Domain.Entities
         public Guid UserId { get; private set; }
         public string? Name { get; private set; }
 
-        private readonly List<Exercise> _exercises = new();
-        private string ExerciseOrder { get; set; } = string.Empty;
-        public IReadOnlyList<Exercise> Exercises => GetOrderedExercises();
+        private readonly List<WorkoutExercise> _workoutExercises = new();
+        public IReadOnlyList<WorkoutExercise> WorkoutExercises =>
+            _workoutExercises.OrderBy(we => we.Order).ToList().AsReadOnly();
 
         public DateTime Date { get; private set; }
         public bool HasExplicitTime { get; private set; }
@@ -36,18 +36,19 @@ namespace Exercise.Domain.Entities
             IsCompleted = false;
         }
 
-        public void AddExercise(Exercise exercise)
+        public void AddExercise(Exercise exercise, int sets = 3, int reps = 10, int restSeconds = 60)
         {
             Guard.AgainstNull(exercise, nameof(exercise));
 
             if (IsCompleted)
                 throw new InvalidOperationException("Cannot add exercises to a completed workout.");
-            
-            if (_exercises.Any(e => e.Id == exercise.Id))
+
+            if (_workoutExercises.Any(we => we.ExerciseId == exercise.Id))
                 return;
 
-            _exercises.Add(exercise);
-            UpdateExerciseOrder();
+            var order = _workoutExercises.Count;
+            _workoutExercises.Add(new WorkoutExercise(
+                Guid.NewGuid(), Id, exercise.Id, exercise, order, sets, reps, restSeconds));
         }
 
         public void RemoveExercise(Guid exerciseId)
@@ -57,11 +58,11 @@ namespace Exercise.Domain.Entities
             if (IsCompleted)
                 throw new InvalidOperationException("Cannot remove exercises from a completed workout.");
 
-            var exerciseToRemove = _exercises.FirstOrDefault(e => e.Id == exerciseId);
-            if (exerciseToRemove != null)
+            var toRemove = _workoutExercises.FirstOrDefault(we => we.ExerciseId == exerciseId);
+            if (toRemove != null)
             {
-                _exercises.Remove(exerciseToRemove);
-                UpdateExerciseOrder();
+                _workoutExercises.Remove(toRemove);
+                ReorderExercises();
             }
         }
 
@@ -72,13 +73,13 @@ namespace Exercise.Domain.Entities
             if (IsCompleted)
                 throw new InvalidOperationException("Cannot update exercises for a completed workout.");
 
-            _exercises.Clear();
-            foreach (var exercise in exercises.DistinctBy(exercise => exercise.Id))
+            _workoutExercises.Clear();
+            int order = 0;
+            foreach (var exercise in exercises.DistinctBy(e => e.Id))
             {
-                _exercises.Add(exercise);
+                _workoutExercises.Add(new WorkoutExercise(
+                    Guid.NewGuid(), Id, exercise.Id, exercise, order++));
             }
-
-            UpdateExerciseOrder();
         }
 
         public void CompleteWorkout(TimeSpan duration)
@@ -105,34 +106,12 @@ namespace Exercise.Domain.Entities
             HasExplicitTime = hasExplicitTime;
         }
 
-        private IReadOnlyList<Exercise> GetOrderedExercises()
+        private void ReorderExercises()
         {
-            if (_exercises.Count <= 1 || string.IsNullOrWhiteSpace(ExerciseOrder))
+            for (int i = 0; i < _workoutExercises.Count; i++)
             {
-                return _exercises.AsReadOnly();
+                _workoutExercises[i].UpdateOrder(i);
             }
-
-            var lookup = _exercises.ToDictionary(exercise => exercise.Id);
-            var ordered = new List<Exercise>(_exercises.Count);
-
-            foreach (var id in ExerciseOrder
-                         .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                         .Select(raw => Guid.TryParse(raw, out var value) ? value : Guid.Empty)
-                         .Where(value => value != Guid.Empty))
-            {
-                if (lookup.Remove(id, out var exercise))
-                {
-                    ordered.Add(exercise);
-                }
-            }
-
-            ordered.AddRange(lookup.Values.OrderBy(exercise => exercise.Name));
-            return ordered.AsReadOnly();
-        }
-
-        private void UpdateExerciseOrder()
-        {
-            ExerciseOrder = string.Join(',', _exercises.Select(exercise => exercise.Id));
         }
     }
 }

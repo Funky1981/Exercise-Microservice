@@ -292,6 +292,12 @@ node_modules/
 *.opt
 
 # Visual Studio 6 auto-generated workspace file (contains which files were open etc.)
+
+# Tool-generated temp files
+.run/
+.run-*.txt
+.serena/
+frontend/.run-*.txt
 *.vbw
 
 # Visual Studio LightSwitch build output

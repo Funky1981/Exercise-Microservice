@@ -31,23 +31,18 @@ namespace Exercise.Infrastructure.Data.Configurations
             builder.Property(w => w.Notes)
                 .HasMaxLength(1000);
 
-            builder.Property<string>("ExerciseOrder")
-                .HasMaxLength(4000)
-                .HasDefaultValue(string.Empty);
-
             builder.Property(w => w.IsCompleted)
                 .IsRequired();
 
             // Index for common query pattern: fetch workouts by user
             builder.HasIndex(w => new { w.UserId, w.Date });
 
-            // Many-to-many: Workout <-> Exercise via join table.
-            // UsePropertyAccessMode.Field tells EF Core to populate the private _exercises
-            // backing field directly, making .Include(w => w.Exercises) type-safe.
-            builder.HasMany(w => w.Exercises)
-                .WithMany()
-                .UsingEntity(j => j.ToTable("WorkoutExercises"));
-            builder.Navigation(w => w.Exercises)
+            // One-to-many: Workout -> WorkoutExercise (explicit join entity with payload).
+            builder.HasMany(w => w.WorkoutExercises)
+                .WithOne()
+                .HasForeignKey(we => we.WorkoutId)
+                .OnDelete(DeleteBehavior.Cascade);
+            builder.Navigation(w => w.WorkoutExercises)
                 .UsePropertyAccessMode(PropertyAccessMode.Field);
 
             // Soft delete

@@ -10,7 +10,7 @@ namespace Exercise.Application.Features.WorkoutPlans.Mapping
         public WorkoutPlanProfile()
         {
             CreateMap<Workout, WorkoutPlanWorkoutDto>()
-                .ForMember(dest => dest.ExerciseIds, opt => opt.MapFrom(src => src.Exercises.Select(exercise => exercise.Id)));
+                .ForMember(dest => dest.ExerciseIds, opt => opt.MapFrom(src => src.WorkoutExercises.Select(we => we.ExerciseId)));
             CreateMap<WorkoutPlan, WorkoutPlanDto>();
         }
     }

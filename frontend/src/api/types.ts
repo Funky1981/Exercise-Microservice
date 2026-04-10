@@ -96,10 +96,15 @@ export type WorkoutPlan = {
 
 export type WorkoutExercise = {
   id: string;
+  exerciseId: string;
   name: string;
   bodyPart: string;
   targetMuscle: string;
   equipment?: string | null;
+  sets: number;
+  reps: number;
+  restSeconds: number;
+  order: number;
 };
 
 export type WorkoutPlanWorkout = {
@@ -116,11 +121,14 @@ export type ExerciseLogEntry = {
   sets: number;
   reps: number;
   duration?: string | null;
+  restTime?: string | null;
+  completedAt?: string | null;
 };
 
 export type ExerciseLog = {
   id: string;
   userId: string;
+  workoutId?: string | null;
   name?: string | null;
   date: string;
   duration?: string | null;
@@ -177,4 +185,60 @@ export type WorkoutSummary = {
   totalExerciseLogs: number;
   completedExerciseLogs: number;
   totalExerciseLogDuration: string;
+};
+
+export type WeeklyDataPoint = {
+  weekStart: string;
+  workoutCount: number;
+  totalSets: number;
+  totalReps: number;
+  volume: number;
+  durationSeconds: number;
+  avgRestSeconds: number;
+};
+
+export type WeeklyAnalytics = {
+  weeks: WeeklyDataPoint[];
+  avgWorkoutsPerWeek: number;
+  totalVolume: number;
+  totalDuration: string;
+  avgRestSeconds: number;
+};
+
+export type ExerciseDataPoint = {
+  date: string;
+  sets: number;
+  reps: number;
+  volume: number;
+  durationSeconds: number;
+  restSeconds: number;
+};
+
+export type ExerciseAnalytics = {
+  exerciseId: string;
+  exerciseName: string;
+  totalSets: number;
+  totalReps: number;
+  totalVolume: number;
+  avgRepsPerSet: number;
+  avgRestSeconds: number;
+  totalDuration: string;
+  dataPoints: ExerciseDataPoint[];
+};
+
+export type UserProfile = {
+  id: string;
+  name: string;
+  email: string;
+  userName?: string | null;
+  provider?: string | null;
+  heightCm?: number | null;
+  weightKg?: number | null;
+  createdAt: string;
+};
+
+export type UpdateProfilePayload = {
+  userName?: string | null;
+  heightCm?: number | null;
+  weightKg?: number | null;
 };

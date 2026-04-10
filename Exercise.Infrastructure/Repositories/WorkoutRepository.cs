@@ -31,14 +31,14 @@ namespace Exercise.Infrastructure.Repositories
         {
             return await _context.Workouts
                 .AsNoTracking()
-                .Include(w => w.Exercises)
+                .Include(w => w.WorkoutExercises).ThenInclude(we => we.Exercise)
                 .FirstOrDefaultAsync(w => w.Id == id, cancellationToken);
         }
 
         public async Task<Workout?> GetByIdWithExercisesForUpdateAsync(Guid id, CancellationToken cancellationToken = default)
         {
             return await _context.Workouts
-                .Include(w => w.Exercises)
+                .Include(w => w.WorkoutExercises).ThenInclude(we => we.Exercise)
                 .FirstOrDefaultAsync(w => w.Id == id, cancellationToken);
         }
 
@@ -53,7 +53,7 @@ namespace Exercise.Infrastructure.Repositories
         {
             return await _context.Workouts
                 .AsNoTracking()
-                .Include(w => w.Exercises)
+                .Include(w => w.WorkoutExercises).ThenInclude(we => we.Exercise)
                 .FirstOrDefaultAsync(w => w.Id == id && w.UserId == userId, cancellationToken);
         }
 
@@ -66,7 +66,7 @@ namespace Exercise.Infrastructure.Repositories
         public async Task<Workout?> GetOwnedByIdWithExercisesForUpdateAsync(Guid id, Guid userId, CancellationToken cancellationToken = default)
         {
             return await _context.Workouts
-                .Include(w => w.Exercises)
+                .Include(w => w.WorkoutExercises).ThenInclude(we => we.Exercise)
                 .FirstOrDefaultAsync(w => w.Id == id && w.UserId == userId, cancellationToken);
         }
 
@@ -88,7 +88,7 @@ namespace Exercise.Infrastructure.Repositories
         {
             var query = _context.Workouts
                 .AsNoTracking()
-                .Include(w => w.Exercises)
+                .Include(w => w.WorkoutExercises).ThenInclude(we => we.Exercise)
                 .Where(w => w.UserId == userId)
                 .OrderByDescending(w => w.Date);
 

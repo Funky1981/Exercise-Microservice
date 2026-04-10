@@ -1,11 +1,15 @@
+import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { router, type Href } from 'expo-router';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { apiClient } from '@/api/client';
+import { queryKeys } from '@/api/query-keys';
 import { AppScreen } from '@/components/ui/app-screen';
 import { GlowCard } from '@/components/ui/glow-card';
 import { PrimaryButton } from '@/components/ui/primary-button';
 import { SectionHeading } from '@/components/ui/section-heading';
-import { env } from '@/lib/env';
+import { TextField } from '@/components/ui/text-field';
 import { formatDateTime } from '@/lib/format';
 import { useBreakpoint } from '@/lib/responsive';
 import { useToast } from '@/providers/toast-provider';
@@ -16,6 +20,50 @@ export function ProfileScreen() {
   const { session, signOut } = useSession();
   const { showToast } = useToast();
   const { isCompact } = useBreakpoint();
+  const queryClient = useQueryClient();
+
+  const profileQuery = useQuery({
+    queryKey: queryKeys.users.profile(session?.userId),
+    queryFn: () => apiClient.getUserProfile(session!.userId),
+    enabled: Boolean(session?.userId),
+  });
+
+  const [userName, setUserName] = useState('');
+  const [heightCm, setHeightCm] = useState('');
+  const [weightKg, setWeightKg] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Seed form fields when profile loads
+  useEffect(() => {
+    if (profileQuery.data) {
+      setUserName(profileQuery.data.userName ?? '');
+      setHeightCm(profileQuery.data.heightCm?.toString() ?? '');
+      setWeightKg(profileQuery.data.weightKg?.toString() ?? '');
+    }
+  }, [profileQuery.data]);
+
+  const updateMutation = useMutation({
+    mutationFn: () =>
+      apiClient.updateUserProfile(session!.userId, {
+        userName: userName.trim() || null,
+        heightCm: heightCm ? Number(heightCm) : null,
+        weightKg: weightKg ? Number(weightKg) : null,
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.users.profile(session?.userId),
+      });
+      setIsEditing(false);
+      showToast({ tone: 'success', title: 'Profile updated' });
+    },
+    onError: (err) => {
+      showToast({
+        tone: 'error',
+        title: 'Update failed',
+        message: err instanceof Error ? err.message : 'Try again.',
+      });
+    },
+  });
 
   async function handleSignOut() {
     await signOut();
@@ -26,12 +74,14 @@ export function ProfileScreen() {
     });
   }
 
+  const profile = profileQuery.data;
+
   return (
     <AppScreen>
       <SectionHeading
-        eyebrow="Session"
+        eyebrow="Account"
         title="Profile"
-        subtitle="Secure session storage stays separate from TanStack Query cache so account changes can clear server data without breaking the shell or navigation state."
+        subtitle={profile ? `Member since ${formatDateTime(profile.createdAt)}` : undefined}
       />
 
       <GlowCard>
@@ -45,21 +95,69 @@ export function ProfileScreen() {
               <Text style={styles.label}>Email</Text>
               <Text style={styles.value}>{session?.email ?? 'Unknown'}</Text>
             </View>
-            <View style={styles.row}>
-              <Text style={styles.label}>Access token expiry</Text>
-              <Text style={styles.value}>{formatDateTime(session?.expiresAt)}</Text>
-            </View>
           </View>
 
           <View style={styles.infoColumn}>
-            <View style={styles.row}>
-              <Text style={styles.label}>Refresh token expiry</Text>
-              <Text style={styles.value}>{formatDateTime(session?.refreshTokenExpiry)}</Text>
-            </View>
-            <View style={styles.row}>
-              <Text style={styles.label}>API base URL</Text>
-              <Text style={styles.value}>{env.apiBaseUrl}</Text>
-            </View>
+            {isEditing ? (
+              <>
+                <TextField
+                  label="Username"
+                  value={userName}
+                  onChangeText={setUserName}
+                  helperText="Optional display name"
+                />
+                <TextField
+                  label="Height (cm)"
+                  value={heightCm}
+                  onChangeText={setHeightCm}
+                  keyboardType="decimal-pad"
+                />
+                <TextField
+                  label="Weight (kg)"
+                  value={weightKg}
+                  onChangeText={setWeightKg}
+                  keyboardType="decimal-pad"
+                />
+                <View style={styles.editActions}>
+                  <PrimaryButton
+                    label="Save"
+                    onPress={() => updateMutation.mutate()}
+                    busy={updateMutation.isPending}
+                    style={styles.editBtn}
+                  />
+                  <PrimaryButton
+                    label="Cancel"
+                    onPress={() => setIsEditing(false)}
+                    tone="muted"
+                    style={styles.editBtn}
+                  />
+                </View>
+              </>
+            ) : (
+              <>
+                <View style={styles.row}>
+                  <Text style={styles.label}>Username</Text>
+                  <Text style={styles.value}>{profile?.userName ?? 'Not set'}</Text>
+                </View>
+                <View style={styles.row}>
+                  <Text style={styles.label}>Height</Text>
+                  <Text style={styles.value}>
+                    {profile?.heightCm ? `${profile.heightCm} cm` : 'Not set'}
+                  </Text>
+                </View>
+                <View style={styles.row}>
+                  <Text style={styles.label}>Weight</Text>
+                  <Text style={styles.value}>
+                    {profile?.weightKg ? `${profile.weightKg} kg` : 'Not set'}
+                  </Text>
+                </View>
+                <PrimaryButton
+                  label="Edit profile"
+                  onPress={() => setIsEditing(true)}
+                  tone="muted"
+                />
+              </>
+            )}
           </View>
         </View>
       </GlowCard>
@@ -82,7 +180,7 @@ export function ProfileScreen() {
         </View>
       </GlowCard>
 
-      <PrimaryButton label="Sign out" onPress={() => void handleSignOut()} tone="muted" />
+      <PrimaryButton label="Sign out" onPress={() => void handleSignOut()} tone="danger" />
     </AppScreen>
   );
 }
@@ -126,5 +224,12 @@ const styles = StyleSheet.create({
   actionButton: {
     flexGrow: 1,
     minWidth: 160,
+  },
+  editActions: {
+    flexDirection: 'row',
+    gap: tokens.spacing.sm,
+  },
+  editBtn: {
+    flex: 1,
   },
 });

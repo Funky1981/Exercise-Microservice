@@ -54,7 +54,7 @@ namespace Exercise.Infrastructure.Repositories
             return await _context.WorkoutPlans
                 .AsNoTracking()
                 .Include(wp => wp.Workouts)
-                .ThenInclude(workout => workout.Exercises)
+                .ThenInclude(workout => workout.WorkoutExercises)
                 .FirstOrDefaultAsync(wp => wp.Id == id && wp.UserId == userId, cancellationToken);
         }
 

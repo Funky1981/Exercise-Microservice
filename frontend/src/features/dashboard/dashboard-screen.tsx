@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { StyleSheet, Text, View } from 'react-native';
 import { router, type Href } from 'expo-router';
@@ -8,6 +9,7 @@ import { AppScreen } from '@/components/ui/app-screen';
 import { GlowCard } from '@/components/ui/glow-card';
 import { PrimaryButton } from '@/components/ui/primary-button';
 import { SectionHeading } from '@/components/ui/section-heading';
+import { sessionStorage } from '@/features/workout-session/session-storage';
 import { useBreakpoint } from '@/lib/responsive';
 import { useSession } from '@/state/session-context';
 import { tokens } from '@/theme/tokens';
@@ -22,6 +24,12 @@ const stats = [
 export function DashboardScreen() {
   const { session } = useSession();
   const { isExpanded } = useBreakpoint();
+  const [hasActiveSession, setHasActiveSession] = useState(false);
+
+  useEffect(() => {
+    sessionStorage.load().then((s) => setHasActiveSession(s !== null));
+  }, []);
+
   const summaryQuery = useQuery({
     queryKey: queryKeys.analytics.summary(session?.userId),
     queryFn: () => apiClient.getWorkoutSummary(),
@@ -46,6 +54,19 @@ export function DashboardScreen() {
           </GlowCard>
         ))}
       </View>
+
+      {hasActiveSession && (
+        <GlowCard>
+          <Text style={styles.panelTitle}>Workout in progress</Text>
+          <Text style={styles.bodyText}>
+            You have an active workout session. Pick up where you left off.
+          </Text>
+          <PrimaryButton
+            label="Resume workout"
+            onPress={() => router.push('/(app)/session' as Href)}
+          />
+        </GlowCard>
+      )}
 
       <GlowCard>
         <Text style={styles.panelTitle}>Current foundation</Text>
