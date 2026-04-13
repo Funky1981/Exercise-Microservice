@@ -191,7 +191,7 @@ export function WorkoutDetailScreen({ workoutId }: WorkoutDetailScreenProps) {
                 onPress={() =>
                   router.push({
                     pathname: '/(app)/session',
-                    params: { workoutId: workout.id },
+                    params: { workoutId: workout.id, fresh: '1' },
                   } as Href)
                 }
                 style={styles.actionButton}

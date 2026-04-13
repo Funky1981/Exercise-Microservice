@@ -21,9 +21,10 @@ import { useWorkoutSession } from './use-workout-session';
 
 type WorkoutSessionScreenProps = {
   workoutId?: string;
+  freshStart?: boolean;
 };
 
-export function WorkoutSessionScreen({ workoutId }: WorkoutSessionScreenProps) {
+export function WorkoutSessionScreen({ workoutId, freshStart = false }: WorkoutSessionScreenProps) {
   const {
     session,
     isBooting,
@@ -47,6 +48,8 @@ export function WorkoutSessionScreen({ workoutId }: WorkoutSessionScreenProps) {
   const { isCompact } = useBreakpoint();
   const [summary, setSummary] = useState<WorkoutSessionSummary | null>(null);
   const hasAutoStarted = useRef(false);
+  const hasClearedForFreshStart = useRef(false);
+  const shouldIgnoreActiveSession = freshStart && Boolean(workoutId);
 
   // Fetch the workout if we have a workoutId and no active session yet
   const workoutQuery = useQuery({
@@ -55,8 +58,24 @@ export function WorkoutSessionScreen({ workoutId }: WorkoutSessionScreenProps) {
         ? queryKeys.workouts.detail(authSession.userId, workoutId)
         : ['workouts', 'detail', 'missing'],
     queryFn: () => apiClient.getWorkoutById(workoutId!),
-    enabled: Boolean(workoutId) && Boolean(authSession?.userId) && !session && !isBooting,
+    enabled:
+      Boolean(workoutId) &&
+      Boolean(authSession?.userId) &&
+      !isBooting &&
+      (shouldIgnoreActiveSession || !session),
   });
+
+  useEffect(() => {
+    if (!shouldIgnoreActiveSession || isBooting || hasClearedForFreshStart.current) {
+      return;
+    }
+
+    hasClearedForFreshStart.current = true;
+    if (session) {
+      discardSession();
+    }
+    hasAutoStarted.current = false;
+  }, [discardSession, isBooting, session, shouldIgnoreActiveSession]);
 
   // Auto-start session when workout data arrives
   useEffect(() => {
