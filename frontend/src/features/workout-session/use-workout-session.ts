@@ -23,6 +23,7 @@ export function useWorkoutSession() {
   const [isBooting, setIsBooting] = useState(true);
   const timer = useTimer();
   const persistRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const restAdvanceLockRef = useRef(false);
 
   // ── Persistence helpers ──
   const persist = useCallback((next: WorkoutSession) => {
@@ -68,6 +69,86 @@ export function useWorkoutSession() {
     // We don't re-persist on every frame — only on meaningful state changes
   }, [session, timer.elapsedSeconds]);
 
+  useEffect(() => {
+    if (!session || session.timerMode !== 'rest') {
+      restAdvanceLockRef.current = false;
+      return;
+    }
+
+    if (session.timerState !== 'running') {
+      return;
+    }
+
+    if (timer.elapsedSeconds < session.restDurationSeconds) {
+      restAdvanceLockRef.current = false;
+      return;
+    }
+
+    if (restAdvanceLockRef.current) {
+      return;
+    }
+
+    restAdvanceLockRef.current = true;
+
+    const isExerciseComplete =
+      session.exerciseProgress[session.currentExerciseIndex].sets.length >=
+      session.exercises[session.currentExerciseIndex].sets;
+    const isLastExerciseComplete =
+      isExerciseComplete && session.currentExerciseIndex === session.exercises.length - 1;
+
+    timer.reset();
+    if (!isLastExerciseComplete) {
+      timer.start();
+    }
+
+    updateSession((prev) => {
+      const updatedProgress = [...prev.exerciseProgress];
+      const currentExercise = prev.exercises[prev.currentExerciseIndex];
+      const currentSets = [...updatedProgress[prev.currentExerciseIndex].sets];
+
+      if (currentSets.length > 0) {
+        const lastSet = currentSets[currentSets.length - 1];
+        currentSets[currentSets.length - 1] = {
+          ...lastSet,
+          restSeconds: prev.restDurationSeconds,
+        };
+        updatedProgress[prev.currentExerciseIndex] = {
+          ...updatedProgress[prev.currentExerciseIndex],
+          sets: currentSets,
+        };
+      }
+
+      const nextExerciseIndex = isExerciseComplete
+        ? Math.min(prev.currentExerciseIndex + 1, prev.exercises.length - 1)
+        : prev.currentExerciseIndex;
+      const nextExercise = prev.exercises[nextExerciseIndex];
+
+      if (isLastExerciseComplete) {
+        return {
+          ...prev,
+          exerciseProgress: updatedProgress,
+          timerMode: 'exercise',
+          timerState: 'idle',
+          timerStartedAt: null,
+          timerElapsedBeforePause: 0,
+        };
+      }
+
+      return {
+        ...prev,
+        exerciseProgress: updatedProgress,
+        currentExerciseIndex: nextExerciseIndex,
+        timerMode: 'exercise',
+        timerState: 'running',
+        timerStartedAt: Date.now(),
+        timerElapsedBeforePause: 0,
+        restDurationSeconds: nextExercise.restSeconds,
+        defaultRestSeconds: nextExercise.restSeconds,
+        currentReps: nextExercise.reps,
+      };
+    });
+  }, [session, timer, updateSession, timer.elapsedSeconds]);
+
   // ── Actions ──
   const startSession = useCallback(
     async (workout: Workout) => {
@@ -97,10 +178,10 @@ export function useWorkoutSession() {
         timerState: 'running',
         timerStartedAt: Date.now(),
         timerElapsedBeforePause: 0,
-        restDurationSeconds: DEFAULT_REST_SECONDS,
+        restDurationSeconds: workout.exercises[0]?.restSeconds ?? DEFAULT_REST_SECONDS,
         startedAt: new Date().toISOString(),
-        defaultRestSeconds: DEFAULT_REST_SECONDS,
-        currentReps: DEFAULT_REPS,
+        defaultRestSeconds: workout.exercises[0]?.restSeconds ?? DEFAULT_REST_SECONDS,
+        currentReps: workout.exercises[0]?.reps ?? DEFAULT_REPS,
         trainingMode: 'reps',
         timedDurationSeconds: DEFAULT_TIMED_DURATION,
       };
@@ -155,6 +236,10 @@ export function useWorkoutSession() {
   const completeSet = useCallback(() => {
     if (!session) return;
 
+    const currentExercise = session.exercises[session.currentExerciseIndex];
+    const currentProgress = session.exerciseProgress[session.currentExerciseIndex];
+    if (currentProgress.sets.length >= currentExercise.sets) return;
+
     const exerciseDuration = timer.elapsedSeconds;
     timer.reset();
 
@@ -170,19 +255,23 @@ export function useWorkoutSession() {
 
     // Persist set to the backend
     if (session.logId) {
-      const currentExercise = session.exercises[session.currentExerciseIndex];
       apiClient
         .logSet(session.logId, {
           exerciseId: currentExercise.exerciseId,
           reps: entry.reps,
           durationSeconds: entry.durationSeconds,
-          restSeconds: 0,
+          restSeconds: currentExercise.restSeconds,
         })
         .catch(() => console.warn('Failed to log set to backend'));
     }
 
-    // Switch to rest timer
-    timer.start();
+    const willFinishExercise = currentProgress.sets.length + 1 >= currentExercise.sets;
+    const willFinishWorkout =
+      willFinishExercise && session.currentExerciseIndex === session.exercises.length - 1;
+
+    if (!willFinishWorkout) {
+      timer.start();
+    }
 
     updateSession((prev) => {
       const updatedProgress = [...prev.exerciseProgress];
@@ -194,23 +283,36 @@ export function useWorkoutSession() {
       return {
         ...prev,
         exerciseProgress: updatedProgress,
-        timerMode: 'rest' as TimerMode,
-        timerState: 'running',
-        timerStartedAt: Date.now(),
+        timerMode: willFinishWorkout ? ('exercise' as TimerMode) : ('rest' as TimerMode),
+        timerState: willFinishWorkout ? 'idle' : 'running',
+        timerStartedAt: willFinishWorkout ? null : Date.now(),
         timerElapsedBeforePause: 0,
-        currentReps: DEFAULT_REPS,
+        restDurationSeconds: currentExercise.restSeconds,
+        defaultRestSeconds: currentExercise.restSeconds,
+        currentReps: currentExercise.reps,
       };
     });
   }, [session, timer, updateSession]);
 
   const skipRest = useCallback(() => {
-    const restDuration = timer.elapsedSeconds;
+    if (!session) return;
+
+    const restDuration = Math.min(timer.elapsedSeconds, session.restDurationSeconds);
+    const isExerciseComplete =
+      session.exerciseProgress[session.currentExerciseIndex].sets.length >=
+      session.exercises[session.currentExerciseIndex].sets;
+    const isLastExerciseComplete =
+      isExerciseComplete && session.currentExerciseIndex === session.exercises.length - 1;
+
     timer.reset();
-    timer.start();
+    if (!isLastExerciseComplete) {
+      timer.start();
+    }
 
     updateSession((prev) => {
       // Record rest time on the last completed set
       const updatedProgress = [...prev.exerciseProgress];
+      const currentExercise = prev.exercises[prev.currentExerciseIndex];
       const currentSets = [...updatedProgress[prev.currentExerciseIndex].sets];
       if (currentSets.length > 0) {
         const lastSet = currentSets[currentSets.length - 1];
@@ -221,16 +323,36 @@ export function useWorkoutSession() {
         };
       }
 
+      const nextExerciseIndex = isExerciseComplete
+        ? Math.min(prev.currentExerciseIndex + 1, prev.exercises.length - 1)
+        : prev.currentExerciseIndex;
+      const nextExercise = prev.exercises[nextExerciseIndex];
+
+      if (isLastExerciseComplete) {
+        return {
+          ...prev,
+          exerciseProgress: updatedProgress,
+          timerMode: 'exercise' as TimerMode,
+          timerState: 'idle',
+          timerStartedAt: null,
+          timerElapsedBeforePause: 0,
+        };
+      }
+
       return {
         ...prev,
         exerciseProgress: updatedProgress,
+        currentExerciseIndex: nextExerciseIndex,
         timerMode: 'exercise' as TimerMode,
         timerState: 'running',
         timerStartedAt: Date.now(),
         timerElapsedBeforePause: 0,
+        restDurationSeconds: nextExercise.restSeconds,
+        defaultRestSeconds: nextExercise.restSeconds,
+        currentReps: nextExercise.reps,
       };
     });
-  }, [timer, updateSession]);
+  }, [session, timer, updateSession]);
 
   const nextExercise = useCallback(() => {
     if (!session) return;
@@ -247,7 +369,9 @@ export function useWorkoutSession() {
       timerState: 'running',
       timerStartedAt: Date.now(),
       timerElapsedBeforePause: 0,
-      currentReps: DEFAULT_REPS,
+      restDurationSeconds: prev.exercises[nextIndex].restSeconds,
+      defaultRestSeconds: prev.exercises[nextIndex].restSeconds,
+      currentReps: prev.exercises[nextIndex].reps,
     }));
   }, [session, timer, updateSession]);
 
@@ -265,7 +389,9 @@ export function useWorkoutSession() {
       timerState: 'running',
       timerStartedAt: Date.now(),
       timerElapsedBeforePause: 0,
-      currentReps: DEFAULT_REPS,
+      restDurationSeconds: prev.exercises[prevIndex].restSeconds,
+      defaultRestSeconds: prev.exercises[prevIndex].restSeconds,
+      currentReps: prev.exercises[prevIndex].reps,
     }));
   }, [session, timer, updateSession]);
 

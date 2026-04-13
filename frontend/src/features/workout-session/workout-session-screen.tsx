@@ -116,6 +116,10 @@ export function WorkoutSessionScreen({ workoutId }: WorkoutSessionScreenProps) {
   const isLastExercise = session.currentExerciseIndex === session.exercises.length - 1;
   const isTimed = session.trainingMode === 'timed';
   const timedRemaining = Math.max(0, session.timedDurationSeconds - timer.elapsedSeconds);
+  const targetSetCount = currentExercise.sets;
+  const completedSetCount = currentProgress.sets.length;
+  const hasCompletedExercise = completedSetCount >= targetSetCount;
+  const isWorkoutReadyToFinish = isLastExercise && hasCompletedExercise && !isResting;
 
   function handleFinish() {
     if (Platform.OS === 'web') {
@@ -165,11 +169,11 @@ export function WorkoutSessionScreen({ workoutId }: WorkoutSessionScreenProps) {
   }
 
   return (
-    <AppScreen scrollable={false}>
+    <AppScreen>
       <SectionHeading
         eyebrow={`Exercise ${session.currentExerciseIndex + 1} of ${session.exercises.length}`}
         title={currentExercise.name}
-        subtitle={`${currentExercise.bodyPart} · ${currentExercise.targetMuscle}`}
+        subtitle={`${currentExercise.bodyPart} · ${currentExercise.targetMuscle} · ${currentExercise.sets} sets · ${currentExercise.reps} reps · ${currentExercise.restSeconds}s rest`}
       />
 
       {/* ── Timer Display ── */}
@@ -181,15 +185,17 @@ export function WorkoutSessionScreen({ workoutId }: WorkoutSessionScreenProps) {
           style={[
             styles.timerDisplay,
             isResting && styles.timerRest,
-            isResting && timer.elapsedSeconds > session.defaultRestSeconds && styles.timerOvertime,
+            isResting && timer.elapsedSeconds > session.restDurationSeconds && styles.timerOvertime,
           ]}>
           {isResting
-            ? formatRestCountdown(timer.elapsedSeconds, session.defaultRestSeconds)
+            ? formatRestCountdown(timer.elapsedSeconds, session.restDurationSeconds)
             : formatTimerDisplay(timer.elapsedSeconds)}
         </Text>
 
         <View style={styles.timerActions}>
-          {session.timerState === 'running' ? (
+          {isWorkoutReadyToFinish ? (
+            <PrimaryButton label="Workout ready to finish" onPress={handleFinish} style={styles.timerButton} />
+          ) : session.timerState === 'running' ? (
             <PrimaryButton label="Pause" onPress={pauseTimer} tone="muted" style={styles.timerButton} />
           ) : (
             <PrimaryButton label="Resume" onPress={resumeTimer} style={styles.timerButton} />
@@ -200,6 +206,14 @@ export function WorkoutSessionScreen({ workoutId }: WorkoutSessionScreenProps) {
       {/* ── Set/Rep Controls (visible during exercise mode) ── */}
       {!isResting ? (
         <GlowCard style={styles.repCard}>
+          {hasCompletedExercise ? (
+            <Text style={styles.restInfo}>
+              {isLastExercise
+                ? 'All prescribed sets completed. Finish the workout when you are ready.'
+                : 'All prescribed sets completed. The next exercise will start after the rest timer.'}
+            </Text>
+          ) : null}
+
           {/* Training mode toggle */}
           <View style={styles.modeToggle}>
             <Pressable
@@ -240,8 +254,9 @@ export function WorkoutSessionScreen({ workoutId }: WorkoutSessionScreenProps) {
                 {timedRemaining > 0 ? `${timedRemaining}s remaining` : 'Time reached!'}
               </Text>
               <PrimaryButton
-                label={`Complete Set ${currentProgress.sets.length + 1}`}
+                label={hasCompletedExercise ? 'Exercise complete' : `Complete Set ${completedSetCount + 1} of ${targetSetCount}`}
                 onPress={completeSet}
+                disabled={hasCompletedExercise}
               />
             </>
           ) : (
@@ -263,8 +278,9 @@ export function WorkoutSessionScreen({ workoutId }: WorkoutSessionScreenProps) {
                 </Pressable>
               </View>
               <PrimaryButton
-                label={`Complete Set ${currentProgress.sets.length + 1}`}
+                label={hasCompletedExercise ? 'Exercise complete' : `Complete Set ${completedSetCount + 1} of ${targetSetCount}`}
                 onPress={completeSet}
+                disabled={hasCompletedExercise}
               />
             </>
           )}
@@ -272,7 +288,7 @@ export function WorkoutSessionScreen({ workoutId }: WorkoutSessionScreenProps) {
       ) : (
         <GlowCard style={styles.repCard}>
           <Text style={styles.restInfo}>
-            Set {currentProgress.sets.length} completed · {currentProgress.sets[currentProgress.sets.length - 1]?.reps} reps
+            Resting after set {completedSetCount} of {targetSetCount} · next {hasCompletedExercise && !isLastExercise ? 'exercise' : 'set'} starts in {formatRestCountdown(timer.elapsedSeconds, session.restDurationSeconds)}
           </Text>
           <PrimaryButton label="Skip rest" onPress={skipRest} tone="muted" />
         </GlowCard>
@@ -307,7 +323,7 @@ export function WorkoutSessionScreen({ workoutId }: WorkoutSessionScreenProps) {
         />
         {!isLastExercise ? (
           <PrimaryButton
-            label="Next exercise →"
+            label={hasCompletedExercise ? 'Next exercise →' : 'Skip to next exercise →'}
             onPress={nextExercise}
             tone="muted"
             style={styles.navButton}
