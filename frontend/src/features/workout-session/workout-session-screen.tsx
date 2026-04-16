@@ -48,6 +48,7 @@ export function WorkoutSessionScreen({ workoutId, freshStart = false }: WorkoutS
   const { showToast } = useToast();
   const { isCompact } = useBreakpoint();
   const [summary, setSummary] = useState<WorkoutSessionSummary | null>(null);
+  const [now, setNow] = useState(() => Date.now());
   const hasAutoStarted = useRef(false);
   const hasClearedForFreshStart = useRef(false);
   const shouldIgnoreActiveSession = freshStart && Boolean(workoutId);
@@ -77,6 +78,18 @@ export function WorkoutSessionScreen({ workoutId, freshStart = false }: WorkoutS
     }
     hasAutoStarted.current = false;
   }, [discardSession, isBooting, session, shouldIgnoreActiveSession]);
+
+  useEffect(() => {
+    if (!session) {
+      return;
+    }
+
+    const intervalId = setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [session]);
 
   // Auto-start session when workout data arrives
   useEffect(() => {
@@ -152,6 +165,10 @@ export function WorkoutSessionScreen({ workoutId, freshStart = false }: WorkoutS
   const completedSetCount = currentProgress.sets.length;
   const hasCompletedExercise = completedSetCount >= targetSetCount;
   const isWorkoutReadyToFinish = isLastExercise && hasCompletedExercise && !isResting;
+  const workoutElapsedSeconds = Math.max(
+    0,
+    Math.floor((now - new Date(session.startedAt).getTime()) / 1000)
+  );
 
   function handleFinish() {
     if (Platform.OS === 'web') {
@@ -210,6 +227,13 @@ export function WorkoutSessionScreen({ workoutId, freshStart = false }: WorkoutS
 
       {/* ── Timer Display ── */}
       <GlowCard style={styles.timerCard}>
+        <View style={styles.workoutElapsedWrap}>
+          <Text style={styles.workoutElapsedLabel}>Workout elapsed</Text>
+          <Text style={styles.workoutElapsedValue}>{formatTimerDisplay(workoutElapsedSeconds)}</Text>
+        </View>
+
+        <View style={styles.timerDivider} />
+
         <Text style={styles.timerLabel}>
           {isResting ? 'REST' : 'EXERCISE'}
         </Text>
@@ -453,6 +477,30 @@ const styles = StyleSheet.create({
   timerCard: {
     alignItems: 'center',
     paddingVertical: tokens.spacing.xl,
+  },
+  workoutElapsedWrap: {
+    alignItems: 'center',
+    gap: tokens.spacing.xs,
+    marginBottom: tokens.spacing.md,
+  },
+  workoutElapsedLabel: {
+    color: tokens.colors.textMuted,
+    fontFamily: tokens.typography.label,
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+  },
+  workoutElapsedValue: {
+    color: tokens.colors.text,
+    fontFamily: tokens.typography.heading,
+    fontSize: 28,
+  },
+  timerDivider: {
+    width: '100%',
+    maxWidth: 280,
+    height: 1,
+    backgroundColor: tokens.colors.border,
+    marginBottom: tokens.spacing.md,
   },
   timerLabel: {
     color: tokens.colors.textSoft,
