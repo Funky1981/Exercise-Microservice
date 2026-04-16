@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { router, type Href } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { apiClient } from '@/api/client';
 import { queryKeys } from '@/api/query-keys';
@@ -30,17 +30,31 @@ type WorkoutFormScreenProps = {
   mode: 'create' | 'edit';
   workoutId?: string;
   duplicateWorkoutId?: string;
+  prefillExerciseId?: string;
 };
 
-type BuilderExercise = Pick<
-  Exercise,
-  'id' | 'name' | 'bodyPart' | 'targetMuscle' | 'equipment' | 'gifUrl' | 'difficulty'
->;
+type BuilderExercise = {
+  id: string;
+  name: string;
+  bodyPart: string;
+  targetMuscle: string;
+  equipment?: string | null;
+  gifUrl?: string | null;
+  difficulty?: string | null;
+  sets: number;
+  reps: number;
+  restSeconds: number;
+};
+
+const DEFAULT_SETS = 3;
+const DEFAULT_REPS = 10;
+const DEFAULT_REST_SECONDS = 60;
 
 export function WorkoutFormScreen({
   mode,
   workoutId,
   duplicateWorkoutId,
+  prefillExerciseId,
 }: WorkoutFormScreenProps) {
   const queryClient = useQueryClient();
   const { session } = useSession();
@@ -57,6 +71,7 @@ export function WorkoutFormScreen({
   const [showDuplicateList, setShowDuplicateList] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const hydratedTemplateRef = useRef<string | null>(null);
+  const appliedPrefillExerciseRef = useRef<string | null>(null);
 
   const recentWorkoutsQuery = useQuery({
     queryKey: queryKeys.workouts.list(session?.userId, 1, 20),
@@ -82,6 +97,12 @@ export function WorkoutFormScreen({
     enabled: mode === 'create' && Boolean(duplicateWorkoutId) && Boolean(session?.userId),
   });
 
+  const prefillExerciseQuery = useQuery({
+    queryKey: prefillExerciseId ? queryKeys.exercises.detail(prefillExerciseId) : ['exercises', 'detail', 'prefill-missing'],
+    queryFn: () => apiClient.getExerciseById(prefillExerciseId!),
+    enabled: mode === 'create' && Boolean(prefillExerciseId),
+  });
+
   useEffect(() => {
     if (mode === 'create' && !date) {
       setDate(inputDateFromIso(new Date().toISOString()));
@@ -104,6 +125,22 @@ export function WorkoutFormScreen({
     hydrateFromWorkout(source);
   }, [duplicateQuery.data, duplicateWorkoutId, mode, workoutQuery.data]);
 
+  useEffect(() => {
+    if (!prefillExerciseQuery.data || appliedPrefillExerciseRef.current === prefillExerciseQuery.data.id) {
+      return;
+    }
+
+    appliedPrefillExerciseRef.current = prefillExerciseQuery.data.id;
+
+    setSelectedExercises((current) => {
+      if (current.some((exercise) => exercise.id === prefillExerciseQuery.data!.id)) {
+        return current;
+      }
+
+      return [...current, toBuilderExercise(prefillExerciseQuery.data!)];
+    });
+  }, [prefillExerciseQuery.data]);
+
   function hydrateFromWorkout(workout: Workout) {
     setName(workout.name ?? '');
     setShowNameField(Boolean(workout.name));
@@ -114,13 +151,16 @@ export function WorkoutFormScreen({
     setShowNotesField(Boolean(workout.notes));
     setSelectedExercises(
       workout.exercises.map((exercise) => ({
-        id: exercise.id,
+        id: exercise.exerciseId,
         name: exercise.name,
         bodyPart: exercise.bodyPart,
         targetMuscle: exercise.targetMuscle,
         equipment: exercise.equipment ?? null,
         gifUrl: null,
         difficulty: null,
+        sets: exercise.sets,
+        reps: exercise.reps,
+        restSeconds: exercise.restSeconds,
       }))
     );
   }
@@ -165,10 +205,33 @@ export function WorkoutFormScreen({
       };
 
       if (mode === 'create') {
-        return apiClient.createWorkout(payload);
+        const result = await apiClient.createWorkout(payload);
+
+        await Promise.all(
+          selectedExercises.map((exercise) =>
+            apiClient.updateExercisePrescription(result.id, exercise.id, {
+              sets: exercise.sets,
+              reps: exercise.reps,
+              restSeconds: exercise.restSeconds,
+            })
+          )
+        );
+
+        return result;
       }
 
       await apiClient.updateWorkout(workoutId!, payload);
+
+      await Promise.all(
+        selectedExercises.map((exercise) =>
+          apiClient.updateExercisePrescription(workoutId!, exercise.id, {
+            sets: exercise.sets,
+            reps: exercise.reps,
+            restSeconds: exercise.restSeconds,
+          })
+        )
+      );
+
       return { id: workoutId! };
     },
     onSuccess: async (result) => {
@@ -213,6 +276,16 @@ export function WorkoutFormScreen({
     hasExplicitTime
   );
   const summaryRegions = [...new Set(selectedExercises.map((exercise) => describeRegion(exercise.bodyPart)))];
+  const totalPlannedSets = selectedExercises.reduce((sum, exercise) => sum + exercise.sets, 0);
+  const estimatedWorkoutMinutes = Math.max(
+    1,
+    Math.round(
+      selectedExercises.reduce(
+        (sum, exercise) => sum + exercise.sets * 45 + Math.max(0, exercise.sets - 1) * exercise.restSeconds,
+        0
+      ) / 60
+    )
+  );
   const recentColumns = pickResponsiveValue(breakpoint, {
     compact: 1,
     medium: 2,
@@ -321,7 +394,7 @@ export function WorkoutFormScreen({
               setSelectedExercises((current) =>
                 current.some((item) => item.id === exercise.id)
                   ? current
-                  : [...current, exercise]
+                  : [...current, toBuilderExercise(exercise)]
               )
             }
           />
@@ -343,6 +416,39 @@ export function WorkoutFormScreen({
                     <Text style={styles.resultBody}>
                       {exercise.equipment ?? 'Bodyweight / unspecified'}
                     </Text>
+                    <View style={styles.prescriptionRow}>
+                      <BuilderStepper
+                        label="Sets"
+                        value={exercise.sets}
+                        step={1}
+                        onChange={(next) =>
+                          setSelectedExercises((current) =>
+                            updateBuilderExercise(current, exercise.id, { sets: clamp(next, 1, 100) })
+                          )
+                        }
+                      />
+                      <BuilderStepper
+                        label="Reps"
+                        value={exercise.reps}
+                        step={1}
+                        onChange={(next) =>
+                          setSelectedExercises((current) =>
+                            updateBuilderExercise(current, exercise.id, { reps: clamp(next, 0, 999) })
+                          )
+                        }
+                      />
+                      <BuilderStepper
+                        label="Rest"
+                        value={exercise.restSeconds}
+                        suffix="s"
+                        step={15}
+                        onChange={(next) =>
+                          setSelectedExercises((current) =>
+                            updateBuilderExercise(current, exercise.id, { restSeconds: clamp(next, 0, 600) })
+                          )
+                        }
+                      />
+                    </View>
                     <View style={styles.actions}>
                       <PrimaryButton
                         label="Move up"
@@ -495,6 +601,11 @@ export function WorkoutFormScreen({
             <Text style={styles.sectionTitle}>Workout summary</Text>
             <Text style={styles.summaryValue}>{selectedExercises.length} exercises selected</Text>
             <Text style={styles.summaryMeta}>{scheduleLabel}</Text>
+            {selectedExercises.length > 0 ? (
+              <Text style={styles.body}>
+                Planned load: {totalPlannedSets} sets · about {estimatedWorkoutMinutes} min
+              </Text>
+            ) : null}
             {summaryRegions.length > 0 ? (
               <Text style={styles.body}>Focus: {summaryRegions.join(', ')}</Text>
             ) : null}
@@ -516,6 +627,35 @@ export function WorkoutFormScreen({
   );
 }
 
+function BuilderStepper({
+  label,
+  value,
+  step,
+  suffix,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  step: number;
+  suffix?: string;
+  onChange: (next: number) => void;
+}) {
+  return (
+    <View style={styles.stepperBlock}>
+      <Text style={styles.stepperLabel}>{label}</Text>
+      <View style={styles.stepperControls}>
+        <Pressable style={styles.stepperButton} onPress={() => onChange(value - step)}>
+          <Text style={styles.stepperButtonText}>−</Text>
+        </Pressable>
+        <Text style={styles.stepperValue}>{value}{suffix ?? ''}</Text>
+        <Pressable style={styles.stepperButton} onPress={() => onChange(value + step)}>
+          <Text style={styles.stepperButtonText}>+</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
 function moveExercise(list: BuilderExercise[], fromIndex: number, toIndex: number) {
   if (toIndex < 0 || toIndex >= list.length) {
     return list;
@@ -525,6 +665,35 @@ function moveExercise(list: BuilderExercise[], fromIndex: number, toIndex: numbe
   const [exercise] = next.splice(fromIndex, 1);
   next.splice(toIndex, 0, exercise);
   return next;
+}
+
+function updateBuilderExercise(
+  list: BuilderExercise[],
+  exerciseId: string,
+  patch: Partial<Pick<BuilderExercise, 'sets' | 'reps' | 'restSeconds'>>
+) {
+  return list.map((exercise) =>
+    exercise.id === exerciseId ? { ...exercise, ...patch } : exercise
+  );
+}
+
+function toBuilderExercise(exercise: Exercise): BuilderExercise {
+  return {
+    id: exercise.id,
+    name: exercise.name,
+    bodyPart: exercise.bodyPart,
+    targetMuscle: exercise.targetMuscle,
+    equipment: exercise.equipment ?? null,
+    gifUrl: exercise.gifUrl ?? null,
+    difficulty: exercise.difficulty ?? null,
+    sets: DEFAULT_SETS,
+    reps: DEFAULT_REPS,
+    restSeconds: DEFAULT_REST_SECONDS,
+  };
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
 }
 
 function currentLastIndex(list: BuilderExercise[]) {
@@ -632,6 +801,49 @@ const styles = StyleSheet.create({
   },
   selectedCard: {
     gap: tokens.spacing.sm,
+  },
+  prescriptionRow: {
+    flexDirection: 'row',
+    gap: tokens.spacing.md,
+  },
+  stepperBlock: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 4,
+  },
+  stepperLabel: {
+    color: tokens.colors.textSoft,
+    fontFamily: tokens.typography.label,
+    fontSize: 11,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  stepperControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.spacing.sm,
+  },
+  stepperButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: tokens.colors.surfaceStrong,
+    borderWidth: 1,
+    borderColor: tokens.colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepperButtonText: {
+    color: tokens.colors.text,
+    fontFamily: tokens.typography.heading,
+    fontSize: 18,
+  },
+  stepperValue: {
+    color: tokens.colors.text,
+    fontFamily: tokens.typography.heading,
+    fontSize: 18,
+    minWidth: 44,
+    textAlign: 'center',
   },
   actionButton: {
     minWidth: 120,
