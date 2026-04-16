@@ -94,7 +94,11 @@ export function WorkoutSessionScreen({ workoutId, freshStart = false }: WorkoutS
   if (isBooting) {
     return (
       <AppScreen>
-        <StatusCard title="Loading session" body="Recovering workout session..." busy />
+        <StatusCard
+          title="Loading session"
+          body={freshStart ? 'Starting a fresh workout session...' : 'Recovering workout session...'}
+          busy
+        />
       </AppScreen>
     );
   }
@@ -102,7 +106,11 @@ export function WorkoutSessionScreen({ workoutId, freshStart = false }: WorkoutS
   if (workoutId && workoutQuery.isPending && !session) {
     return (
       <AppScreen>
-        <StatusCard title="Loading workout" body="Preparing your workout session..." busy />
+        <StatusCard
+          title="Loading workout"
+          body={freshStart ? 'Preparing a brand new workout session...' : 'Preparing your workout session...'}
+          busy
+        />
       </AppScreen>
     );
   }

@@ -59,10 +59,11 @@ export function DashboardScreen() {
         <GlowCard>
           <Text style={styles.panelTitle}>Workout in progress</Text>
           <Text style={styles.bodyText}>
-            You have an active workout session. Pick up where you left off.
+            You have a saved workout session. Resume it to restore the timer, current exercise,
+            and completed sets exactly where you left them.
           </Text>
           <PrimaryButton
-            label="Resume workout"
+            label="Resume saved workout"
             onPress={() => router.push('/(app)/session' as Href)}
           />
         </GlowCard>

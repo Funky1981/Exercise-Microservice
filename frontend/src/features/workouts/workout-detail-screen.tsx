@@ -187,7 +187,7 @@ export function WorkoutDetailScreen({ workoutId }: WorkoutDetailScreenProps) {
           <View style={styles.actions}>
             {!workout.isCompleted && workout.exercises.length > 0 ? (
               <PrimaryButton
-                label="Start workout"
+                label="Start new workout"
                 onPress={() =>
                   router.push({
                     pathname: '/(app)/session',
@@ -226,6 +226,12 @@ export function WorkoutDetailScreen({ workoutId }: WorkoutDetailScreenProps) {
               style={styles.actionButton}
             />
           </View>
+
+          {!workout.isCompleted && workout.exercises.length > 0 ? (
+            <Text style={styles.helperText}>
+              Starting a new workout begins from 00:00 and clears any previously saved in-progress session.
+            </Text>
+          ) : null}
 
           <TextField
             label="Complete in minutes"
@@ -562,5 +568,11 @@ const styles = StyleSheet.create({
     color: tokens.colors.danger,
     fontFamily: tokens.typography.bodyStrong,
     fontSize: 14,
+  },
+  helperText: {
+    color: tokens.colors.textMuted,
+    fontFamily: tokens.typography.body,
+    fontSize: 13,
+    lineHeight: 20,
   },
 });
