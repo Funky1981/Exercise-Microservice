@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 
@@ -169,6 +169,14 @@ export function WorkoutSessionScreen({ workoutId, freshStart = false }: WorkoutS
     0,
     Math.floor((now - new Date(session.startedAt).getTime()) / 1000)
   );
+  const topStatusBarStyle: ViewStyle | undefined =
+    Platform.OS === 'web'
+      ? {
+          position: 'sticky' as ViewStyle['position'],
+          top: 0,
+          zIndex: 20,
+        }
+      : undefined;
 
   function handleFinish() {
     if (Platform.OS === 'web') {
@@ -219,6 +227,22 @@ export function WorkoutSessionScreen({ workoutId, freshStart = false }: WorkoutS
 
   return (
     <AppScreen>
+      <GlowCard style={[styles.topStatusBar, topStatusBarStyle]}>
+        <View style={styles.topStatusBlock}>
+          <Text style={styles.topStatusLabel}>Workout elapsed</Text>
+          <Text style={styles.topStatusValue}>{formatTimerDisplay(workoutElapsedSeconds)}</Text>
+        </View>
+        <View style={styles.topStatusDivider} />
+        <View style={styles.topStatusBlock}>
+          <Text style={styles.topStatusLabel}>{isResting ? 'Current phase' : 'Current set timer'}</Text>
+          <Text style={[styles.topStatusValue, isResting && styles.topStatusValueRest]}>
+            {isResting
+              ? formatRestCountdown(timer.elapsedSeconds, session.restDurationSeconds)
+              : formatTimerDisplay(timer.elapsedSeconds)}
+          </Text>
+        </View>
+      </GlowCard>
+
       <SectionHeading
         eyebrow={`Exercise ${session.currentExerciseIndex + 1} of ${session.exercises.length}`}
         title={currentExercise.name}
@@ -227,13 +251,6 @@ export function WorkoutSessionScreen({ workoutId, freshStart = false }: WorkoutS
 
       {/* ── Timer Display ── */}
       <GlowCard style={styles.timerCard}>
-        <View style={styles.workoutElapsedWrap}>
-          <Text style={styles.workoutElapsedLabel}>Workout elapsed</Text>
-          <Text style={styles.workoutElapsedValue}>{formatTimerDisplay(workoutElapsedSeconds)}</Text>
-        </View>
-
-        <View style={styles.timerDivider} />
-
         <Text style={styles.timerLabel}>
           {isResting ? 'REST' : 'EXERCISE'}
         </Text>
@@ -474,33 +491,42 @@ function SummaryStat({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
+  topStatusBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: tokens.spacing.md,
+    paddingVertical: tokens.spacing.sm,
+    marginBottom: tokens.spacing.xs,
+  },
+  topStatusBlock: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 2,
+  },
+  topStatusLabel: {
+    color: tokens.colors.textMuted,
+    fontFamily: tokens.typography.label,
+    fontSize: 11,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+  },
+  topStatusValue: {
+    color: tokens.colors.text,
+    fontFamily: tokens.typography.heading,
+    fontSize: 20,
+  },
+  topStatusValueRest: {
+    color: tokens.colors.accentWarm,
+  },
+  topStatusDivider: {
+    width: 1,
+    alignSelf: 'stretch',
+    backgroundColor: tokens.colors.border,
+  },
   timerCard: {
     alignItems: 'center',
     paddingVertical: tokens.spacing.xl,
-  },
-  workoutElapsedWrap: {
-    alignItems: 'center',
-    gap: tokens.spacing.xs,
-    marginBottom: tokens.spacing.md,
-  },
-  workoutElapsedLabel: {
-    color: tokens.colors.textMuted,
-    fontFamily: tokens.typography.label,
-    fontSize: 12,
-    textTransform: 'uppercase',
-    letterSpacing: 1.5,
-  },
-  workoutElapsedValue: {
-    color: tokens.colors.text,
-    fontFamily: tokens.typography.heading,
-    fontSize: 28,
-  },
-  timerDivider: {
-    width: '100%',
-    maxWidth: 280,
-    height: 1,
-    backgroundColor: tokens.colors.border,
-    marginBottom: tokens.spacing.md,
   },
   timerLabel: {
     color: tokens.colors.textSoft,
