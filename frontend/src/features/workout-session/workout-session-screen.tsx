@@ -30,6 +30,7 @@ export function WorkoutSessionScreen({ workoutId, freshStart = false }: WorkoutS
     isBooting,
     timer,
     startSession,
+    startExerciseTimer,
     pauseTimer,
     resumeTimer,
     setCurrentReps,
@@ -142,7 +143,11 @@ export function WorkoutSessionScreen({ workoutId, freshStart = false }: WorkoutS
   const isFirstExercise = session.currentExerciseIndex === 0;
   const isLastExercise = session.currentExerciseIndex === session.exercises.length - 1;
   const isTimed = session.trainingMode === 'timed';
-  const timedRemaining = Math.max(0, session.timedDurationSeconds - timer.elapsedSeconds);
+  const hasStartedCurrentSet = !isResting && session.timerState !== 'idle';
+  const timedRemaining = Math.max(
+    0,
+    session.timedDurationSeconds - (hasStartedCurrentSet ? timer.elapsedSeconds : 0)
+  );
   const targetSetCount = currentExercise.sets;
   const completedSetCount = currentProgress.sets.length;
   const hasCompletedExercise = completedSetCount >= targetSetCount;
@@ -222,6 +227,12 @@ export function WorkoutSessionScreen({ workoutId, freshStart = false }: WorkoutS
         <View style={styles.timerActions}>
           {isWorkoutReadyToFinish ? (
             <PrimaryButton label="Workout ready to finish" onPress={handleFinish} style={styles.timerButton} />
+          ) : !isResting && session.timerState === 'idle' ? (
+            <PrimaryButton
+              label={isTimed ? 'Start timed set' : 'Start set timer'}
+              onPress={startExerciseTimer}
+              style={styles.timerButton}
+            />
           ) : session.timerState === 'running' ? (
             <PrimaryButton label="Pause" onPress={pauseTimer} tone="muted" style={styles.timerButton} />
           ) : (
@@ -278,12 +289,16 @@ export function WorkoutSessionScreen({ workoutId, freshStart = false }: WorkoutS
                 </Pressable>
               </View>
               <Text style={[styles.timedCountdown, timedRemaining === 0 && styles.timedDone]}>
-                {timedRemaining > 0 ? `${timedRemaining}s remaining` : 'Time reached!'}
+                {hasStartedCurrentSet
+                  ? timedRemaining > 0
+                    ? `${timedRemaining}s remaining`
+                    : 'Time reached!'
+                  : `Press Start timed set to begin the ${session.timedDurationSeconds}s countdown`}
               </Text>
               <PrimaryButton
                 label={hasCompletedExercise ? 'Exercise complete' : `Complete Set ${completedSetCount + 1} of ${targetSetCount}`}
                 onPress={completeSet}
-                disabled={hasCompletedExercise}
+                disabled={hasCompletedExercise || !hasStartedCurrentSet}
               />
             </>
           ) : (
@@ -304,10 +319,15 @@ export function WorkoutSessionScreen({ workoutId, freshStart = false }: WorkoutS
                   <Text style={styles.repButtonText}>+</Text>
                 </Pressable>
               </View>
+              <Text style={styles.timedCountdown}>
+                {hasStartedCurrentSet
+                  ? `Set timer: ${formatTimerDisplay(timer.elapsedSeconds)}`
+                  : 'Press Start set timer to begin this set timer'}
+              </Text>
               <PrimaryButton
                 label={hasCompletedExercise ? 'Exercise complete' : `Complete Set ${completedSetCount + 1} of ${targetSetCount}`}
                 onPress={completeSet}
-                disabled={hasCompletedExercise}
+                disabled={hasCompletedExercise || !hasStartedCurrentSet}
               />
             </>
           )}

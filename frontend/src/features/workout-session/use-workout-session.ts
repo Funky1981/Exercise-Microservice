@@ -97,9 +97,6 @@ export function useWorkoutSession() {
       isExerciseComplete && session.currentExerciseIndex === session.exercises.length - 1;
 
     timer.reset();
-    if (!isLastExerciseComplete) {
-      timer.start();
-    }
 
     updateSession((prev) => {
       const updatedProgress = [...prev.exerciseProgress];
@@ -139,8 +136,8 @@ export function useWorkoutSession() {
         exerciseProgress: updatedProgress,
         currentExerciseIndex: nextExerciseIndex,
         timerMode: 'exercise',
-        timerState: 'running',
-        timerStartedAt: Date.now(),
+        timerState: 'idle',
+        timerStartedAt: null,
         timerElapsedBeforePause: 0,
         restDurationSeconds: nextExercise.restSeconds,
         defaultRestSeconds: nextExercise.restSeconds,
@@ -175,8 +172,8 @@ export function useWorkoutSession() {
         currentExerciseIndex: 0,
         exerciseProgress,
         timerMode: 'exercise',
-        timerState: 'running',
-        timerStartedAt: Date.now(),
+        timerState: 'idle',
+        timerStartedAt: null,
         timerElapsedBeforePause: 0,
         restDurationSeconds: workout.exercises[0]?.restSeconds ?? DEFAULT_REST_SECONDS,
         startedAt: new Date().toISOString(),
@@ -188,10 +185,22 @@ export function useWorkoutSession() {
 
       setSession(newSession);
       sessionStorage.save(newSession);
-      timer.start();
     },
-    [timer]
+    []
   );
+
+  const startExerciseTimer = useCallback(() => {
+    timer.reset();
+    timer.start();
+
+    updateSession((prev) => ({
+      ...prev,
+      timerMode: 'exercise',
+      timerState: 'running',
+      timerStartedAt: Date.now(),
+      timerElapsedBeforePause: 0,
+    }));
+  }, [timer, updateSession]);
 
   const pauseTimer = useCallback(() => {
     timer.pause();
@@ -239,6 +248,7 @@ export function useWorkoutSession() {
     const currentExercise = session.exercises[session.currentExerciseIndex];
     const currentProgress = session.exerciseProgress[session.currentExerciseIndex];
     if (currentProgress.sets.length >= currentExercise.sets) return;
+    if (session.timerState === 'idle') return;
 
     const exerciseDuration = timer.elapsedSeconds;
     timer.reset();
@@ -305,9 +315,6 @@ export function useWorkoutSession() {
       isExerciseComplete && session.currentExerciseIndex === session.exercises.length - 1;
 
     timer.reset();
-    if (!isLastExerciseComplete) {
-      timer.start();
-    }
 
     updateSession((prev) => {
       // Record rest time on the last completed set
@@ -344,8 +351,8 @@ export function useWorkoutSession() {
         exerciseProgress: updatedProgress,
         currentExerciseIndex: nextExerciseIndex,
         timerMode: 'exercise' as TimerMode,
-        timerState: 'running',
-        timerStartedAt: Date.now(),
+        timerState: 'idle',
+        timerStartedAt: null,
         timerElapsedBeforePause: 0,
         restDurationSeconds: nextExercise.restSeconds,
         defaultRestSeconds: nextExercise.restSeconds,
@@ -360,14 +367,13 @@ export function useWorkoutSession() {
     if (nextIndex >= session.exercises.length) return;
 
     timer.reset();
-    timer.start();
 
     updateSession((prev) => ({
       ...prev,
       currentExerciseIndex: nextIndex,
       timerMode: 'exercise' as TimerMode,
-      timerState: 'running',
-      timerStartedAt: Date.now(),
+      timerState: 'idle',
+      timerStartedAt: null,
       timerElapsedBeforePause: 0,
       restDurationSeconds: prev.exercises[nextIndex].restSeconds,
       defaultRestSeconds: prev.exercises[nextIndex].restSeconds,
@@ -380,14 +386,13 @@ export function useWorkoutSession() {
     const prevIndex = session.currentExerciseIndex - 1;
 
     timer.reset();
-    timer.start();
 
     updateSession((prev) => ({
       ...prev,
       currentExerciseIndex: prevIndex,
       timerMode: 'exercise' as TimerMode,
-      timerState: 'running',
-      timerStartedAt: Date.now(),
+      timerState: 'idle',
+      timerStartedAt: null,
       timerElapsedBeforePause: 0,
       restDurationSeconds: prev.exercises[prevIndex].restSeconds,
       defaultRestSeconds: prev.exercises[prevIndex].restSeconds,
@@ -442,6 +447,7 @@ export function useWorkoutSession() {
     isBooting,
     timer,
     startSession,
+    startExerciseTimer,
     pauseTimer,
     resumeTimer,
     setCurrentReps,
