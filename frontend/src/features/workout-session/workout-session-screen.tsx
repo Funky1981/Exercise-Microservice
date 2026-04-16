@@ -165,6 +165,9 @@ export function WorkoutSessionScreen({ workoutId, freshStart = false }: WorkoutS
   const completedSetCount = currentProgress.sets.length;
   const hasCompletedExercise = completedSetCount >= targetSetCount;
   const isWorkoutReadyToFinish = isLastExercise && hasCompletedExercise && !isResting;
+  const nextExercisePreview = !isLastExercise
+    ? session.exercises[session.currentExerciseIndex + 1]
+    : null;
   const workoutElapsedSeconds = Math.max(
     0,
     Math.floor((now - new Date(session.startedAt).getTime()) / 1000)
@@ -282,6 +285,28 @@ export function WorkoutSessionScreen({ workoutId, freshStart = false }: WorkoutS
         </View>
       </GlowCard>
 
+      <GlowCard style={styles.nextUpCard}>
+        <Text style={styles.nextUpLabel}>Up next</Text>
+        <Text style={styles.nextUpTitle}>
+          {isResting
+            ? `Set ${completedSetCount + 1} of ${targetSetCount}`
+            : hasCompletedExercise
+              ? nextExercisePreview?.name ?? 'Workout complete'
+              : `Set ${completedSetCount + 1} of ${targetSetCount}`}
+        </Text>
+        <Text style={styles.nextUpBody}>
+          {isResting
+            ? `Rest ends, then you return to ${currentExercise.name.toLowerCase()} for the next set.`
+            : hasCompletedExercise
+              ? nextExercisePreview
+                ? `Next exercise is ${nextExercisePreview.name.toLowerCase()}. Press Start set timer when you are ready.`
+                : 'All exercises are complete. Finish the workout when you are ready.'
+              : isTimed
+                ? `Timed set target: ${session.timedDurationSeconds}s.`
+                : `Current target: ${session.currentReps} reps.`}
+        </Text>
+      </GlowCard>
+
       {/* ── Set/Rep Controls (visible during exercise mode) ── */}
       {!isResting ? (
         <GlowCard style={styles.repCard}>
@@ -289,7 +314,7 @@ export function WorkoutSessionScreen({ workoutId, freshStart = false }: WorkoutS
             <Text style={styles.restInfo}>
               {isLastExercise
                 ? 'All prescribed sets completed. Finish the workout when you are ready.'
-                : 'All prescribed sets completed. The next exercise will start after the rest timer.'}
+                : 'All prescribed sets completed. Move straight into the next exercise when you are ready.'}
             </Text>
           ) : null}
 
@@ -558,6 +583,27 @@ const styles = StyleSheet.create({
   repCard: {
     alignItems: 'center',
     gap: tokens.spacing.md,
+  },
+  nextUpCard: {
+    gap: tokens.spacing.xs,
+  },
+  nextUpLabel: {
+    color: tokens.colors.textSoft,
+    fontFamily: tokens.typography.label,
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  nextUpTitle: {
+    color: tokens.colors.text,
+    fontFamily: tokens.typography.heading,
+    fontSize: 22,
+  },
+  nextUpBody: {
+    color: tokens.colors.textMuted,
+    fontFamily: tokens.typography.body,
+    fontSize: 14,
+    lineHeight: 22,
   },
   repLabel: {
     color: tokens.colors.textSoft,

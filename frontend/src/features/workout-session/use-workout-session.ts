@@ -278,8 +278,9 @@ export function useWorkoutSession() {
     const willFinishExercise = currentProgress.sets.length + 1 >= currentExercise.sets;
     const willFinishWorkout =
       willFinishExercise && session.currentExerciseIndex === session.exercises.length - 1;
+    const shouldStartRest = !willFinishExercise && !willFinishWorkout;
 
-    if (!willFinishWorkout) {
+    if (shouldStartRest) {
       timer.start();
     }
 
@@ -290,12 +291,30 @@ export function useWorkoutSession() {
         sets: [...updatedProgress[prev.currentExerciseIndex].sets, entry],
       };
 
+      if (willFinishExercise && !willFinishWorkout) {
+        const nextExerciseIndex = prev.currentExerciseIndex + 1;
+        const nextExercise = prev.exercises[nextExerciseIndex];
+
+        return {
+          ...prev,
+          exerciseProgress: updatedProgress,
+          currentExerciseIndex: nextExerciseIndex,
+          timerMode: 'exercise' as TimerMode,
+          timerState: 'idle',
+          timerStartedAt: null,
+          timerElapsedBeforePause: 0,
+          restDurationSeconds: nextExercise.restSeconds,
+          defaultRestSeconds: nextExercise.restSeconds,
+          currentReps: nextExercise.reps,
+        };
+      }
+
       return {
         ...prev,
         exerciseProgress: updatedProgress,
-        timerMode: willFinishWorkout ? ('exercise' as TimerMode) : ('rest' as TimerMode),
-        timerState: willFinishWorkout ? 'idle' : 'running',
-        timerStartedAt: willFinishWorkout ? null : Date.now(),
+        timerMode: shouldStartRest ? ('rest' as TimerMode) : ('exercise' as TimerMode),
+        timerState: shouldStartRest ? 'running' : 'idle',
+        timerStartedAt: shouldStartRest ? Date.now() : null,
         timerElapsedBeforePause: 0,
         restDurationSeconds: currentExercise.restSeconds,
         defaultRestSeconds: currentExercise.restSeconds,
