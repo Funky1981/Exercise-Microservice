@@ -18,6 +18,7 @@ import { SectionHeading } from '@/components/ui/section-heading';
 import { StatusCard } from '@/components/ui/status-card';
 import { TextField } from '@/components/ui/text-field';
 import { ExerciseSearchPicker } from '@/features/exercises/exercise-search-picker';
+import { sessionStorage } from '@/features/workout-session/session-storage';
 import { formatDuration, formatWorkoutSchedule, minutesToDuration } from '@/lib/format';
 import { pickResponsiveValue, useBreakpoint } from '@/lib/responsive';
 import { useToast } from '@/providers/toast-provider';
@@ -48,6 +49,11 @@ export function WorkoutDetailScreen({ workoutId }: WorkoutDetailScreenProps) {
         : ['workouts', 'detail', 'missing'],
     queryFn: () => apiClient.getWorkoutById(workoutId!),
     enabled: Boolean(workoutId) && Boolean(session?.userId),
+  });
+
+  const activeSessionQuery = useQuery({
+    queryKey: ['workout-session', 'active'],
+    queryFn: () => sessionStorage.load(),
   });
 
   const completeMutation = useMutation({
@@ -163,6 +169,9 @@ export function WorkoutDetailScreen({ workoutId }: WorkoutDetailScreenProps) {
   }
 
   const workout = workoutQuery.data;
+  const activeSession = activeSessionQuery.data;
+  const hasActiveSessionForThisWorkout = activeSession?.workoutId === workout.id;
+  const hasDifferentActiveSession = Boolean(activeSession) && activeSession?.workoutId !== workout.id;
 
   return (
     <AppScreen>
@@ -185,6 +194,13 @@ export function WorkoutDetailScreen({ workoutId }: WorkoutDetailScreenProps) {
         <GlowCard style={styles.secondaryColumn}>
           <Text style={styles.panelTitle}>Actions</Text>
           <View style={styles.actions}>
+            {!workout.isCompleted && hasActiveSessionForThisWorkout ? (
+              <PrimaryButton
+                label="Resume in-progress workout"
+                onPress={() => router.push('/(app)/session' as Href)}
+                style={styles.actionButton}
+              />
+            ) : null}
             {!workout.isCompleted && workout.exercises.length > 0 ? (
               <PrimaryButton
                 label="Start new workout"
@@ -229,7 +245,11 @@ export function WorkoutDetailScreen({ workoutId }: WorkoutDetailScreenProps) {
 
           {!workout.isCompleted && workout.exercises.length > 0 ? (
             <Text style={styles.helperText}>
-              Starting a new workout begins from 00:00 and clears any previously saved in-progress session.
+              {hasActiveSessionForThisWorkout
+                ? 'You already have an in-progress session for this workout. Resume it to keep your current progress, or start new to reset back to 00:00.'
+                : hasDifferentActiveSession
+                  ? 'Starting a new workout begins from 00:00 and replaces the saved in-progress session from another workout.'
+                  : 'Starting a new workout begins from 00:00 and clears any previously saved in-progress session.'}
             </Text>
           ) : null}
 

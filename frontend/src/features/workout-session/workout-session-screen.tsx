@@ -31,6 +31,7 @@ export function WorkoutSessionScreen({ workoutId, freshStart = false }: WorkoutS
     timer,
     startSession,
     startExerciseTimer,
+    restartCurrentSet,
     pauseTimer,
     resumeTimer,
     setCurrentReps,
@@ -282,6 +283,15 @@ export function WorkoutSessionScreen({ workoutId, freshStart = false }: WorkoutS
           ) : (
             <PrimaryButton label="Resume" onPress={resumeTimer} style={styles.timerButton} />
           )}
+
+          {!isResting && session.timerState !== 'idle' ? (
+            <PrimaryButton
+              label="Restart set"
+              onPress={restartCurrentSet}
+              tone="muted"
+              style={styles.timerButton}
+            />
+          ) : null}
         </View>
       </GlowCard>
 

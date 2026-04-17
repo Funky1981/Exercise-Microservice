@@ -202,6 +202,18 @@ export function useWorkoutSession() {
     }));
   }, [timer, updateSession]);
 
+  const restartCurrentSet = useCallback(() => {
+    timer.reset();
+
+    updateSession((prev) => ({
+      ...prev,
+      timerMode: 'exercise',
+      timerState: 'idle',
+      timerStartedAt: null,
+      timerElapsedBeforePause: 0,
+    }));
+  }, [timer, updateSession]);
+
   const pauseTimer = useCallback(() => {
     timer.pause();
     updateSession((prev) => ({
@@ -467,6 +479,7 @@ export function useWorkoutSession() {
     timer,
     startSession,
     startExerciseTimer,
+    restartCurrentSet,
     pauseTimer,
     resumeTimer,
     setCurrentReps,
