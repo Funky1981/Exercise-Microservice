@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { router, type Href } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Image } from 'expo-image';
 
 import { apiClient } from '@/api/client';
 import { queryKeys } from '@/api/query-keys';
@@ -139,6 +140,23 @@ export function ExerciseDetailScreen({ exerciseId }: ExerciseDetailScreenProps) 
         subtitle={`${exercise.targetMuscle} · ${exercise.equipment ?? 'Bodyweight'}`}
       />
 
+      <GlowCard style={styles.mediaCard}>
+        {exercise.gifUrl ? (
+          <Image
+            contentFit="cover"
+            source={{ uri: exercise.gifUrl }}
+            style={styles.mediaPreview}
+          />
+        ) : (
+          <View style={styles.mediaPlaceholder}>
+            <Text style={styles.mediaPlaceholderIcon}>FIT</Text>
+            <Text style={styles.mediaPlaceholderText}>
+              No exercise GIF is stored for this item yet.
+            </Text>
+          </View>
+        )}
+      </GlowCard>
+
       <View style={[styles.metaGrid, !isCompact && styles.metaGridWide]}>
         <GlowCard style={styles.metaCard}>
           <Text style={styles.metaLabel}>Target muscle</Text>
@@ -217,6 +235,34 @@ export function ExerciseDetailScreen({ exerciseId }: ExerciseDetailScreenProps) 
 }
 
 const styles = StyleSheet.create({
+  mediaCard: {
+    overflow: 'hidden',
+    padding: 0,
+  },
+  mediaPreview: {
+    width: '100%',
+    minHeight: 260,
+    backgroundColor: tokens.colors.surfaceStrong,
+  },
+  mediaPlaceholder: {
+    minHeight: 220,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: tokens.spacing.sm,
+    backgroundColor: tokens.colors.surfaceStrong,
+    padding: tokens.spacing.xl,
+  },
+  mediaPlaceholderIcon: {
+    color: tokens.colors.accent,
+    fontFamily: tokens.typography.display,
+    fontSize: 28,
+  },
+  mediaPlaceholderText: {
+    color: tokens.colors.textMuted,
+    fontFamily: tokens.typography.body,
+    fontSize: 14,
+    textAlign: 'center',
+  },
   metaGrid: {
     gap: tokens.spacing.md,
   },
