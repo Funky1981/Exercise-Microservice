@@ -13,6 +13,8 @@ namespace Exercise.Domain.Entities
         public string? Equipment { get; private set; }
         public string TargetMuscle { get; private set; } = null!;
         public string? GifUrl { get; private set; }
+        public string? MediaUrl { get; private set; }
+        public string? MediaKind { get; private set; }
         public string? SecondaryMusclesJson { get; private set; }
         public string? InstructionsJson { get; private set; }
         public string? SourcePayloadJson { get; private set; }
@@ -25,7 +27,8 @@ namespace Exercise.Domain.Entities
         public Exercise(Guid id, string name, string bodyPart, string targetMuscle,
             string? equipment = null, string? gifUrl = null, string? description = null, string? difficulty = null,
             string? externalId = null, string? sourceProvider = null, string? secondaryMusclesJson = null,
-            string? instructionsJson = null, string? sourcePayloadJson = null, string? category = null)
+            string? instructionsJson = null, string? sourcePayloadJson = null, string? category = null,
+            string? mediaUrl = null, string? mediaKind = null)
         {
             Guard.AgainstEmptyGuid(id, nameof(id));
             Guard.AgainstNullOrWhiteSpace(name, nameof(name));
@@ -40,6 +43,8 @@ namespace Exercise.Domain.Entities
             TargetMuscle = targetMuscle;
             Equipment = equipment;
             GifUrl = gifUrl;
+            MediaUrl = mediaUrl;
+            MediaKind = mediaKind;
             SecondaryMusclesJson = secondaryMusclesJson;
             InstructionsJson = instructionsJson;
             SourcePayloadJson = sourcePayloadJson;
@@ -61,7 +66,8 @@ namespace Exercise.Domain.Entities
         public void Update(string name, string bodyPart, string targetMuscle,
             string? equipment = null, string? gifUrl = null, string? description = null, string? difficulty = null,
             string? externalId = null, string? sourceProvider = null, string? secondaryMusclesJson = null,
-            string? instructionsJson = null, string? sourcePayloadJson = null, string? category = null)
+            string? instructionsJson = null, string? sourcePayloadJson = null, string? category = null,
+            string? mediaUrl = null, string? mediaKind = null)
         {
             Guard.AgainstNullOrWhiteSpace(name, nameof(name));
             Guard.AgainstNullOrWhiteSpace(bodyPart, nameof(bodyPart));
@@ -72,6 +78,8 @@ namespace Exercise.Domain.Entities
             TargetMuscle = targetMuscle;
             Equipment = equipment;
             GifUrl = gifUrl;
+            MediaUrl = mediaUrl;
+            MediaKind = mediaKind;
             ExternalId = externalId;
             SourceProvider = sourceProvider;
             SecondaryMusclesJson = secondaryMusclesJson;
@@ -95,7 +103,9 @@ namespace Exercise.Domain.Entities
             string? sourcePayloadJson,
             string? description,
             string? difficulty,
-            string? category)
+            string? category,
+            string? mediaUrl,
+            string? mediaKind)
         {
             Update(
                 name,
@@ -110,7 +120,9 @@ namespace Exercise.Domain.Entities
                 secondaryMusclesJson,
                 instructionsJson,
                 sourcePayloadJson,
-                category);
+                category,
+                mediaUrl,
+                mediaKind);
         }
 
         public bool RequiresEquipment()

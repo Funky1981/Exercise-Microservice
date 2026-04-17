@@ -10,6 +10,8 @@ namespace Exercise.Application.Exercises.Dtos
         public string? Equipment { get; set; }
         public string TargetMuscle { get; set; } = string.Empty;
         public string? GifUrl { get; set; }
+        public string? MediaUrl { get; set; }
+        public string? MediaKind { get; set; }
         public IReadOnlyList<string> SecondaryMuscles { get; set; } = [];
         public IReadOnlyList<string> Instructions { get; set; } = [];
         public string? SourcePayloadJson { get; set; }

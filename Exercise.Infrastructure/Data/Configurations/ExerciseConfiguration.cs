@@ -45,6 +45,12 @@ namespace Exercise.Infrastructure.Data.Configurations
             builder.Property(e => e.GifUrl)
                 .HasMaxLength(500);
 
+            builder.Property(e => e.MediaUrl)
+                .HasMaxLength(500);
+
+            builder.Property(e => e.MediaKind)
+                .HasMaxLength(50);
+
             builder.Property(e => e.SecondaryMusclesJson)
                 .HasColumnType("nvarchar(max)");
 

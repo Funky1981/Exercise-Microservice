@@ -470,6 +470,9 @@ function CompactExerciseRow({
 }: CompactExerciseRowProps) {
   const [hovered, setHovered] = useState(false);
   const isMultiSelected = selectionMode === 'multi' && selected;
+  const previewUrl = exercise.mediaKind?.toLowerCase().startsWith('video')
+    ? null
+    : (exercise.mediaUrl ?? exercise.gifUrl);
 
   return (
     <Pressable
@@ -485,8 +488,8 @@ function CompactExerciseRow({
         hovered && !selected && styles.exerciseRowHovered,
       ]}>
       {/* Thumbnail */}
-      {exercise.gifUrl ? (
-        <Image contentFit="cover" source={{ uri: exercise.gifUrl }} style={styles.thumbnail} />
+      {previewUrl ? (
+        <Image contentFit="cover" source={{ uri: previewUrl }} style={styles.thumbnail} />
       ) : (
         <View style={[styles.thumbnail, styles.thumbnailPlaceholder]}>
           <Text style={styles.thumbnailIcon}>💪</Text>

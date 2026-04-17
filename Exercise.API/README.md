@@ -99,6 +99,13 @@ Expected configuration keys:
   "RapidApi": {
     "Host": "exercisedb.p.rapidapi.com",
     "Key": ""
+  },
+  "ExerciseProvider": {
+    "Provider": "RapidApi"
+  },
+  "Wger": {
+    "BaseUrl": "https://wger.de/api/v2/",
+    "PreferredLanguage": 2
   }
 }
 ```
@@ -108,8 +115,10 @@ Secrets should be supplied through user secrets or environment variables.
 The current sync path is provider-agnostic at the application layer. If you replace the current catalogue provider, the main changes are expected in the infrastructure layer:
 
 - implement `IExerciseDataProvider`
-- register the new provider in `Exercise.Infrastructure/Data/DependencyInjection.cs`
+- add the new provider to `Exercise.Infrastructure/Data/DependencyInjection.cs`
 - update provider-specific config keys and `HttpClient` setup
+
+Select the active provider with `ExerciseProvider:Provider` in configuration. Supported values in the current code are `RapidApi` and `Wger`.
 
 The `POST /api/exercises/sync` endpoint and the local exercise database remain the stable contract for the rest of the system.
 

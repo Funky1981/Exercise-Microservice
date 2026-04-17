@@ -40,6 +40,8 @@ type BuilderExercise = {
   targetMuscle: string;
   equipment?: string | null;
   gifUrl?: string | null;
+  mediaUrl?: string | null;
+  mediaKind?: string | null;
   difficulty?: string | null;
   sets: number;
   reps: number;
@@ -157,6 +159,8 @@ export function WorkoutFormScreen({
         targetMuscle: exercise.targetMuscle,
         equipment: exercise.equipment ?? null,
         gifUrl: null,
+        mediaUrl: null,
+        mediaKind: null,
         difficulty: null,
         sets: exercise.sets,
         reps: exercise.reps,
@@ -685,6 +689,8 @@ function toBuilderExercise(exercise: Exercise): BuilderExercise {
     targetMuscle: exercise.targetMuscle,
     equipment: exercise.equipment ?? null,
     gifUrl: exercise.gifUrl ?? null,
+    mediaUrl: exercise.mediaUrl ?? null,
+    mediaKind: exercise.mediaKind ?? null,
     difficulty: exercise.difficulty ?? null,
     sets: DEFAULT_SETS,
     reps: DEFAULT_REPS,

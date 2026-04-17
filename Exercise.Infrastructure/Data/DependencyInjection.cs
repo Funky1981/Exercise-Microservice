@@ -5,6 +5,7 @@ using Exercise.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Exercise.Infrastructure.Data
 {
@@ -32,15 +33,30 @@ namespace Exercise.Infrastructure.Data
             // Unit of Work
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-            // External API provider — swap implementation here to change providers
-            services.AddScoped<IExerciseDataProvider, RapidApiExerciseProvider>();
+            services.Configure<ExerciseProviderOptions>(configuration.GetSection(ExerciseProviderOptions.SectionName));
 
-            // Named HttpClient for RapidAPI (with standard resilience pipeline)
-            services.AddHttpClient("ExerciseApi", client =>
+            services.AddScoped<RapidApiExerciseProvider>();
+            services.AddScoped<WgerExerciseProvider>();
+            services.AddScoped<IExerciseDataProvider>(serviceProvider =>
+            {
+                var options = serviceProvider.GetRequiredService<IOptions<ExerciseProviderOptions>>().Value;
+                return options.Provider?.Trim().ToLowerInvariant() switch
+                {
+                    "wger" => serviceProvider.GetRequiredService<WgerExerciseProvider>(),
+                    _ => serviceProvider.GetRequiredService<RapidApiExerciseProvider>()
+                };
+            });
+
+            services.AddHttpClient("RapidApiExerciseApi", client =>
             {
                 client.BaseAddress = new Uri("https://exercisedb.p.rapidapi.com/");
                 client.DefaultRequestHeaders.Add("x-rapidapi-host", configuration["RapidApi:Host"]);
                 client.DefaultRequestHeaders.Add("x-rapidapi-key", configuration["RapidApi:Key"]);
+            }).AddStandardResilienceHandler();
+
+            services.AddHttpClient("WgerExerciseApi", client =>
+            {
+                client.BaseAddress = new Uri(configuration["Wger:BaseUrl"] ?? "https://wger.de/api/v2/");
             }).AddStandardResilienceHandler();
 
             services.AddHostedService<LegacyExerciseSeedCleanupService>();

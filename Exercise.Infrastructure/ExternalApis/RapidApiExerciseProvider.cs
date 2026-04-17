@@ -64,6 +64,8 @@ namespace Exercise.Infrastructure.ExternalApis
                     GetString(item, "target") ?? string.Empty,
                     GetString(item, "equipment"),
                     GetString(item, "gifUrl"),
+                    GetString(item, "gifUrl"),
+                    string.IsNullOrWhiteSpace(GetString(item, "gifUrl")) ? null : "image/gif",
                     GetStringArray(item, "secondaryMuscles"),
                     GetStringArray(item, "instructions"),
                     item.GetRawText(),

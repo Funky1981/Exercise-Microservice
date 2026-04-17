@@ -95,7 +95,9 @@ namespace Exercise.Application.Features.Exercises.Commands.SyncExercises
                         remote.SourcePayloadJson ?? exercise.SourcePayloadJson,
                         string.IsNullOrWhiteSpace(remote.Description) ? exercise.Description : remote.Description,
                         string.IsNullOrWhiteSpace(remote.Difficulty) ? exercise.Difficulty : remote.Difficulty,
-                        string.IsNullOrWhiteSpace(remote.Category) ? exercise.Category : remote.Category);
+                        string.IsNullOrWhiteSpace(remote.Category) ? exercise.Category : remote.Category,
+                        string.IsNullOrWhiteSpace(remote.MediaUrl) ? exercise.MediaUrl : remote.MediaUrl,
+                        string.IsNullOrWhiteSpace(remote.MediaKind) ? exercise.MediaKind : remote.MediaKind);
                     updated++;
                     continue;
                 }
@@ -112,7 +114,9 @@ namespace Exercise.Application.Features.Exercises.Commands.SyncExercises
                     secondaryMusclesJson: secondaryMusclesJson,
                     instructionsJson: instructionsJson,
                     sourcePayloadJson: remote.SourcePayloadJson,
-                    category: remote.Category);
+                    category: remote.Category,
+                    mediaUrl: remote.MediaUrl,
+                    mediaKind: remote.MediaKind);
 
                 newExercise.UpdateDescription(remote.Description);
                 newExercise.Update(
@@ -128,7 +132,9 @@ namespace Exercise.Application.Features.Exercises.Commands.SyncExercises
                     newExercise.SecondaryMusclesJson,
                     newExercise.InstructionsJson,
                     newExercise.SourcePayloadJson,
-                    remote.Category);
+                    remote.Category,
+                    newExercise.MediaUrl,
+                    newExercise.MediaKind);
 
                 await _exerciseRepository.AddAsync(newExercise, cancellationToken);
                 if (!string.IsNullOrWhiteSpace(remote.ExternalId))

@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { router, type Href } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
+import * as WebBrowser from 'expo-web-browser';
 
 import { apiClient } from '@/api/client';
 import { queryKeys } from '@/api/query-keys';
@@ -126,6 +127,8 @@ export function ExerciseDetailScreen({ exerciseId }: ExerciseDetailScreenProps) 
   }
 
   const exercise = exerciseQuery.data;
+  const preferredMediaUrl = exercise.mediaUrl ?? exercise.gifUrl;
+  const isVideoMedia = exercise.mediaKind?.toLowerCase().startsWith('video') ?? false;
 
   // Available workouts that don't already contain this exercise
   const availableWorkouts = (workoutsQuery.data?.items ?? []).filter(
@@ -141,12 +144,26 @@ export function ExerciseDetailScreen({ exerciseId }: ExerciseDetailScreenProps) 
       />
 
       <GlowCard style={styles.mediaCard}>
-        {exercise.gifUrl ? (
+        {preferredMediaUrl && !isVideoMedia ? (
           <Image
             contentFit="cover"
-            source={{ uri: exercise.gifUrl }}
+            source={{ uri: preferredMediaUrl }}
             style={styles.mediaPreview}
           />
+        ) : preferredMediaUrl && isVideoMedia ? (
+          <View style={styles.mediaPlaceholder}>
+            <Text style={styles.mediaPlaceholderIcon}>VID</Text>
+            <Text style={styles.mediaPlaceholderText}>
+              Video media is available for this exercise.
+            </Text>
+            <PrimaryButton
+              label="Open video"
+              onPress={() => {
+                void WebBrowser.openBrowserAsync(preferredMediaUrl);
+              }}
+              tone="muted"
+            />
+          </View>
         ) : (
           <View style={styles.mediaPlaceholder}>
             <Text style={styles.mediaPlaceholderIcon}>FIT</Text>

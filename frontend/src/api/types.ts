@@ -56,6 +56,8 @@ export type Exercise = {
   equipment?: string | null;
   targetMuscle: string;
   gifUrl?: string | null;
+  mediaUrl?: string | null;
+  mediaKind?: string | null;
   secondaryMuscles?: string[];
   instructions?: string[];
   sourcePayloadJson?: string | null;

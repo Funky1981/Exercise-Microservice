@@ -28,6 +28,8 @@ namespace Exercise.Application.Abstractions.Services
         string TargetMuscle,
         string? Equipment = null,
         string? GifUrl = null,
+        string? MediaUrl = null,
+        string? MediaKind = null,
         IReadOnlyList<string>? SecondaryMuscles = null,
         IReadOnlyList<string>? Instructions = null,
         string? SourcePayloadJson = null,
