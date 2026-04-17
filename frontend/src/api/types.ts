@@ -49,13 +49,19 @@ export type ExerciseRegion = 'upper-body' | 'lower-body' | 'core' | 'cardio' | '
 
 export type Exercise = {
   id: string;
+  externalId?: string | null;
+  sourceProvider?: string | null;
   name: string;
   bodyPart: string;
   equipment?: string | null;
   targetMuscle: string;
   gifUrl?: string | null;
+  secondaryMuscles?: string[];
+  instructions?: string[];
+  sourcePayloadJson?: string | null;
   description?: string | null;
   difficulty?: string | null;
+  category?: string | null;
 };
 
 export type ExerciseFilters = {

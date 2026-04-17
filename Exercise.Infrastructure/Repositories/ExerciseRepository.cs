@@ -26,6 +26,12 @@ namespace Exercise.Infrastructure.Repositories
                 .ToListAsync(cancellationToken);
         }
 
+        public async Task<IReadOnlyList<ExerciseEntity>> GetAllForUpdateAsync(CancellationToken cancellationToken = default)
+        {
+            return await _context.Exercises
+                .ToListAsync(cancellationToken);
+        }
+
         /// <inheritdoc />
         public async Task<(IReadOnlyList<ExerciseEntity> Items, int TotalCount)> GetPagedAsync(
             int skip,

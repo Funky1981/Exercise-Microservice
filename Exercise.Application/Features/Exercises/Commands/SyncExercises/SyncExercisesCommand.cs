@@ -8,5 +8,5 @@ namespace Exercise.Application.Features.Exercises.Commands.SyncExercises
     /// </summary>
     public record SyncExercisesCommand(int Limit = 100, int Offset = 0) : IRequest<SyncExercisesResult>;
 
-    public record SyncExercisesResult(int Added, int TotalFetched);
+    public record SyncExercisesResult(int Added, int Updated, int TotalFetched);
 }

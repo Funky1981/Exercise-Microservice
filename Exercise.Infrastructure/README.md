@@ -70,6 +70,15 @@ The current exercise sync implementation uses:
 - `IExerciseDataProvider`
 - `RapidApiExerciseProvider`
 
+To switch providers with minimal code changes:
+
+- Keep `IExerciseDataProvider` as the application boundary.
+- Add a new provider implementation under `ExternalApis/`.
+- Register that implementation in `Data/DependencyInjection.cs`.
+- Configure its `HttpClient` and provider-specific settings in the same DI file.
+
+The sync pipeline, persistence model, API endpoints, and frontend screens now work against the provider-agnostic DTO returned by `IExerciseDataProvider`, so provider-specific parsing is isolated to the infrastructure layer.
+
 ## Migrations
 
 Useful commands:
@@ -80,7 +89,7 @@ dotnet ef database update --project Exercise.Infrastructure --startup-project Ex
 dotnet ef migrations script --project Exercise.Infrastructure --startup-project Exercise.API
 ```
 
-The latest migration is `AddConcurrencyTokensAndIndexes`.
+The latest migrations are `AddExerciseExternalMetadata` and `AddExerciseCategory`.
 
 ## Build
 

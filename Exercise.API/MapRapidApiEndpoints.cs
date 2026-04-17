@@ -12,13 +12,13 @@ namespace Exercise.API
                 async (IMediator mediator, CancellationToken ct) =>
                 {
                     var result = await mediator.Send(new SyncExercisesCommand(), ct);
-                    return Results.Ok(new { synced = result.Added, total = result.TotalFetched });
+                    return Results.Ok(new { added = result.Added, updated = result.Updated, total = result.TotalFetched });
                 })
             .WithTags("Exercises")
             .WithOpenApi()
             .WithName("SyncExercisesFromExternalProvider")
             .WithSummary("Sync exercises from the configured external provider (admin only)")
-            .WithDescription("Fetches exercises from the external API provider and inserts any that are not already present. Returns the count of newly added exercises and total fetched. Requires Admin role.")
+            .WithDescription("Fetches exercises from the external API provider, inserts missing records, and updates existing records with refreshed external metadata such as instructions, descriptions, difficulty, category, and any provider media URLs that are available. Returns the counts of added, updated, and total fetched exercises. Requires Admin role.")
             .RequireAuthorization("Admin")
             .RequireRateLimiting("api")
             .Produces(StatusCodes.Status200OK)

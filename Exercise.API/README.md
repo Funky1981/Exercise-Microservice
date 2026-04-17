@@ -105,6 +105,14 @@ Expected configuration keys:
 
 Secrets should be supplied through user secrets or environment variables.
 
+The current sync path is provider-agnostic at the application layer. If you replace the current catalogue provider, the main changes are expected in the infrastructure layer:
+
+- implement `IExerciseDataProvider`
+- register the new provider in `Exercise.Infrastructure/Data/DependencyInjection.cs`
+- update provider-specific config keys and `HttpClient` setup
+
+The `POST /api/exercises/sync` endpoint and the local exercise database remain the stable contract for the rest of the system.
+
 ## Versioning
 
 - API versioning is enabled.

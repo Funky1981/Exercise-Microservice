@@ -38,27 +38,73 @@ namespace Exercise.Infrastructure.ExternalApis
             response.EnsureSuccessStatusCode();
 
             var json = await response.Content.ReadAsStringAsync(cancellationToken);
-            var exercises = JsonSerializer.Deserialize<List<RapidApiExercise>>(json, JsonOptions) ?? [];
+            using var document = JsonDocument.Parse(json);
+            var exercises = ParseExercises(document.RootElement);
 
             _logger.LogInformation("Fetched {Count} exercises from RapidAPI (limit={Limit}, offset={Offset}).",
                 exercises.Count, limit, offset);
 
-            return exercises
-                .Select(e => new ExternalExerciseDto(
-                    e.Name,
-                    e.BodyPart,
-                    e.Target,
-                    e.Equipment,
-                    e.GifUrl))
+            return exercises;
+        }
+
+        private static IReadOnlyList<ExternalExerciseDto> ParseExercises(JsonElement root)
+        {
+            if (root.ValueKind != JsonValueKind.Array)
+            {
+                return [];
+            }
+
+            var exercises = new List<ExternalExerciseDto>();
+            foreach (var item in root.EnumerateArray())
+            {
+                exercises.Add(new ExternalExerciseDto(
+                    GetString(item, "id"),
+                    GetString(item, "name") ?? string.Empty,
+                    GetString(item, "bodyPart") ?? string.Empty,
+                    GetString(item, "target") ?? string.Empty,
+                    GetString(item, "equipment"),
+                    GetString(item, "gifUrl"),
+                    GetStringArray(item, "secondaryMuscles"),
+                    GetStringArray(item, "instructions"),
+                    item.GetRawText(),
+                    "RapidApiExerciseDb",
+                    GetString(item, "description"),
+                    GetString(item, "difficulty"),
+                    GetString(item, "category")));
+            }
+
+            return exercises.AsReadOnly();
+        }
+
+        private static string? GetString(JsonElement item, string propertyName)
+        {
+            if (!item.TryGetProperty(propertyName, out var value))
+            {
+                return null;
+            }
+
+            return value.ValueKind switch
+            {
+                JsonValueKind.Null => null,
+                JsonValueKind.String => value.GetString(),
+                _ => value.ToString()
+            };
+        }
+
+        private static IReadOnlyList<string> GetStringArray(JsonElement item, string propertyName)
+        {
+            if (!item.TryGetProperty(propertyName, out var value) || value.ValueKind != JsonValueKind.Array)
+            {
+                return [];
+            }
+
+            return value
+                .EnumerateArray()
+                .Select(entry => entry.GetString())
+                .Where(entry => !string.IsNullOrWhiteSpace(entry))
+                .Cast<string>()
                 .ToList()
                 .AsReadOnly();
         }
-
-        private sealed record RapidApiExercise(
-            [property: JsonPropertyName("name")] string Name,
-            [property: JsonPropertyName("bodyPart")] string BodyPart,
-            [property: JsonPropertyName("target")] string Target,
-            [property: JsonPropertyName("equipment")] string? Equipment,
-            [property: JsonPropertyName("gifUrl")] string? GifUrl);
     }
 }

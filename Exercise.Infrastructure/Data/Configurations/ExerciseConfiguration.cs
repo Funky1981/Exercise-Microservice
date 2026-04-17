@@ -25,6 +25,12 @@ namespace Exercise.Infrastructure.Data.Configurations
                 .IsRequired()
                 .HasMaxLength(200);
 
+            builder.Property(e => e.ExternalId)
+                .HasMaxLength(100);
+
+            builder.Property(e => e.SourceProvider)
+                .HasMaxLength(100);
+
             builder.Property(e => e.BodyPart)
                 .IsRequired()
                 .HasMaxLength(100);
@@ -39,13 +45,26 @@ namespace Exercise.Infrastructure.Data.Configurations
             builder.Property(e => e.GifUrl)
                 .HasMaxLength(500);
 
+            builder.Property(e => e.SecondaryMusclesJson)
+                .HasColumnType("nvarchar(max)");
+
+            builder.Property(e => e.InstructionsJson)
+                .HasColumnType("nvarchar(max)");
+
+            builder.Property(e => e.SourcePayloadJson)
+                .HasColumnType("nvarchar(max)");
+
             builder.Property(e => e.Description)
                 .HasMaxLength(1000);
 
             builder.Property(e => e.Difficulty)
                 .HasMaxLength(50);
+
+            builder.Property(e => e.Category)
+                .HasMaxLength(100);
             
             builder.HasIndex(e => e.BodyPart);
+            builder.HasIndex(e => e.ExternalId);
 
             // Soft delete
             builder.Property<bool>("IsDeleted").HasDefaultValue(false);

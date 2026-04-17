@@ -22,9 +22,17 @@ namespace Exercise.Application.Abstractions.Services
     /// Provider-agnostic DTO representing an exercise from any external source.
     /// </summary>
     public record ExternalExerciseDto(
+        string? ExternalId,
         string Name,
         string BodyPart,
         string TargetMuscle,
         string? Equipment = null,
-        string? GifUrl = null);
+        string? GifUrl = null,
+        IReadOnlyList<string>? SecondaryMuscles = null,
+        IReadOnlyList<string>? Instructions = null,
+        string? SourcePayloadJson = null,
+        string? SourceProvider = null,
+        string? Description = null,
+        string? Difficulty = null,
+        string? Category = null);
 }

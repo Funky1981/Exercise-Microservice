@@ -6,18 +6,26 @@ namespace Exercise.Domain.Entities
     public class Exercise
     {
         public Guid Id { get; private set; }
+        public string? ExternalId { get; private set; }
+        public string? SourceProvider { get; private set; }
         public string Name { get; private set; } = null!;
         public string BodyPart { get; private set; } = null!;
         public string? Equipment { get; private set; }
         public string TargetMuscle { get; private set; } = null!;
         public string? GifUrl { get; private set; }
+        public string? SecondaryMusclesJson { get; private set; }
+        public string? InstructionsJson { get; private set; }
+        public string? SourcePayloadJson { get; private set; }
         public string? Description { get; private set; }
         public string? Difficulty { get; private set; }
+        public string? Category { get; private set; }
 
         private Exercise() { } // For EF Core
 
-        public Exercise(Guid id, string name, string bodyPart, string targetMuscle, 
-            string? equipment = null, string? gifUrl = null, string? description = null, string? difficulty = null)
+        public Exercise(Guid id, string name, string bodyPart, string targetMuscle,
+            string? equipment = null, string? gifUrl = null, string? description = null, string? difficulty = null,
+            string? externalId = null, string? sourceProvider = null, string? secondaryMusclesJson = null,
+            string? instructionsJson = null, string? sourcePayloadJson = null, string? category = null)
         {
             Guard.AgainstEmptyGuid(id, nameof(id));
             Guard.AgainstNullOrWhiteSpace(name, nameof(name));
@@ -25,13 +33,19 @@ namespace Exercise.Domain.Entities
             Guard.AgainstNullOrWhiteSpace(targetMuscle, nameof(targetMuscle));
 
             Id = id;
+            ExternalId = externalId;
+            SourceProvider = sourceProvider;
             Name = name;
             BodyPart = bodyPart;
             TargetMuscle = targetMuscle;
             Equipment = equipment;
             GifUrl = gifUrl;
+            SecondaryMusclesJson = secondaryMusclesJson;
+            InstructionsJson = instructionsJson;
+            SourcePayloadJson = sourcePayloadJson;
             Description = description;
             Difficulty = difficulty;
+            Category = category;
         }
 
         public void UpdateDescription(string? description)
@@ -45,7 +59,9 @@ namespace Exercise.Domain.Entities
         }
 
         public void Update(string name, string bodyPart, string targetMuscle,
-            string? equipment = null, string? gifUrl = null, string? description = null, string? difficulty = null)
+            string? equipment = null, string? gifUrl = null, string? description = null, string? difficulty = null,
+            string? externalId = null, string? sourceProvider = null, string? secondaryMusclesJson = null,
+            string? instructionsJson = null, string? sourcePayloadJson = null, string? category = null)
         {
             Guard.AgainstNullOrWhiteSpace(name, nameof(name));
             Guard.AgainstNullOrWhiteSpace(bodyPart, nameof(bodyPart));
@@ -56,8 +72,45 @@ namespace Exercise.Domain.Entities
             TargetMuscle = targetMuscle;
             Equipment = equipment;
             GifUrl = gifUrl;
+            ExternalId = externalId;
+            SourceProvider = sourceProvider;
+            SecondaryMusclesJson = secondaryMusclesJson;
+            InstructionsJson = instructionsJson;
+            SourcePayloadJson = sourcePayloadJson;
             Description = description;
             Difficulty = difficulty;
+            Category = category;
+        }
+
+        public void ApplyExternalData(
+            string name,
+            string bodyPart,
+            string targetMuscle,
+            string? equipment,
+            string? gifUrl,
+            string? externalId,
+            string? sourceProvider,
+            string? secondaryMusclesJson,
+            string? instructionsJson,
+            string? sourcePayloadJson,
+            string? description,
+            string? difficulty,
+            string? category)
+        {
+            Update(
+                name,
+                bodyPart,
+                targetMuscle,
+                equipment,
+                gifUrl,
+                description,
+                difficulty,
+                externalId,
+                sourceProvider,
+                secondaryMusclesJson,
+                instructionsJson,
+                sourcePayloadJson,
+                category);
         }
 
         public bool RequiresEquipment()

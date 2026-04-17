@@ -23,6 +23,11 @@ namespace Exercise.Application.Abstractions.Repositories
         Task<IReadOnlyList<ExerciseEntity>> GetAllAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Retrieves all exercises as tracked entities for bulk sync/update flows.
+        /// </summary>
+        Task<IReadOnlyList<ExerciseEntity>> GetAllForUpdateAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Retrieves a paged slice of the exercise catalogue.
         /// </summary>
         Task<(IReadOnlyList<ExerciseEntity> Items, int TotalCount)> GetPagedAsync(

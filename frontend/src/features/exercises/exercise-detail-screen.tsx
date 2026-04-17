@@ -151,7 +151,7 @@ export function ExerciseDetailScreen({ exerciseId }: ExerciseDetailScreenProps) 
           <View style={styles.mediaPlaceholder}>
             <Text style={styles.mediaPlaceholderIcon}>FIT</Text>
             <Text style={styles.mediaPlaceholderText}>
-              No exercise GIF is stored for this item yet.
+              The current provider did not return media for this exercise.
             </Text>
           </View>
         )}
@@ -170,7 +170,18 @@ export function ExerciseDetailScreen({ exerciseId }: ExerciseDetailScreenProps) 
           <Text style={styles.metaLabel}>Difficulty</Text>
           <Text style={styles.metaValue}>{exercise.difficulty ?? 'Not set'}</Text>
         </GlowCard>
+        <GlowCard style={styles.metaCard}>
+          <Text style={styles.metaLabel}>Category</Text>
+          <Text style={styles.metaValue}>{exercise.category ?? 'Not set'}</Text>
+        </GlowCard>
       </View>
+
+      {exercise.secondaryMuscles && exercise.secondaryMuscles.length > 0 ? (
+        <GlowCard>
+          <Text style={styles.sectionTitle}>Secondary muscles</Text>
+          <Text style={styles.body}>{exercise.secondaryMuscles.join(' · ')}</Text>
+        </GlowCard>
+      ) : null}
 
       <GlowCard>
         <Text style={styles.sectionTitle}>Description</Text>
@@ -178,6 +189,19 @@ export function ExerciseDetailScreen({ exerciseId }: ExerciseDetailScreenProps) 
           {exercise.description ?? 'No description is stored for this exercise yet.'}
         </Text>
       </GlowCard>
+
+      {exercise.instructions && exercise.instructions.length > 0 ? (
+        <GlowCard>
+          <Text style={styles.sectionTitle}>Instructions</Text>
+          <View style={styles.instructionsList}>
+            {exercise.instructions.map((instruction, index) => (
+              <Text key={`${exercise.id}-instruction-${index}`} style={styles.body}>
+                {index + 1}. {instruction}
+              </Text>
+            ))}
+          </View>
+        </GlowCard>
+      ) : null}
 
       <GlowCard>
         <Text style={styles.sectionTitle}>Actions</Text>
@@ -300,6 +324,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: tokens.spacing.sm,
+  },
+  instructionsList: {
+    gap: tokens.spacing.xs,
   },
   actionBtn: {
     flexGrow: 1,
