@@ -2,62 +2,32 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Exercise API",
+            "name": "Start App",
             "type": "node-terminal",
             "request": "launch",
-            "command": "dotnet run --project Exercise.API --launch-profile http",
-            "cwd": "${workspaceFolder}",
-            "env": {
-                "ASPNETCORE_ENVIRONMENT": "Development"
-            }
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\Start-ExerciseDev.ps1",
+            "cwd": "${workspaceFolder}"
         },
         {
-            "name": "Exercise API (watch)",
+            "name": "Rebuild API",
             "type": "node-terminal",
             "request": "launch",
-            "command": "dotnet watch run --project Exercise.API --launch-profile http",
-            "cwd": "${workspaceFolder}",
-            "env": {
-                "ASPNETCORE_ENVIRONMENT": "Development"
-            }
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\Start-ExerciseDev.ps1 -Rebuild",
+            "cwd": "${workspaceFolder}"
         },
         {
-            "name": "Expo Web",
+            "name": "Rebuild All + Sync",
             "type": "node-terminal",
             "request": "launch",
-            "command": "npm run web",
-            "cwd": "${workspaceFolder}/frontend",
-            "env": {
-                "EXPO_PUBLIC_API_BASE_URL": "http://localhost:5034"
-            }
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\Start-ExerciseDev.ps1 -RebuildAll -RunSync",
+            "cwd": "${workspaceFolder}"
         },
         {
-            "name": "Expo Dev Server",
+            "name": "Local API",
             "type": "node-terminal",
             "request": "launch",
-            "command": "npm run start",
-            "cwd": "${workspaceFolder}/frontend",
-            "env": {
-                "EXPO_PUBLIC_API_BASE_URL": "http://localhost:5034"
-            }
-        }
-    ],
-    "compounds": [
-        {
-            "name": "Full Stack: API + Expo Web",
-            "configurations": [
-                "Exercise API",
-                "Expo Web"
-            ],
-            "stopAll": true
-        },
-        {
-            "name": "Full Stack: API + Expo Dev Server",
-            "configurations": [
-                "Exercise API (watch)",
-                "Expo Dev Server"
-            ],
-            "stopAll": true
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\Start-ExerciseDev.ps1 -StartApiLocally -SkipDocker",
+            "cwd": "${workspaceFolder}"
         }
     ]
 }
