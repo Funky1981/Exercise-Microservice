@@ -8,6 +8,11 @@ namespace Exercise.Application.Features.Workouts.Dtos
         public string BodyPart { get; set; } = string.Empty;
         public string TargetMuscle { get; set; } = string.Empty;
         public string? Equipment { get; set; }
+        public string? GifUrl { get; set; }
+        public string? MediaUrl { get; set; }
+        public string? MediaKind { get; set; }
+        public string? MediaThumbnailUrl { get; set; }
+        public string? MediaSourceProvider { get; set; }
         public int Sets { get; set; }
         public int Reps { get; set; }
         public int RestSeconds { get; set; }

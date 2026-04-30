@@ -15,12 +15,17 @@ namespace Exercise.Domain.Entities
         public string? GifUrl { get; private set; }
         public string? MediaUrl { get; private set; }
         public string? MediaKind { get; private set; }
+        public string? MediaThumbnailUrl { get; private set; }
+        public string? MediaSourcePageUrl { get; private set; }
+        public string? MediaSourceProvider { get; private set; }
+        public string? MediaSourcePayloadJson { get; private set; }
         public string? SecondaryMusclesJson { get; private set; }
         public string? InstructionsJson { get; private set; }
         public string? SourcePayloadJson { get; private set; }
         public string? Description { get; private set; }
         public string? Difficulty { get; private set; }
         public string? Category { get; private set; }
+        public ICollection<ExerciseMediaCandidate> MediaCandidates { get; private set; } = [];
 
         private Exercise() { } // For EF Core
 
@@ -28,7 +33,8 @@ namespace Exercise.Domain.Entities
             string? equipment = null, string? gifUrl = null, string? description = null, string? difficulty = null,
             string? externalId = null, string? sourceProvider = null, string? secondaryMusclesJson = null,
             string? instructionsJson = null, string? sourcePayloadJson = null, string? category = null,
-            string? mediaUrl = null, string? mediaKind = null)
+            string? mediaUrl = null, string? mediaKind = null, string? mediaThumbnailUrl = null,
+            string? mediaSourcePageUrl = null, string? mediaSourceProvider = null, string? mediaSourcePayloadJson = null)
         {
             Guard.AgainstEmptyGuid(id, nameof(id));
             Guard.AgainstNullOrWhiteSpace(name, nameof(name));
@@ -45,6 +51,10 @@ namespace Exercise.Domain.Entities
             GifUrl = gifUrl;
             MediaUrl = mediaUrl;
             MediaKind = mediaKind;
+            MediaThumbnailUrl = mediaThumbnailUrl;
+            MediaSourcePageUrl = mediaSourcePageUrl;
+            MediaSourceProvider = mediaSourceProvider;
+            MediaSourcePayloadJson = mediaSourcePayloadJson;
             SecondaryMusclesJson = secondaryMusclesJson;
             InstructionsJson = instructionsJson;
             SourcePayloadJson = sourcePayloadJson;
@@ -67,7 +77,8 @@ namespace Exercise.Domain.Entities
             string? equipment = null, string? gifUrl = null, string? description = null, string? difficulty = null,
             string? externalId = null, string? sourceProvider = null, string? secondaryMusclesJson = null,
             string? instructionsJson = null, string? sourcePayloadJson = null, string? category = null,
-            string? mediaUrl = null, string? mediaKind = null)
+            string? mediaUrl = null, string? mediaKind = null, string? mediaThumbnailUrl = null,
+            string? mediaSourcePageUrl = null, string? mediaSourceProvider = null, string? mediaSourcePayloadJson = null)
         {
             Guard.AgainstNullOrWhiteSpace(name, nameof(name));
             Guard.AgainstNullOrWhiteSpace(bodyPart, nameof(bodyPart));
@@ -80,6 +91,10 @@ namespace Exercise.Domain.Entities
             GifUrl = gifUrl;
             MediaUrl = mediaUrl;
             MediaKind = mediaKind;
+            MediaThumbnailUrl = mediaThumbnailUrl;
+            MediaSourcePageUrl = mediaSourcePageUrl;
+            MediaSourceProvider = mediaSourceProvider;
+            MediaSourcePayloadJson = mediaSourcePayloadJson;
             ExternalId = externalId;
             SourceProvider = sourceProvider;
             SecondaryMusclesJson = secondaryMusclesJson;
@@ -105,7 +120,11 @@ namespace Exercise.Domain.Entities
             string? difficulty,
             string? category,
             string? mediaUrl,
-            string? mediaKind)
+            string? mediaKind,
+            string? mediaThumbnailUrl,
+            string? mediaSourcePageUrl,
+            string? mediaSourceProvider,
+            string? mediaSourcePayloadJson)
         {
             Update(
                 name,
@@ -122,7 +141,42 @@ namespace Exercise.Domain.Entities
                 sourcePayloadJson,
                 category,
                 mediaUrl,
-                mediaKind);
+                mediaKind,
+                mediaThumbnailUrl,
+                mediaSourcePageUrl,
+                mediaSourceProvider,
+                mediaSourcePayloadJson);
+        }
+
+        public void ApplyMediaData(
+            string mediaUrl,
+            string? mediaKind,
+            string? mediaThumbnailUrl,
+            string? mediaSourcePageUrl,
+            string? mediaSourceProvider,
+            string? mediaSourcePayloadJson)
+        {
+            MediaUrl = mediaUrl;
+            MediaKind = mediaKind;
+            MediaThumbnailUrl = mediaThumbnailUrl;
+            MediaSourcePageUrl = mediaSourcePageUrl;
+            MediaSourceProvider = mediaSourceProvider;
+            MediaSourcePayloadJson = mediaSourcePayloadJson;
+
+            if (string.IsNullOrWhiteSpace(GifUrl) && string.Equals(mediaKind, "image/gif", StringComparison.OrdinalIgnoreCase))
+            {
+                GifUrl = mediaUrl;
+            }
+        }
+
+        public void ClearMediaData()
+        {
+            MediaUrl = null;
+            MediaKind = null;
+            MediaThumbnailUrl = null;
+            MediaSourcePageUrl = null;
+            MediaSourceProvider = null;
+            MediaSourcePayloadJson = null;
         }
 
         public bool RequiresEquipment()

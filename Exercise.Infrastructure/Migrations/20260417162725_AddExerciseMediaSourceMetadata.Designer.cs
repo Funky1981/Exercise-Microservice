@@ -4,6 +4,7 @@ using Exercise.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Exercise.Infrastructure.Migrations
 {
     [DbContext(typeof(ExerciseDbContext))]
-    partial class ExerciseDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260417162725_AddExerciseMediaSourceMetadata")]
+    partial class AddExerciseMediaSourceMetadata
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -94,7 +97,8 @@ namespace Exercise.Infrastructure.Migrations
                         .HasDefaultValue("");
 
                     b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<string>("Difficulty")
                         .HasMaxLength(50)
@@ -224,76 +228,6 @@ namespace Exercise.Infrastructure.Migrations
                     b.HasIndex("UserId", "Date");
 
                     b.ToTable("ExerciseLogs", (string)null);
-                });
-
-            modelBuilder.Entity("Exercise.Domain.Entities.ExerciseMediaCandidate", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("ExerciseId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<bool>("IsSelected")
-                        .HasColumnType("bit");
-
-                    b.Property<decimal>("MatchScore")
-                        .HasPrecision(5, 4)
-                        .HasColumnType("decimal(5,4)");
-
-                    b.Property<string>("MediaKind")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("MediaUrl")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("ReviewNotes")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("ReviewStatus")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime?>("ReviewedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("SourcePageUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("SourcePayloadJson")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("SourceProvider")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("SourceTitle")
-                        .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
-
-                    b.Property<string>("ThumbnailUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ExerciseId");
-
-                    b.HasIndex("ExerciseId", "SourceProvider", "MediaUrl")
-                        .IsUnique();
-
-                    b.ToTable("ExerciseMediaCandidates", (string)null);
                 });
 
             modelBuilder.Entity("Exercise.Domain.Entities.User", b =>
@@ -566,17 +500,6 @@ namespace Exercise.Infrastructure.Migrations
                     b.Navigation("_exercisesCompleted");
                 });
 
-            modelBuilder.Entity("Exercise.Domain.Entities.ExerciseMediaCandidate", b =>
-                {
-                    b.HasOne("Exercise.Domain.Entities.Exercise", "Exercise")
-                        .WithMany("MediaCandidates")
-                        .HasForeignKey("ExerciseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Exercise");
-                });
-
             modelBuilder.Entity("Exercise.Domain.Entities.User", b =>
                 {
                     b.OwnsOne("Exercise.Domain.ValueObjects.Height", "Height", b1 =>
@@ -650,11 +573,6 @@ namespace Exercise.Infrastructure.Migrations
                         .HasForeignKey("WorkoutsId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("Exercise.Domain.Entities.Exercise", b =>
-                {
-                    b.Navigation("MediaCandidates");
                 });
 
             modelBuilder.Entity("Exercise.Domain.Entities.Workout", b =>

@@ -100,27 +100,43 @@ Expected configuration keys:
     "Host": "exercisedb.p.rapidapi.com",
     "Key": ""
   },
-  "ExerciseProvider": {
-    "Provider": "RapidApi"
+  "ExerciseProviders": {
+    "CatalogProviders": [ "RapidApi", "Wger" ],
+    "MediaProviders": [ "Openverse", "WikimediaCommons", "Pexels", "Pixabay" ],
+    "MediaExerciseLimit": 250
   },
   "Wger": {
     "BaseUrl": "https://wger.de/api/v2/",
     "PreferredLanguage": 2
+  },
+  "Openverse": {
+    "BaseUrl": "https://api.openverse.org/v1/"
+  },
+  "WikimediaCommons": {
+    "BaseUrl": "https://commons.wikimedia.org/w/"
+  },
+  "Pexels": {
+    "BaseUrl": "https://api.pexels.com/",
+    "ApiKey": ""
+  },
+  "Pixabay": {
+    "BaseUrl": "https://pixabay.com/",
+    "ApiKey": ""
   }
 }
 ```
 
 Secrets should be supplied through user secrets or environment variables.
 
-The current sync path is provider-agnostic at the application layer. If you replace the current catalogue provider, the main changes are expected in the infrastructure layer:
+The current sync path is provider-agnostic at the application layer. If you add or replace a catalogue or media provider, the main changes are expected in the infrastructure layer:
 
-- implement `IExerciseDataProvider`
+- implement `IExerciseCatalogProvider` or `IExerciseMediaProvider`
 - add the new provider to `Exercise.Infrastructure/Data/DependencyInjection.cs`
 - update provider-specific config keys and `HttpClient` setup
 
-Select the active provider with `ExerciseProvider:Provider` in configuration. Supported values in the current code are `RapidApi` and `Wger`.
+Select enabled providers with `ExerciseProviders:CatalogProviders` and `ExerciseProviders:MediaProviders` in configuration. The current code supports `RapidApi` and `Wger` for catalogues, and `Openverse`, `WikimediaCommons`, `Pexels`, and `Pixabay` for media enrichment.
 
-The `POST /api/exercises/sync` endpoint and the local exercise database remain the stable contract for the rest of the system.
+The `POST /api/exercises/sync` endpoint and the local exercise database remain the stable contract for the rest of the system. The sync endpoint also accepts an optional `mediaExerciseLimit` query value to cap how many media-less exercises are enriched in one run.
 
 ## Versioning
 

@@ -26,6 +26,8 @@ namespace Exercise.Infrastructure.Data
         /// </summary>
         public DbSet<ExerciseEntity> Exercises { get; set; } = null!;
 
+        public DbSet<ExerciseMediaCandidate> ExerciseMediaCandidates { get; set; } = null!;
+
         /// <summary>
         /// Gets or sets the Users entity set
         /// Represents the Users table in the database

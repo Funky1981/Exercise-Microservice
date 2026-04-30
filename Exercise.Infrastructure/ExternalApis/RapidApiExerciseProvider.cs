@@ -10,7 +10,7 @@ namespace Exercise.Infrastructure.ExternalApis
     /// To swap providers, implement <see cref="IExerciseDataProvider"/> and register
     /// the new implementation in DI — no other code changes required.
     /// </summary>
-    public class RapidApiExerciseProvider : IExerciseDataProvider
+    public sealed class RapidApiExerciseProvider : IExerciseCatalogProvider
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<RapidApiExerciseProvider> _logger;
@@ -20,6 +20,8 @@ namespace Exercise.Infrastructure.ExternalApis
             PropertyNameCaseInsensitive = true
         };
 
+        public string ProviderName => "RapidApi";
+
         public RapidApiExerciseProvider(
             IHttpClientFactory httpClientFactory,
             ILogger<RapidApiExerciseProvider> logger)
@@ -28,23 +30,32 @@ namespace Exercise.Infrastructure.ExternalApis
             _logger = logger;
         }
 
-        public async Task<IReadOnlyList<ExternalExerciseDto>> FetchExercisesAsync(
-            int limit, int offset, CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<ExternalExerciseDto>> FetchExercisesAsync(CancellationToken cancellationToken = default)
         {
-            var client = _httpClientFactory.CreateClient("ExerciseApi");
+            var client = _httpClientFactory.CreateClient("RapidApiExerciseApi");
+            var allExercises = new List<ExternalExerciseDto>();
+            var offset = 0;
+            const int pageSize = 100;
 
-            var response = await client.GetAsync(
-                $"exercises?limit={limit}&offset={offset}", cancellationToken);
-            response.EnsureSuccessStatusCode();
+            for (var page = 0; page < 500; page++)
+            {
+                var response = await client.GetAsync($"exercises?limit={pageSize}&offset={offset}", cancellationToken);
+                response.EnsureSuccessStatusCode();
 
-            var json = await response.Content.ReadAsStringAsync(cancellationToken);
-            using var document = JsonDocument.Parse(json);
-            var exercises = ParseExercises(document.RootElement);
+                var json = await response.Content.ReadAsStringAsync(cancellationToken);
+                using var document = JsonDocument.Parse(json);
+                var batch = ParseExercises(document.RootElement);
+                if (batch.Count == 0)
+                {
+                    break;
+                }
 
-            _logger.LogInformation("Fetched {Count} exercises from RapidAPI (limit={Limit}, offset={Offset}).",
-                exercises.Count, limit, offset);
+                allExercises.AddRange(batch);
+                offset += batch.Count;
+            }
 
-            return exercises;
+            _logger.LogInformation("Fetched {Count} exercises from RapidAPI.", allExercises.Count);
+            return allExercises.AsReadOnly();
         }
 
         private static IReadOnlyList<ExternalExerciseDto> ParseExercises(JsonElement root)
@@ -58,7 +69,7 @@ namespace Exercise.Infrastructure.ExternalApis
             foreach (var item in root.EnumerateArray())
             {
                 exercises.Add(new ExternalExerciseDto(
-                    GetString(item, "id"),
+                    PrefixExternalId(GetString(item, "id")),
                     GetString(item, "name") ?? string.Empty,
                     GetString(item, "bodyPart") ?? string.Empty,
                     GetString(item, "target") ?? string.Empty,
@@ -76,6 +87,11 @@ namespace Exercise.Infrastructure.ExternalApis
             }
 
             return exercises.AsReadOnly();
+        }
+
+        private static string? PrefixExternalId(string? externalId)
+        {
+            return string.IsNullOrWhiteSpace(externalId) ? null : $"rapidapi:{externalId}";
         }
 
         private static string? GetString(JsonElement item, string propertyName)

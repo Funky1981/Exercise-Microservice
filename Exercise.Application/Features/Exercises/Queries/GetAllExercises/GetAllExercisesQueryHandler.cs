@@ -35,6 +35,7 @@ namespace Exercise.Application.Features.Exercises.Queries.GetAllExercises
                 request.Search,
                 request.BodyPart,
                 request.Equipment,
+                request.MediaOnly,
                 regionBodyParts,
                 otherRegionOnly,
                 cancellationToken);

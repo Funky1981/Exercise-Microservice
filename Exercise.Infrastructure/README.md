@@ -68,17 +68,24 @@ This allows the API layer to return `409 Conflict` on stale overlapping writes.
 The current exercise sync implementation uses:
 
 - `IExerciseDataProvider`
+- `IExerciseCatalogProvider`
+- `IExerciseMediaProvider`
 - `RapidApiExerciseProvider`
 - `WgerExerciseProvider`
+- `WgerExerciseMediaProvider`
+- `OpenverseExerciseMediaProvider`
+- `WikimediaCommonsExerciseMediaProvider`
+- `PexelsExerciseMediaProvider`
 
-To switch providers with minimal code changes:
+To extend providers with minimal code changes:
 
 - Keep `IExerciseDataProvider` as the application boundary.
-- Add a new provider implementation under `ExternalApis/`.
-- Select that implementation through `ExerciseProvider:Provider` in configuration.
+- Add a new catalog or media provider implementation under `ExternalApis/`.
+- Register it in `DependencyInjection`.
+- Add it to `ExerciseProviders:CatalogProviders` or `ExerciseProviders:MediaProviders` in configuration.
 - Configure its `HttpClient` and provider-specific settings in the same DI file.
 
-The sync pipeline, persistence model, API endpoints, and frontend screens now work against the provider-agnostic DTO returned by `IExerciseDataProvider`, so provider-specific parsing is isolated to the infrastructure layer. The app currently ships with `RapidApiExerciseProvider` and `WgerExerciseProvider`.
+The sync pipeline, persistence model, API endpoints, and frontend screens now work against provider-agnostic DTOs, so provider-specific parsing is isolated to the infrastructure layer. Catalog ingestion and media enrichment are configured separately, while the local database remains the runtime source of truth.
 
 ## Migrations
 
@@ -90,7 +97,7 @@ dotnet ef database update --project Exercise.Infrastructure --startup-project Ex
 dotnet ef migrations script --project Exercise.Infrastructure --startup-project Exercise.API
 ```
 
-The latest migrations are `AddExerciseExternalMetadata`, `AddExerciseCategory`, and `AddExerciseMediaFields`.
+The latest migrations are `AddExerciseExternalMetadata`, `AddExerciseCategory`, `AddExerciseMediaFields`, and `AddExerciseMediaSourceMetadata`.
 
 ## Build
 

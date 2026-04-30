@@ -51,6 +51,18 @@ namespace Exercise.Infrastructure.Data.Configurations
             builder.Property(e => e.MediaKind)
                 .HasMaxLength(50);
 
+            builder.Property(e => e.MediaThumbnailUrl)
+                .HasMaxLength(500);
+
+            builder.Property(e => e.MediaSourcePageUrl)
+                .HasMaxLength(500);
+
+            builder.Property(e => e.MediaSourceProvider)
+                .HasMaxLength(100);
+
+            builder.Property(e => e.MediaSourcePayloadJson)
+                .HasColumnType("nvarchar(max)");
+
             builder.Property(e => e.SecondaryMusclesJson)
                 .HasColumnType("nvarchar(max)");
 
@@ -61,7 +73,7 @@ namespace Exercise.Infrastructure.Data.Configurations
                 .HasColumnType("nvarchar(max)");
 
             builder.Property(e => e.Description)
-                .HasMaxLength(1000);
+                .HasColumnType("nvarchar(max)");
 
             builder.Property(e => e.Difficulty)
                 .HasMaxLength(50);

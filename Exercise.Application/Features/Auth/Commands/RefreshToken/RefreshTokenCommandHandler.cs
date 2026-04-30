@@ -52,6 +52,7 @@ namespace Exercise.Application.Features.Auth.Commands.RefreshToken
                 UserId             = user.Id,
                 Name               = user.Name,
                 Email              = user.Email,
+                Role               = user.Role,
                 RefreshToken       = newRefreshToken,
                 RefreshTokenExpiry = newRefreshExpiry
             };

@@ -1,3 +1,5 @@
+using ExerciseEntity = Exercise.Domain.Entities.Exercise;
+
 namespace Exercise.Application.Abstractions.Services
 {
     /// <summary>
@@ -7,15 +9,33 @@ namespace Exercise.Application.Abstractions.Services
     /// </summary>
     public interface IExerciseDataProvider
     {
-        /// <summary>
-        /// Fetches exercises from the external provider.
-        /// </summary>
-        /// <param name="limit">Maximum number of exercises to fetch.</param>
-        /// <param name="offset">Offset for pagination.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>A list of exercises from the external source.</returns>
-        Task<IReadOnlyList<ExternalExerciseDto>> FetchExercisesAsync(
-            int limit, int offset, CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<ExternalExerciseDto>> FetchExercisesAsync(CancellationToken cancellationToken = default);
+    }
+
+    public interface IExerciseCatalogProvider
+    {
+        string ProviderName { get; }
+
+        Task<IReadOnlyList<ExternalExerciseDto>> FetchExercisesAsync(CancellationToken cancellationToken = default);
+    }
+
+    public interface IExerciseMediaProvider
+    {
+        string ProviderName { get; }
+
+        bool IsConfigured { get; }
+
+        Task<ExternalExerciseMediaDto?> FindMediaAsync(
+            ExerciseMediaSearchQuery query,
+            CancellationToken cancellationToken = default);
+    }
+
+    public interface IExerciseMediaEnrichmentService
+    {
+        Task<int> EnrichMissingMediaAsync(
+            IReadOnlyCollection<ExerciseEntity> exercises,
+            int? limit = null,
+            CancellationToken cancellationToken = default);
     }
 
     /// <summary>
@@ -37,4 +57,23 @@ namespace Exercise.Application.Abstractions.Services
         string? Description = null,
         string? Difficulty = null,
         string? Category = null);
+
+    public record ExerciseMediaSearchQuery(
+        string Name,
+        string? BodyPart = null,
+        string? TargetMuscle = null,
+        string? Equipment = null,
+        string? ExternalId = null,
+        string? SourceProvider = null,
+        string? SourcePayloadJson = null);
+
+    public record ExternalExerciseMediaDto(
+        string? MediaUrl,
+        string? MediaKind,
+        string? ThumbnailUrl = null,
+        string? SourcePageUrl = null,
+        string? SourceProvider = null,
+        string? SourcePayloadJson = null,
+        string? SourceTitle = null,
+        double MatchScore = 0d);
 }

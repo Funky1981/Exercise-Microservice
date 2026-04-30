@@ -12,6 +12,7 @@ namespace Exercise.Application.Features.Exercises.Queries.GetAllExercises
         public string? Region { get; set; }
         public string? BodyPart { get; set; }
         public string? Equipment { get; set; }
+        public bool MediaOnly { get; set; }
 
         public GetAllExercisesQuery(int pageNumber = 1, int pageSize = 20)
         {

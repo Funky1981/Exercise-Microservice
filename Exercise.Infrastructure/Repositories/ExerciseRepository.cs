@@ -39,11 +39,27 @@ namespace Exercise.Infrastructure.Repositories
             string? search = null,
             string? bodyPart = null,
             string? equipment = null,
+            bool mediaOnly = false,
             IReadOnlyCollection<string>? regionBodyParts = null,
             bool otherRegionOnly = false,
             CancellationToken cancellationToken = default)
         {
             var query = _context.Exercises.AsNoTracking();
+
+            if (mediaOnly)
+            {
+                query = query.Where(exercise =>
+                    exercise.MediaUrl != null
+                    && exercise.MediaSourceProvider != null
+                    && (exercise.MediaKind != null && EF.Functions.Like(exercise.MediaKind, "video/%")
+                        || EF.Functions.Like(exercise.MediaUrl, "%.mp4")
+                        || EF.Functions.Like(exercise.MediaUrl, "%.webm")
+                        || EF.Functions.Like(exercise.MediaUrl, "%.mov")
+                        || EF.Functions.Like(exercise.MediaUrl, "%.m4v")
+                        || EF.Functions.Like(exercise.MediaUrl, "%.avi")
+                        || EF.Functions.Like(exercise.MediaUrl, "%.ogg"))
+                    && (exercise.MediaSourceProvider == "Wger" || exercise.MediaSourceProvider == "CuratedManifest"));
+            }
 
             if (regionBodyParts is { Count: > 0 })
             {

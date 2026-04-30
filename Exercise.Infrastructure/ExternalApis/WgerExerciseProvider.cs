@@ -6,8 +6,10 @@ using System.Text.Json;
 
 namespace Exercise.Infrastructure.ExternalApis
 {
-    public sealed class WgerExerciseProvider : IExerciseDataProvider
+    public sealed class WgerExerciseProvider : IExerciseCatalogProvider
     {
+            public string ProviderName => "Wger";
+
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<WgerExerciseProvider> _logger;
         private readonly int _preferredLanguage;
@@ -27,23 +29,32 @@ namespace Exercise.Infrastructure.ExternalApis
             _preferredLanguage = Math.Max(1, configuration.GetValue<int?>("Wger:PreferredLanguage") ?? 2);
         }
 
-        public async Task<IReadOnlyList<ExternalExerciseDto>> FetchExercisesAsync(
-            int limit,
-            int offset,
-            CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<ExternalExerciseDto>> FetchExercisesAsync(CancellationToken cancellationToken = default)
         {
             var client = _httpClientFactory.CreateClient("WgerExerciseApi");
-            var response = await client.GetAsync($"exerciseinfo/?limit={limit}&offset={offset}", cancellationToken);
-            response.EnsureSuccessStatusCode();
+            var allExercises = new List<ExternalExerciseDto>();
+            var offset = 0;
+            const int pageSize = 200;
 
-            var json = await response.Content.ReadAsStringAsync(cancellationToken);
-            using var document = JsonDocument.Parse(json);
-            var exercises = ParseExercises(document.RootElement, _preferredLanguage);
+            for (var page = 0; page < 500; page++)
+            {
+                var response = await client.GetAsync($"exerciseinfo/?limit={pageSize}&offset={offset}", cancellationToken);
+                response.EnsureSuccessStatusCode();
 
-            _logger.LogInformation("Fetched {Count} exercises from wger (limit={Limit}, offset={Offset}).",
-                exercises.Count, limit, offset);
+                var json = await response.Content.ReadAsStringAsync(cancellationToken);
+                using var document = JsonDocument.Parse(json);
+                var batch = ParseExercises(document.RootElement, _preferredLanguage);
+                if (batch.Count == 0)
+                {
+                    break;
+                }
 
-            return exercises;
+                allExercises.AddRange(batch);
+                offset += batch.Count;
+            }
+
+            _logger.LogInformation("Fetched {Count} exercises from wger.", allExercises.Count);
+            return allExercises.AsReadOnly();
         }
 
         private static IReadOnlyList<ExternalExerciseDto> ParseExercises(JsonElement root, int preferredLanguage)
@@ -64,21 +75,19 @@ namespace Exercise.Infrastructure.ExternalApis
                 var equipment = JoinArrayObjectNames(item, "equipment");
                 var videoUrl = GetFirstArrayObjectString(item, "videos", "video")
                     ?? GetFirstArrayObjectString(item, "videos", "url");
-                var imageUrl = GetFirstArrayObjectString(item, "images", "image")
-                    ?? GetFirstArrayObjectString(item, "images", "url");
-                var mediaUrl = videoUrl ?? imageUrl;
-                var mediaKind = videoUrl is not null ? "video/mp4" : imageUrl is not null ? "image/jpeg" : null;
+                var mediaUrl = videoUrl;
+                var mediaKind = videoUrl is not null ? "video/mp4" : null;
                 var instructions = string.IsNullOrWhiteSpace(description)
                     ? []
                     : SplitParagraphs(description);
 
                 exercises.Add(new ExternalExerciseDto(
-                    GetString(item, "uuid") ?? GetString(item, "id"),
+                    PrefixExternalId(GetString(item, "uuid") ?? GetString(item, "id")),
                     name,
                     bodyPart,
                     targetMuscle,
                     equipment,
-                    imageUrl,
+                    null,
                     mediaUrl,
                     mediaKind,
                     GetArrayObjectNames(item, "muscles_secondary"),
@@ -91,6 +100,11 @@ namespace Exercise.Infrastructure.ExternalApis
             }
 
             return exercises.AsReadOnly();
+        }
+
+        private static string? PrefixExternalId(string? externalId)
+        {
+            return string.IsNullOrWhiteSpace(externalId) ? null : $"wger:{externalId}";
         }
 
         private static JsonElement SelectTranslation(JsonElement item, int preferredLanguage)

@@ -36,6 +36,7 @@ namespace Exercise.Application.Abstractions.Repositories
             string? search = null,
             string? bodyPart = null,
             string? equipment = null,
+            bool mediaOnly = false,
             IReadOnlyCollection<string>? regionBodyParts = null,
             bool otherRegionOnly = false,
             CancellationToken cancellationToken = default);

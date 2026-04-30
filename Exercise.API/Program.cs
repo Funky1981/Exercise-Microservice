@@ -139,7 +139,7 @@ builder.Services.AddOutputCache(options =>
     options.AddPolicy("ExerciseCatalogue", policy =>
         policy
             .Expire(TimeSpan.FromMinutes(5))
-            .SetVaryByQuery("pageNumber", "pageSize")
+            .SetVaryByQuery("pageNumber", "pageSize", "region", "bodyPart", "equipment", "search", "mediaOnly")
             .Tag("exercises"));
 });
 

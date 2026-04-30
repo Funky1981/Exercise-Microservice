@@ -29,4 +29,10 @@
     <ProjectReference Include="..\Exercise.Infrastructure\Exercise.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Update="CuratedMedia\curated-exercise-videos.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

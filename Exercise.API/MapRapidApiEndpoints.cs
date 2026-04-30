@@ -9,16 +9,22 @@ namespace Exercise.API
         public static void MapRapidApiEndpoints(this WebApplication app)
         {
             app.MapPost("/api/exercises/sync",
-                async (IMediator mediator, CancellationToken ct) =>
+                async ([FromQuery] int? mediaExerciseLimit, IMediator mediator, CancellationToken ct) =>
                 {
-                    var result = await mediator.Send(new SyncExercisesCommand(), ct);
-                    return Results.Ok(new { added = result.Added, updated = result.Updated, total = result.TotalFetched });
+                    var result = await mediator.Send(new SyncExercisesCommand(mediaExerciseLimit), ct);
+                    return Results.Ok(new
+                    {
+                        added = result.Added,
+                        updated = result.Updated,
+                        mediaEnriched = result.MediaEnriched,
+                        total = result.TotalFetched
+                    });
                 })
             .WithTags("Exercises")
             .WithOpenApi()
             .WithName("SyncExercisesFromExternalProvider")
-            .WithSummary("Sync exercises from the configured external provider (admin only)")
-            .WithDescription("Fetches exercises from the external API provider, inserts missing records, and updates existing records with refreshed external metadata such as instructions, descriptions, difficulty, category, and any provider media URLs that are available. Returns the counts of added, updated, and total fetched exercises. Requires Admin role.")
+            .WithSummary("Sync exercises from configured catalog and media providers (admin only)")
+            .WithDescription("Fetches exercises from the configured catalog providers, upserts them into the local database, and then enriches missing media from the configured media providers. Returns the counts of added, updated, media-enriched, and total fetched exercises. Requires Admin role.")
             .RequireAuthorization("Admin")
             .RequireRateLimiting("api")
             .Produces(StatusCodes.Status200OK)
