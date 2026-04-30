@@ -12,6 +12,12 @@ import { GlowCard } from '@/components/ui/glow-card';
 import { PrimaryButton } from '@/components/ui/primary-button';
 import { SectionHeading } from '@/components/ui/section-heading';
 import { StatusCard } from '@/components/ui/status-card';
+import {
+  getPlayableExerciseMediaUrl,
+  getPlayableExercisePreviewUrl,
+  hasPlayableExerciseMedia,
+  isVideoExerciseMedia,
+} from '@/features/exercises/exercise-media';
 import { useBreakpoint } from '@/lib/responsive';
 import { useToast } from '@/providers/toast-provider';
 import { useSession } from '@/state/session-context';
@@ -27,6 +33,8 @@ export function ExerciseDetailScreen({ exerciseId }: ExerciseDetailScreenProps) 
   const { showToast } = useToast();
   const queryClient = useQueryClient();
   const [selectedWorkoutId, setSelectedWorkoutId] = useState<string | null>(null);
+  const [reviewingCandidateId, setReviewingCandidateId] = useState<string | null>(null);
+  const isAdmin = session?.role === 'Admin';
 
   const exerciseQuery = useQuery({
     queryKey: exerciseId ? queryKeys.exercises.detail(exerciseId) : ['exercises', 'detail', 'missing'],
@@ -38,6 +46,12 @@ export function ExerciseDetailScreen({ exerciseId }: ExerciseDetailScreenProps) 
     queryKey: queryKeys.workouts.list(session?.userId, 1, 100),
     queryFn: () => apiClient.getWorkouts(1, 100),
     enabled: Boolean(session) && Boolean(exerciseId),
+  });
+
+  const mediaCandidatesQuery = useQuery({
+    queryKey: exerciseId ? queryKeys.exercises.mediaCandidates(exerciseId) : ['exercises', 'media-candidates', 'missing'],
+    queryFn: () => apiClient.getExerciseMediaCandidates(exerciseId!),
+    enabled: Boolean(exerciseId) && isAdmin,
   });
 
   const addToWorkoutMutation = useMutation({
@@ -92,6 +106,48 @@ export function ExerciseDetailScreen({ exerciseId }: ExerciseDetailScreenProps) 
     },
   });
 
+  const approveCandidateMutation = useMutation({
+    mutationFn: (candidateId: string) =>
+      apiClient.approveExerciseMediaCandidate(exerciseId!, candidateId, 'Approved in the exercise review panel.'),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.exercises.detail(exerciseId!) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.exercises.mediaCandidates(exerciseId!) }),
+      ]);
+      setReviewingCandidateId(null);
+      showToast({ tone: 'success', title: 'Media candidate approved' });
+    },
+    onError: (err) => {
+      setReviewingCandidateId(null);
+      showToast({
+        tone: 'error',
+        title: 'Approval failed',
+        message: err instanceof Error ? err.message : 'Try again.',
+      });
+    },
+  });
+
+  const rejectCandidateMutation = useMutation({
+    mutationFn: (candidateId: string) =>
+      apiClient.rejectExerciseMediaCandidate(exerciseId!, candidateId, 'Rejected in the exercise review panel.'),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.exercises.detail(exerciseId!) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.exercises.mediaCandidates(exerciseId!) }),
+      ]);
+      setReviewingCandidateId(null);
+      showToast({ tone: 'success', title: 'Media candidate rejected' });
+    },
+    onError: (err) => {
+      setReviewingCandidateId(null);
+      showToast({
+        tone: 'error',
+        title: 'Rejection failed',
+        message: err instanceof Error ? err.message : 'Try again.',
+      });
+    },
+  });
+
   if (!exerciseId) {
     return (
       <AppScreen>
@@ -127,8 +183,10 @@ export function ExerciseDetailScreen({ exerciseId }: ExerciseDetailScreenProps) 
   }
 
   const exercise = exerciseQuery.data;
-  const preferredMediaUrl = exercise.mediaUrl ?? exercise.gifUrl;
-  const isVideoMedia = exercise.mediaKind?.toLowerCase().startsWith('video') ?? false;
+  const preferredMediaUrl = getPlayableExerciseMediaUrl(exercise);
+  const preferredPreviewUrl = getPlayableExercisePreviewUrl(exercise);
+  const hasExampleMedia = hasPlayableExerciseMedia(exercise);
+  const isVideoDemo = isVideoExerciseMedia(exercise.mediaKind, exercise.mediaUrl);
 
   // Available workouts that don't already contain this exercise
   const availableWorkouts = (workoutsQuery.data?.items ?? []).filter(
@@ -144,18 +202,21 @@ export function ExerciseDetailScreen({ exerciseId }: ExerciseDetailScreenProps) 
       />
 
       <GlowCard style={styles.mediaCard}>
-        {preferredMediaUrl && !isVideoMedia ? (
-          <Image
-            contentFit="cover"
-            source={{ uri: preferredMediaUrl }}
-            style={styles.mediaPreview}
-          />
-        ) : preferredMediaUrl && isVideoMedia ? (
+        {preferredMediaUrl ? (
           <View style={styles.mediaPlaceholder}>
-            <Text style={styles.mediaPlaceholderIcon}>VID</Text>
-            <Text style={styles.mediaPlaceholderText}>
-              Video media is available for this exercise.
-            </Text>
+            {preferredPreviewUrl ? (
+              <Image
+                contentFit="cover"
+                source={{ uri: preferredPreviewUrl }}
+                style={styles.mediaPreview}
+              />
+            ) : null}
+            <View style={styles.videoOverlay}>
+              <Text style={styles.mediaPlaceholderIcon}>VID</Text>
+              <Text style={styles.mediaPlaceholderText}>
+                Verified video is available for this exercise.
+              </Text>
+            </View>
             <PrimaryButton
               label="Open video"
               onPress={() => {
@@ -174,6 +235,104 @@ export function ExerciseDetailScreen({ exerciseId }: ExerciseDetailScreenProps) 
         )}
       </GlowCard>
 
+      <GlowCard>
+        <Text style={styles.sectionTitle}>Media source</Text>
+        <Text style={styles.body}>
+          {hasExampleMedia
+            ? `Video${exercise.mediaSourceProvider ? ` · ${exercise.mediaSourceProvider}` : ''}`
+            : 'No verified example video yet.'}
+        </Text>
+        {preferredMediaUrl ? (
+          <View style={styles.actionsRow}>
+            <PrimaryButton
+              label="Open source page"
+              onPress={() => {
+                void WebBrowser.openBrowserAsync(exercise.mediaSourcePageUrl ?? preferredMediaUrl);
+              }}
+              tone="muted"
+              style={styles.actionBtn}
+            />
+          </View>
+        ) : null}
+      </GlowCard>
+
+      {isAdmin ? (
+        <GlowCard>
+          <Text style={styles.sectionTitle}>Media review</Text>
+          <Text style={styles.body}>
+            Review candidate matches before they become the exercise&apos;s primary media.
+          </Text>
+
+          {mediaCandidatesQuery.isPending ? (
+            <Text style={styles.body}>Loading candidate matches...</Text>
+          ) : mediaCandidatesQuery.isError ? (
+            <Text style={styles.body}>
+              {mediaCandidatesQuery.error instanceof Error ? mediaCandidatesQuery.error.message : 'Unable to load candidates.'}
+            </Text>
+          ) : mediaCandidatesQuery.data && mediaCandidatesQuery.data.length > 0 ? (
+            <View style={styles.candidateList}>
+              {mediaCandidatesQuery.data.map((candidate) => {
+                const isBusy = reviewingCandidateId === candidate.id
+                  && (approveCandidateMutation.isPending || rejectCandidateMutation.isPending);
+
+                return (
+                  <View key={candidate.id} style={styles.candidateCard}>
+                    <View style={styles.candidateHeaderRow}>
+                      <Text style={styles.candidateProvider}>{candidate.sourceProvider}</Text>
+                      <Text style={styles.candidateScore}>{Math.round(candidate.matchScore * 100)}% match</Text>
+                    </View>
+                    <Text style={styles.candidateTitle}>
+                      {candidate.sourceTitle ?? 'Untitled candidate'}
+                    </Text>
+                    <Text style={styles.body}>
+                      Status: {candidate.reviewStatus}{candidate.isSelected ? ' · Active' : ''}
+                    </Text>
+                    <View style={styles.actionsRow}>
+                      <PrimaryButton
+                        label="Open source"
+                        onPress={() => {
+                          const target = candidate.sourcePageUrl ?? candidate.mediaUrl;
+                          if (target) {
+                            void WebBrowser.openBrowserAsync(target);
+                          }
+                        }}
+                        tone="muted"
+                        style={styles.actionBtn}
+                      />
+                      {candidate.reviewStatus !== 'Approved' && candidate.reviewStatus !== 'AutoAccepted' ? (
+                        <PrimaryButton
+                          label="Approve"
+                          onPress={() => {
+                            setReviewingCandidateId(candidate.id);
+                            approveCandidateMutation.mutate(candidate.id);
+                          }}
+                          busy={isBusy && approveCandidateMutation.isPending}
+                          style={styles.actionBtn}
+                        />
+                      ) : null}
+                      {candidate.reviewStatus !== 'Rejected' ? (
+                        <PrimaryButton
+                          label="Reject"
+                          onPress={() => {
+                            setReviewingCandidateId(candidate.id);
+                            rejectCandidateMutation.mutate(candidate.id);
+                          }}
+                          tone="danger"
+                          busy={isBusy && rejectCandidateMutation.isPending}
+                          style={styles.actionBtn}
+                        />
+                      ) : null}
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          ) : (
+            <Text style={styles.body}>No review candidates have been stored for this exercise yet.</Text>
+          )}
+        </GlowCard>
+      ) : null}
+
       <View style={[styles.metaGrid, !isCompact && styles.metaGridWide]}>
         <GlowCard style={styles.metaCard}>
           <Text style={styles.metaLabel}>Target muscle</Text>
@@ -190,6 +349,10 @@ export function ExerciseDetailScreen({ exerciseId }: ExerciseDetailScreenProps) 
         <GlowCard style={styles.metaCard}>
           <Text style={styles.metaLabel}>Category</Text>
           <Text style={styles.metaValue}>{exercise.category ?? 'Not set'}</Text>
+        </GlowCard>
+        <GlowCard style={styles.metaCard}>
+          <Text style={styles.metaLabel}>Catalogue source</Text>
+          <Text style={styles.metaValue}>{exercise.sourceProvider ?? 'Unknown'}</Text>
         </GlowCard>
       </View>
 
@@ -293,6 +456,16 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.surfaceStrong,
     padding: tokens.spacing.xl,
   },
+  videoOverlay: {
+    alignItems: 'center',
+    gap: tokens.spacing.sm,
+    justifyContent: 'center',
+    left: 0,
+    padding: tokens.spacing.lg,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+  },
   mediaPlaceholderIcon: {
     color: tokens.colors.accent,
     fontFamily: tokens.typography.display,
@@ -351,5 +524,37 @@ const styles = StyleSheet.create({
   },
   workoutList: {
     gap: tokens.spacing.sm,
+  },
+  candidateList: {
+    gap: tokens.spacing.md,
+  },
+  candidateCard: {
+    backgroundColor: tokens.colors.surfaceStrong,
+    borderRadius: tokens.radius.lg,
+    gap: tokens.spacing.sm,
+    padding: tokens.spacing.md,
+  },
+  candidateHeaderRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: tokens.spacing.sm,
+  },
+  candidateProvider: {
+    color: tokens.colors.accent,
+    fontFamily: tokens.typography.label,
+    fontSize: 12,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  candidateScore: {
+    color: tokens.colors.textSoft,
+    fontFamily: tokens.typography.label,
+    fontSize: 12,
+  },
+  candidateTitle: {
+    color: tokens.colors.text,
+    fontFamily: tokens.typography.heading,
+    fontSize: 16,
   },
 });

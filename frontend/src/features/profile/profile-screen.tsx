@@ -177,6 +177,14 @@ export function ProfileScreen() {
             tone="muted"
             style={styles.actionButton}
           />
+          {session?.role === 'Admin' ? (
+            <PrimaryButton
+              label="Media review queue"
+              onPress={() => router.push('/(app)/admin/media-review' as Href)}
+              tone="muted"
+              style={styles.actionButton}
+            />
+          ) : null}
         </View>
       </GlowCard>
 

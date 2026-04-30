@@ -25,6 +25,7 @@ import {
   recordRecentExercise,
   toggleFavouriteExercise,
 } from '@/features/exercises/exercise-preferences';
+import { getPlayableExercisePreviewUrl, hasPlayableExerciseMedia } from '@/features/exercises/exercise-media';
 import { useSession } from '@/state/session-context';
 import { tokens } from '@/theme/tokens';
 
@@ -73,8 +74,9 @@ export function ExerciseCataloguePicker({
   const [bodyPart, setBodyPart] = useState('');
   const [equipment, setEquipment] = useState('');
   const [search, setSearch] = useState('');
+  const [mediaOnly, setMediaOnly] = useState(false);
   const deferredSearch = useDeferredValue(search.trim());
-  const hasFilters = Boolean(region || bodyPart || equipment || deferredSearch);
+  const hasFilters = Boolean(region || bodyPart || equipment || deferredSearch || mediaOnly);
   const listRef = useRef<FlatList>(null);
 
   const filtersQuery = useQuery({
@@ -94,8 +96,9 @@ export function ExerciseCataloguePicker({
       bodyPart: bodyPart || null,
       equipment: equipment || null,
       search: deferredSearch || null,
+      mediaOnly,
     }),
-    [bodyPart, deferredSearch, equipment, region]
+    [bodyPart, deferredSearch, equipment, mediaOnly, region]
   );
 
   useEffect(() => {
@@ -141,8 +144,9 @@ export function ExerciseCataloguePicker({
 
     return (catalogueQuery.data?.pages ?? [])
       .flatMap((page) => page.items)
-      .filter((exercise) => !excluded.has(exercise.id));
-  }, [catalogueQuery.data?.pages, excludedExerciseIds]);
+      .filter((exercise) => !excluded.has(exercise.id))
+      .filter((exercise) => (mediaOnly ? hasPlayableExerciseMedia(exercise) : true));
+  }, [catalogueQuery.data?.pages, excludedExerciseIds, mediaOnly]);
 
   const totalCount = catalogueQuery.data?.pages[0]?.totalCount ?? 0;
 
@@ -171,6 +175,15 @@ export function ExerciseCataloguePicker({
     return filtersQuery.data?.equipment ?? [];
   }, [filtersQuery.data?.equipment]);
 
+  function clearAllFilters() {
+    setRegion('');
+    setBodyPart('');
+    setEquipment('');
+    setSearch('');
+    setMediaOnly(false);
+    listRef.current?.scrollToOffset({ offset: 0, animated: true });
+  }
+
   async function markRecent(exerciseId: string) {
     if (!session?.userId) {
       return;
@@ -189,13 +202,6 @@ export function ExerciseCataloguePicker({
     }
 
     onAdd?.(exercise);
-  }
-
-  function clearAllFilters() {
-    setRegion('');
-    setBodyPart('');
-    setEquipment('');
-    setSearch('');
   }
 
   const handleEndReached = useCallback(() => {
@@ -298,6 +304,22 @@ export function ExerciseCataloguePicker({
         </GlowCard>
       ) : null}
 
+      <GlowCard>
+        <Text style={styles.sectionLabel}>Media</Text>
+        <View style={styles.chipRow}>
+          <FilterChip
+            label="All exercises"
+            selected={!mediaOnly}
+            onPress={() => setMediaOnly(false)}
+          />
+          <FilterChip
+            label="Media only"
+            selected={mediaOnly}
+            onPress={() => setMediaOnly((current) => !current)}
+          />
+        </View>
+      </GlowCard>
+
       {/* ── Active filter summary ── */}
       {hasFilters ? (
         <View style={styles.activeFilters}>
@@ -313,6 +335,9 @@ export function ExerciseCataloguePicker({
           ) : null}
           {equipment ? (
             <FilterChip label={equipment} selected onPress={() => setEquipment('')} />
+          ) : null}
+          {mediaOnly ? (
+            <FilterChip label="Media only" selected onPress={() => setMediaOnly(false)} />
           ) : null}
           {deferredSearch ? (
             <FilterChip label={`"${deferredSearch}"`} selected onPress={() => setSearch('')} />
@@ -470,9 +495,7 @@ function CompactExerciseRow({
 }: CompactExerciseRowProps) {
   const [hovered, setHovered] = useState(false);
   const isMultiSelected = selectionMode === 'multi' && selected;
-  const previewUrl = exercise.mediaKind?.toLowerCase().startsWith('video')
-    ? null
-    : (exercise.mediaUrl ?? exercise.gifUrl);
+  const previewUrl = getPlayableExercisePreviewUrl(exercise);
 
   return (
     <Pressable
@@ -503,6 +526,7 @@ function CompactExerciseRow({
           {exercise.bodyPart} · {exercise.targetMuscle}
           {exercise.equipment ? ` · ${exercise.equipment}` : ''}
           {exercise.difficulty ? ` · ${exercise.difficulty}` : ''}
+          {exercise.mediaSourceProvider ? ` · ${exercise.mediaSourceProvider}` : ''}
         </Text>
       </View>
 

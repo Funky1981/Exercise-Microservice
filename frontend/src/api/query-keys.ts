@@ -14,6 +14,8 @@ export const queryKeys = {
       filters?: Record<string, string | null | undefined>
     ) => ['exercises', 'catalogue', pageNumber, pageSize, filters ?? {}] as const,
     detail: (id: string) => ['exercises', 'detail', id] as const,
+    mediaCandidates: (id: string) => ['exercises', 'media-candidates', id] as const,
+    mediaReviewQueue: (limit = 100) => ['exercises', 'media-review-queue', limit] as const,
     filters: () => ['exercises', 'filters'] as const,
   },
   workouts: {

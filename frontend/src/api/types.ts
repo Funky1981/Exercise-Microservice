@@ -6,6 +6,7 @@ export type Session = {
   userId: string;
   name: string;
   email: string;
+  role: string;
 };
 
 export type LoginPayload = {
@@ -25,6 +26,7 @@ export type LoginResponse = {
   userId: string;
   name: string;
   email: string;
+  role: string;
   refreshToken: string;
   refreshTokenExpiry: string;
 };
@@ -58,6 +60,10 @@ export type Exercise = {
   gifUrl?: string | null;
   mediaUrl?: string | null;
   mediaKind?: string | null;
+  mediaThumbnailUrl?: string | null;
+  mediaSourcePageUrl?: string | null;
+  mediaSourceProvider?: string | null;
+  mediaSourcePayloadJson?: string | null;
   secondaryMuscles?: string[];
   instructions?: string[];
   sourcePayloadJson?: string | null;
@@ -66,11 +72,49 @@ export type Exercise = {
   category?: string | null;
 };
 
+export type ExerciseMediaCandidate = {
+  id: string;
+  exerciseId: string;
+  mediaUrl: string;
+  mediaKind?: string | null;
+  thumbnailUrl?: string | null;
+  sourcePageUrl?: string | null;
+  sourceProvider: string;
+  sourcePayloadJson?: string | null;
+  sourceTitle?: string | null;
+  matchScore: number;
+  reviewStatus: string;
+  reviewNotes?: string | null;
+  createdAt: string;
+  reviewedAt?: string | null;
+  isSelected: boolean;
+};
+
+export type ExerciseMediaReviewQueueItem = {
+  id: string;
+  exerciseId: string;
+  exerciseName: string;
+  exerciseBodyPart: string;
+  exerciseTargetMuscle: string;
+  exerciseEquipment?: string | null;
+  mediaUrl: string;
+  mediaKind?: string | null;
+  thumbnailUrl?: string | null;
+  sourcePageUrl?: string | null;
+  sourceProvider: string;
+  sourceTitle?: string | null;
+  matchScore: number;
+  reviewStatus: string;
+  isSelected: boolean;
+  createdAt: string;
+};
+
 export type ExerciseFilters = {
   region?: ExerciseRegion | null;
   bodyPart?: string | null;
   equipment?: string | null;
   search?: string | null;
+  mediaOnly?: boolean;
 };
 
 export type ExerciseFilterOptions = {
@@ -109,6 +153,11 @@ export type WorkoutExercise = {
   bodyPart: string;
   targetMuscle: string;
   equipment?: string | null;
+  gifUrl?: string | null;
+  mediaUrl?: string | null;
+  mediaKind?: string | null;
+  mediaThumbnailUrl?: string | null;
+  mediaSourceProvider?: string | null;
   sets: number;
   reps: number;
   restSeconds: number;

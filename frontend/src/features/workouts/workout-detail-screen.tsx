@@ -7,6 +7,7 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
+import { Image } from 'expo-image';
 
 import { apiClient } from '@/api/client';
 import { queryKeys } from '@/api/query-keys';
@@ -17,6 +18,7 @@ import { PrimaryButton } from '@/components/ui/primary-button';
 import { SectionHeading } from '@/components/ui/section-heading';
 import { StatusCard } from '@/components/ui/status-card';
 import { TextField } from '@/components/ui/text-field';
+import { getPlayableExercisePreviewUrl, hasPlayableExerciseMedia } from '@/features/exercises/exercise-media';
 import { ExerciseSearchPicker } from '@/features/exercises/exercise-search-picker';
 import { sessionStorage } from '@/features/workout-session/session-storage';
 import { formatDuration, formatWorkoutSchedule, minutesToDuration } from '@/lib/format';
@@ -328,6 +330,8 @@ function ExerciseRow({
   const [sets, setSets] = useState(exercise.sets);
   const [reps, setReps] = useState(exercise.reps);
   const [restSeconds, setRestSeconds] = useState(exercise.restSeconds);
+  const previewUrl = getWorkoutExercisePreviewUrl(exercise);
+  const hasMedia = hasPlayableExerciseMedia(exercise);
 
   const updateMutation = useMutation({
     mutationFn: (payload: { sets: number; reps: number; restSeconds: number }) =>
@@ -371,11 +375,23 @@ function ExerciseRow({
 
   return (
     <GlowCard style={styles.linkedCard}>
+      {previewUrl ? (
+        <Image contentFit="cover" source={{ uri: previewUrl }} style={styles.linkedPreview} />
+      ) : (
+        <View style={[styles.linkedPreview, styles.linkedPreviewPlaceholder]}>
+          <Text style={styles.linkedPreviewPlaceholderText}>No media</Text>
+        </View>
+      )}
       <Text style={styles.linkedTitle}>{exercise.name}</Text>
       <Text style={styles.linkedMeta}>
         {exercise.bodyPart} | {exercise.targetMuscle}
       </Text>
       <Text style={styles.body}>{exercise.equipment ?? 'Bodyweight / unspecified'}</Text>
+      <Text style={styles.body}>
+        {hasMedia
+          ? `Video ready${exercise.mediaSourceProvider ? ` · ${exercise.mediaSourceProvider}` : ''}`
+          : 'No verified example video synced yet'}
+      </Text>
 
       {!isCompleted ? (
         <View style={styles.prescriptionRow}>
@@ -468,6 +484,10 @@ async function invalidateWorkoutQueries(
   }
 }
 
+function getWorkoutExercisePreviewUrl(exercise: WorkoutExercise) {
+  return getPlayableExercisePreviewUrl(exercise);
+}
+
 const styles = StyleSheet.create({
   detailColumns: {
     gap: tokens.spacing.lg,
@@ -516,6 +536,24 @@ const styles = StyleSheet.create({
   },
   linkedCard: {
     padding: tokens.spacing.md,
+    gap: tokens.spacing.sm,
+  },
+  linkedPreview: {
+    width: '100%',
+    height: 160,
+    borderRadius: tokens.radius.lg,
+    backgroundColor: tokens.colors.surfaceStrong,
+  },
+  linkedPreviewPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  linkedPreviewPlaceholderText: {
+    color: tokens.colors.textSoft,
+    fontFamily: tokens.typography.label,
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   linkedTitle: {
     color: tokens.colors.text,

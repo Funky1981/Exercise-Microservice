@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { router, type Href } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 
 import { apiClient } from '@/api/client';
 import { queryKeys } from '@/api/query-keys';
@@ -13,6 +14,7 @@ import { GlowCard } from '@/components/ui/glow-card';
 import { PrimaryButton } from '@/components/ui/primary-button';
 import { StatusCard } from '@/components/ui/status-card';
 import { TextField } from '@/components/ui/text-field';
+import { getPlayableExercisePreviewUrl, hasPlayableExerciseMedia } from '@/features/exercises/exercise-media';
 import { ExerciseCataloguePicker } from '@/features/exercises/exercise-search-picker';
 import {
   formatWorkoutSchedule,
@@ -42,6 +44,8 @@ type BuilderExercise = {
   gifUrl?: string | null;
   mediaUrl?: string | null;
   mediaKind?: string | null;
+  mediaThumbnailUrl?: string | null;
+  mediaSourceProvider?: string | null;
   difficulty?: string | null;
   sets: number;
   reps: number;
@@ -158,9 +162,11 @@ export function WorkoutFormScreen({
         bodyPart: exercise.bodyPart,
         targetMuscle: exercise.targetMuscle,
         equipment: exercise.equipment ?? null,
-        gifUrl: null,
-        mediaUrl: null,
-        mediaKind: null,
+        gifUrl: exercise.gifUrl ?? null,
+        mediaUrl: exercise.mediaUrl ?? null,
+        mediaKind: exercise.mediaKind ?? null,
+        mediaThumbnailUrl: exercise.mediaThumbnailUrl ?? null,
+        mediaSourceProvider: exercise.mediaSourceProvider ?? null,
         difficulty: null,
         sets: exercise.sets,
         reps: exercise.reps,
@@ -413,12 +419,28 @@ export function WorkoutFormScreen({
               <View style={styles.selectedList}>
                 {selectedExercises.map((exercise, index) => (
                   <GlowCard key={exercise.id} style={styles.selectedCard}>
+                    {getBuilderExercisePreviewUrl(exercise) ? (
+                      <Image
+                        contentFit="cover"
+                        source={{ uri: getBuilderExercisePreviewUrl(exercise)! }}
+                        style={styles.selectedPreview}
+                      />
+                    ) : (
+                      <View style={[styles.selectedPreview, styles.selectedPreviewPlaceholder]}>
+                        <Text style={styles.selectedPreviewPlaceholderText}>No media</Text>
+                      </View>
+                    )}
                     <Text style={styles.resultTitle}>{exercise.name}</Text>
                     <Text style={styles.resultMeta}>
                       {exercise.bodyPart} | {exercise.targetMuscle}
                     </Text>
                     <Text style={styles.resultBody}>
                       {exercise.equipment ?? 'Bodyweight / unspecified'}
+                    </Text>
+                    <Text style={styles.resultBody}>
+                      {hasPlayableExerciseMedia(exercise)
+                        ? `Video ready${exercise.mediaSourceProvider ? ` · ${exercise.mediaSourceProvider}` : ''}`
+                        : 'No verified example video synced yet'}
                     </Text>
                     <View style={styles.prescriptionRow}>
                       <BuilderStepper
@@ -691,11 +713,17 @@ function toBuilderExercise(exercise: Exercise): BuilderExercise {
     gifUrl: exercise.gifUrl ?? null,
     mediaUrl: exercise.mediaUrl ?? null,
     mediaKind: exercise.mediaKind ?? null,
+    mediaThumbnailUrl: exercise.mediaThumbnailUrl ?? null,
+    mediaSourceProvider: exercise.mediaSourceProvider ?? null,
     difficulty: exercise.difficulty ?? null,
     sets: DEFAULT_SETS,
     reps: DEFAULT_REPS,
     restSeconds: DEFAULT_REST_SECONDS,
   };
+}
+
+function getBuilderExercisePreviewUrl(exercise: BuilderExercise) {
+  return getPlayableExercisePreviewUrl(exercise);
 }
 
 function clamp(value: number, min: number, max: number) {
@@ -807,6 +835,23 @@ const styles = StyleSheet.create({
   },
   selectedCard: {
     gap: tokens.spacing.sm,
+  },
+  selectedPreview: {
+    width: '100%',
+    height: 150,
+    borderRadius: tokens.radius.lg,
+    backgroundColor: tokens.colors.surfaceStrong,
+  },
+  selectedPreviewPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectedPreviewPlaceholderText: {
+    color: tokens.colors.textSoft,
+    fontFamily: tokens.typography.label,
+    fontSize: 12,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
   prescriptionRow: {
     flexDirection: 'row',

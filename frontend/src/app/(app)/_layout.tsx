@@ -19,6 +19,7 @@ export default function AppLayout() {
         },
       }}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="admin/media-review" options={{ title: 'Media review queue' }} />
       <Stack.Screen name="session" options={{ title: 'Workout session', headerBackVisible: false }} />
       <Stack.Screen name="exercises/[id]" options={{ title: 'Exercise detail' }} />
       <Stack.Screen name="workouts/[id]" options={{ title: 'Workout detail' }} />

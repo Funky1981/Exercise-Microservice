@@ -9,6 +9,7 @@ const baseSession: Session = {
   userId: 'user-1',
   name: 'Tester',
   email: 'tester@example.com',
+  role: 'User',
 };
 
 describe('apiClient', () => {
@@ -51,6 +52,7 @@ describe('apiClient', () => {
           userId: 'user-1',
           name: 'Tester',
           email: 'tester@example.com',
+          role: 'User',
         }),
       })
       .mockResolvedValueOnce({

@@ -8,6 +8,8 @@ import type {
   CreateWorkoutPayload,
   CreateWorkoutPlanPayload,
   Exercise,
+  ExerciseMediaCandidate,
+  ExerciseMediaReviewQueueItem,
   ExerciseAnalytics,
   ExerciseFilterOptions,
   ExerciseFilters,
@@ -74,6 +76,7 @@ function toSession(response: LoginResponse): Session {
     userId: response.userId,
     name: response.name,
     email: response.email,
+    role: response.role,
   };
 }
 
@@ -191,6 +194,10 @@ export const apiClient = {
       query.set('search', filters.search);
     }
 
+    if (filters.mediaOnly) {
+      query.set('mediaOnly', 'true');
+    }
+
     return request<PagedResult<Exercise>>(
       `/api/exercises?${query.toString()}`
     );
@@ -202,6 +209,28 @@ export const apiClient = {
 
   async getExerciseById(id: string) {
     return request<Exercise>(`/api/exercises/${id}`);
+  },
+
+  async getExerciseMediaCandidates(id: string) {
+    return request<ExerciseMediaCandidate[]>(`/api/exercises/${id}/media-candidates`);
+  },
+
+  async getExerciseMediaReviewQueue(limit = 100) {
+    return request<ExerciseMediaReviewQueueItem[]>(`/api/exercises/media-candidates/review?limit=${limit}`);
+  },
+
+  async approveExerciseMediaCandidate(exerciseId: string, candidateId: string, notes?: string) {
+    return request<void>(`/api/exercises/${exerciseId}/media-candidates/${candidateId}/approve`, {
+      method: 'POST',
+      body: JSON.stringify({ notes }),
+    });
+  },
+
+  async rejectExerciseMediaCandidate(exerciseId: string, candidateId: string, notes?: string) {
+    return request<void>(`/api/exercises/${exerciseId}/media-candidates/${candidateId}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ notes }),
+    });
   },
 
   async getWorkouts(pageNumber = 1, pageSize = 20) {

@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { router, usePathname, type Href } from 'expo-router';
 
+import { useSession } from '@/state/session-context';
 import { tokens } from '@/theme/tokens';
 
 type NavItem = {
@@ -19,6 +20,10 @@ const navItems: NavItem[] = [
 
 export function SideNav() {
   const pathname = usePathname();
+  const { session } = useSession();
+  const items = session?.role === 'Admin'
+    ? [...navItems, { label: 'Media Review', href: '/(app)/admin/media-review' as Href, matchPrefix: '/admin/media-review' }]
+    : navItems;
 
   function isActive(item: NavItem) {
     if (item.matchPrefix === '/') {
@@ -31,7 +36,7 @@ export function SideNav() {
     <View style={styles.rail}>
       <Text style={styles.brand}>Exercise</Text>
       <View style={styles.navList}>
-        {navItems.map((item) => {
+        {items.map((item) => {
           const active = isActive(item);
           return (
             <Pressable
