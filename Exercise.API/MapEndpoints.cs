@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using Exercise.Application.Abstractions.Repositories;
 using Exercise.Application.Common.Models;
 using Exercise.Application.Exercises.Dtos;
 using Exercise.Application.Features.Exercises.Commands.CreateExercise;
@@ -19,6 +20,8 @@ namespace Exercise.API
 {
     public static class MapEndpoints
     {
+        private const string RapidApiExternalIdPrefix = "rapidapi:";
+
         public static void MapExerciseEndpoints(this WebApplication app)
         {
             var versionSet = app.NewApiVersionSet()
@@ -101,6 +104,79 @@ namespace Exercise.API
             .WithSummary("Get a single exercise by its ID")
             .Produces<ExerciseDto>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
+
+            // GET /api/exercises/{id}/rapidapi-image?resolution=180
+            group.MapGet("/{id:guid}/rapidapi-image",
+                async (Guid id, IExerciseRepository exerciseRepository, IHttpClientFactory httpClientFactory, CancellationToken ct,
+                       [FromQuery] int resolution = 180) =>
+                {
+                    var exercise = await exerciseRepository.GetByIdAsync(id, ct);
+                    if (exercise is null)
+                    {
+                        return Results.NotFound(new ProblemDetails
+                        {
+                            Title = "Resource not found.",
+                            Detail = $"Exercise with id '{id}' was not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+
+                    if (string.IsNullOrWhiteSpace(exercise.ExternalId)
+                        || !exercise.ExternalId.StartsWith(RapidApiExternalIdPrefix, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return Results.BadRequest(new ProblemDetails
+                        {
+                            Title = "RapidAPI image unavailable.",
+                            Detail = "This exercise was not sourced from RapidAPI ExerciseDB, so it cannot use the RapidAPI image endpoint.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var rapidApiExerciseId = exercise.ExternalId[RapidApiExternalIdPrefix.Length..];
+                    if (string.IsNullOrWhiteSpace(rapidApiExerciseId))
+                    {
+                        return Results.BadRequest(new ProblemDetails
+                        {
+                            Title = "RapidAPI image unavailable.",
+                            Detail = "This exercise does not have a valid RapidAPI ExerciseDB exercise id.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var safeResolution = resolution <= 0 ? 180 : resolution;
+                    var client = httpClientFactory.CreateClient("RapidApiExerciseApi");
+                    using var response = await client.GetAsync($"image?exerciseId={Uri.EscapeDataString(rapidApiExerciseId)}&resolution={safeResolution}", ct);
+
+                    if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                    {
+                        return Results.NotFound(new ProblemDetails
+                        {
+                            Title = "RapidAPI image not found.",
+                            Detail = $"No RapidAPI image was found for exercise id '{rapidApiExerciseId}'.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        return Results.Problem(
+                            title: "RapidAPI image request failed.",
+                            detail: $"RapidAPI returned status code {(int)response.StatusCode}.",
+                            statusCode: StatusCodes.Status502BadGateway);
+                    }
+
+                    var contentType = response.Content.Headers.ContentType?.ToString() ?? "image/gif";
+                    var bytes = await response.Content.ReadAsByteArrayAsync(ct);
+                    return Results.File(bytes, contentType);
+                })
+            .WithName("GetRapidApiExerciseImage")
+            .WithSummary("Proxy the RapidAPI ExerciseDB image endpoint for an exercise")
+            .WithDescription("Uses the stored rapidapi:{exerciseId} external id to call /image?exerciseId={id}&resolution={resolution} without exposing the RapidAPI key to the frontend.")
+            .Produces(StatusCodes.Status200OK, contentType: "image/gif")
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status502BadGateway)
             .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
 
             group.MapGet("/{id:guid}/media-candidates", async (Guid id, IMediator mediator, CancellationToken ct) =>
